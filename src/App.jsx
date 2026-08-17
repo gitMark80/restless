@@ -44,7 +44,7 @@ const STRINGS = {
   en: {
     tagline: "Modern questions. Timeless faith.",
     ageLabels: { Child: "Child", Teen: "Teen", Adult: "Adult", Senior: "Senior" },
-    placeholder: "Ask about faith, Scripture, or Church teaching…",
+    placeholder: "How can I help?",
     retryError: "That didn't come through. Tap send again to retry.",
     langToggleLabel: "Switch to Spanish",
     shareLabel: "Share this question and answer",
@@ -65,7 +65,7 @@ const STRINGS = {
   es: {
     tagline: "Preguntas modernas. Fe eterna.",
     ageLabels: { Child: "Niño", Teen: "Adolescente", Adult: "Adulto", Senior: "Mayor" },
-    placeholder: "Pregunta sobre la fe, la Escritura o la enseñanza de la Iglesia…",
+    placeholder: "¿Cómo puedo ayudar?",
     retryError: "Eso no llegó. Toca enviar para volver a intentarlo.",
     langToggleLabel: "Cambiar a inglés",
     shareLabel: "Compartir esta pregunta y respuesta",
@@ -87,41 +87,41 @@ const STRINGS = {
 
 const SEED_MESSAGES = {
   en: [
-    { id: 1, role: "user", text: "How do I know God loves me?" },
+    { id: 1, role: "user", text: "Can I be forgiven?" },
     {
       id: 2,
       role: "companion",
-      text: "You don't have to earn the answer to this — before you did anything at all, you were already loved into existence, and that hasn't wavered since. The clearest proof the Church points to isn't a feeling but a fact: God so loved the world that He gave His only Son, not because we deserved it, but because that's simply who He is. You can trust this even on the days it doesn't feel true, because His love was never based on your feelings in the first place.",
+      text: "Yes — completely, and there's nothing you've done that outruns that. God's mercy isn't a reluctant concession; it's who He is, and He wants your \"yes\" more than He remembers your worst day. The only thing that can close that door is refusing to walk through it — confession exists precisely so it stays open, every time. Whatever it is, bring it to Him; He isn't waiting to shame you, He's waiting to embrace you.",
       sources: [
         {
-          label: "Catechism of the Catholic Church, §1",
+          label: "Catechism of the Catholic Church, §982",
           detail:
-            "Teaches that God, in infinite love, freely created man to share in his own blessed life, and constantly draws every person toward himself.",
+            "Teaches that there is no sin, however serious, that the Church cannot forgive, and that anyone who is honestly repentant can confidently hope for God's mercy.",
         },
         {
-          label: "John 3:16",
+          label: "Luke 15:11–32 (The Prodigal Son)",
           detail:
-            "Describes God's love for the world as the reason he gave his only Son, so that everyone who believes in him might have eternal life.",
+            "Describes a father running to embrace his returning son before a word of apology is even finished, showing how eagerly God receives anyone who turns back to him.",
         },
       ],
     },
   ],
   es: [
-    { id: 1, role: "user", text: "¿Cómo sé que Dios me ama?" },
+    { id: 1, role: "user", text: "¿Puedo ser perdonado?" },
     {
       id: 2,
       role: "companion",
-      text: "No tienes que ganarte la respuesta a esto — antes de que hicieras nada, ya eras amado hacia la existencia, y eso no ha cambiado desde entonces. La prueba más clara que señala la Iglesia no es un sentimiento, sino un hecho: Dios amó tanto al mundo que entregó a su Hijo único, no porque lo mereciéramos, sino porque así es Él. Puedes confiar en esto incluso en los días en que no lo sientas, porque su amor nunca dependió de tus sentimientos.",
+      text: "Sí — por completo, y no hay nada que hayas hecho que esté fuera del alcance de eso. La misericordia de Dios no es una concesión a regañadientes; es quien Él es, y desea tu \"sí\" más de lo que recuerda tu peor día. Lo único que puede cerrar esa puerta es negarte a cruzarla — la confesión existe precisamente para que permanezca abierta, cada vez. Sea lo que sea, llévaselo a Él; no está esperando para avergonzarte, está esperando para abrazarte.",
       sources: [
         {
-          label: "Catecismo de la Iglesia Católica, §1",
+          label: "Catecismo de la Iglesia Católica, §982",
           detail:
-            "Enseña que Dios, en su amor infinito, creó libremente al hombre para compartir su propia vida bienaventurada, y atrae constantemente a cada persona hacia sí.",
+            "Enseña que no hay pecado, por grave que sea, que la Iglesia no pueda perdonar, y que quien se arrepiente sinceramente puede esperar con confianza la misericordia de Dios.",
         },
         {
-          label: "Juan 3:16",
+          label: "Lucas 15:11–32 (El Hijo Pródigo)",
           detail:
-            "Describe el amor de Dios por el mundo como la razón por la que entregó a su Hijo único, para que todo el que crea en él tenga vida eterna.",
+            "Describe a un padre que corre a abrazar a su hijo que regresa antes de que termine de pedir perdón, mostrando cuán ansiosamente recibe Dios a quien vuelve a él.",
         },
       ],
     },
