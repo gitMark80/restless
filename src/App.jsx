@@ -395,13 +395,31 @@ export default function Restless() {
   const theme = THEMES[mode];
   const strings = STRINGS[language];
   const scrollRef = useRef(null);
+  const lastMessageRef = useRef(null);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({
-      top: scrollRef.current.scrollHeight,
-      behavior: "smooth",
-    });
-  }, [messages, isTyping]);
+    // Scroll so the newest message's top is visible, rather than jumping to
+    // the very bottom — for a long companion answer, that means landing on
+    // its first line instead of its last.
+    if (lastMessageRef.current) {
+      lastMessageRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      scrollRef.current?.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    // While the typing indicator is showing, keep it in view at the bottom.
+    if (isTyping) {
+      scrollRef.current?.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  }, [isTyping]);
 
   useEffect(() => {
     document.documentElement.style.overflowX = "hidden";
@@ -543,19 +561,20 @@ export default function Restless() {
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-6">
         <div className="max-w-2xl mx-auto w-full space-y-4 min-w-0">
-          {messages.map((msg, idx) =>
-            msg.role === "user" ? (
-              <UserMessage key={msg.id} message={msg} theme={theme} />
-            ) : (
-              <CompanionMessage
-                key={msg.id}
-                message={msg}
-                questionText={idx > 0 ? messages[idx - 1].text : null}
-                theme={theme}
-                strings={strings}
-              />
-            )
-          )}
+          {messages.map((msg, idx) => (
+            <div key={msg.id} ref={idx === messages.length - 1 ? lastMessageRef : null}>
+              {msg.role === "user" ? (
+                <UserMessage message={msg} theme={theme} />
+              ) : (
+                <CompanionMessage
+                  message={msg}
+                  questionText={idx > 0 ? messages[idx - 1].text : null}
+                  theme={theme}
+                  strings={strings}
+                />
+              )}
+            </div>
+          ))}
           {isTyping && (
             <div className="flex justify-start">
               <div
@@ -597,7 +616,7 @@ export default function Restless() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={strings.placeholder}
-            rows={4}
+            rows={3}
             className="flex-1 min-w-0 resize-none rounded-xl px-4 py-3 focus:outline-none overflow-y-auto max-h-40"
             style={{ backgroundColor: theme.cardBg, color: theme.text, fontSize: "20px", boxSizing: "border-box", width: "100%" }}
           />
