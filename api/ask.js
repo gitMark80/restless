@@ -31,6 +31,96 @@ const LANGUAGE_INSTRUCTION = {
   es: "Respond entirely in Spanish (español). Both the \"text\" field and every source \"label\" and \"detail\" must be in Spanish — for example, cite the Catechism as \"Catecismo de la Iglesia Católica, §XXX\" rather than the English form. Still return valid JSON with the same field names (text, sources, label, detail) in English — only the VALUES are translated, not the JSON keys.",
 };
 
+// Set to true to re-enable the USCCB daily reading / feast day lookup.
+// Currently off because bible.usccb.org fetches weren't reliably succeeding —
+// see console.error logs in fetchTodaysReadingCitations if revisiting this.
+const ENABLE_LITURGICAL_LOOKUP = false;
+
+// Verified public-domain prayer texts only. The Nicene Creed and the Missal's
+// Apostles' Creed are deliberately excluded — the current Mass wording (2011
+// Roman Missal) is copyrighted by ICEL. These traditional prayer texts predate
+// modern copyright and are safe to reproduce verbatim.
+const PRAYERS = {
+  ourFather: {
+    name: "The Our Father (The Lord's Prayer)",
+    aliases: ["our father", "lord's prayer", "lords prayer", "pater noster"],
+    text: "Our Father, who art in heaven, hallowed be thy name. Thy kingdom come. Thy will be done, on earth as it is in heaven. Give us this day our daily bread, and forgive us our trespasses, as we forgive those who trespass against us. And lead us not into temptation, but deliver us from evil. Amen.",
+  },
+  hailMary: {
+    name: "The Hail Mary",
+    aliases: ["hail mary"],
+    text: "Hail Mary, full of grace, the Lord is with thee. Blessed art thou among women, and blessed is the fruit of thy womb, Jesus. Holy Mary, Mother of God, pray for us sinners, now and at the hour of our death. Amen.",
+  },
+  gloryBe: {
+    name: "The Glory Be (Doxology)",
+    aliases: ["glory be", "gloria patri"],
+    text: "Glory be to the Father, and to the Son, and to the Holy Spirit. As it was in the beginning, is now, and ever shall be, world without end. Amen.",
+  },
+  apostlesCreed: {
+    name: "The Apostles' Creed (traditional text)",
+    aliases: ["apostles' creed", "apostles creed"],
+    text: "I believe in God, the Father almighty, Creator of heaven and earth; and in Jesus Christ, His only Son, our Lord, who was conceived by the Holy Spirit, born of the Virgin Mary, suffered under Pontius Pilate, was crucified, died, and was buried. He descended into hell; on the third day He rose again from the dead. He ascended into heaven, and is seated at the right hand of God the Father almighty. From there He will come to judge the living and the dead. I believe in the Holy Spirit, the holy Catholic Church, the communion of saints, the forgiveness of sins, the resurrection of the body, and life everlasting. Amen.",
+  },
+  memorare: {
+    name: "The Memorare",
+    aliases: ["memorare"],
+    text: "Remember, O most gracious Virgin Mary, that never was it known that anyone who fled to thy protection, implored thy help, or sought thy intercession, was left unaided. Inspired by this confidence, I fly unto thee, O Virgin of virgins, my Mother. To thee do I come, before thee I stand, sinful and sorrowful. O Mother of the Word Incarnate, despise not my petitions, but in thy mercy hear and answer me. Amen.",
+  },
+  actOfContrition: {
+    name: "Act of Contrition",
+    aliases: ["act of contrition"],
+    text: "O my God, I am heartily sorry for having offended Thee, and I detest all my sins, because of Thy just punishments, but most of all because they offend Thee, my God, who art all good and deserving of all my love. I firmly resolve, with the help of Thy grace, to sin no more and to avoid the near occasions of sin. Amen.",
+  },
+  guardianAngel: {
+    name: "Guardian Angel Prayer",
+    aliases: ["guardian angel prayer", "angel of god"],
+    text: "Angel of God, my guardian dear, to whom God's love commits me here, ever this day be at my side, to light and guard, to rule and guide. Amen.",
+  },
+  angelus: {
+    name: "The Angelus",
+    aliases: ["angelus"],
+    text: "V. The Angel of the Lord declared unto Mary,\nR. And she conceived of the Holy Spirit.\nHail Mary...\n\nV. Behold the handmaid of the Lord,\nR. Be it done unto me according to thy word.\nHail Mary...\n\nV. And the Word was made flesh,\nR. And dwelt among us.\nHail Mary...\n\nV. Pray for us, O holy Mother of God,\nR. That we may be made worthy of the promises of Christ.\n\nLet us pray: Pour forth, we beseech Thee, O Lord, Thy grace into our hearts, that we, to whom the Incarnation of Christ, Thy Son, was made known by the message of an angel, may by His Passion and Cross be brought to the glory of His Resurrection. Through the same Christ our Lord. Amen.",
+  },
+  hailHolyQueen: {
+    name: "Hail, Holy Queen (Salve Regina)",
+    aliases: ["hail holy queen", "salve regina"],
+    text: "Hail, holy Queen, Mother of mercy, our life, our sweetness, and our hope. To thee do we cry, poor banished children of Eve. To thee do we send up our sighs, mourning and weeping in this valley of tears. Turn then, most gracious advocate, thine eyes of mercy toward us, and after this our exile show unto us the blessed fruit of thy womb, Jesus. O clement, O loving, O sweet Virgin Mary. Pray for us, O holy Mother of God, that we may be made worthy of the promises of Christ. Amen.",
+  },
+  fatimaPrayer: {
+    name: "The Fatima Prayer (O My Jesus)",
+    aliases: ["fatima prayer", "o my jesus", "decade prayer"],
+    text: "O my Jesus, forgive us our sins, save us from the fires of hell, lead all souls to Heaven, especially those who have most need of Thy mercy. Amen.",
+  },
+  stMichael: {
+    name: "Prayer to St. Michael the Archangel",
+    aliases: ["st michael prayer", "saint michael prayer", "prayer to st michael", "prayer to saint michael", "st. michael prayer"],
+    text: "Saint Michael the Archangel, defend us in battle. Be our protection against the wickedness and snares of the devil. May God rebuke him, we humbly pray, and do thou, O Prince of the heavenly host, by the power of God, cast into hell Satan and all the evil spirits who prowl about the world seeking the ruin of souls. Amen.",
+  },
+  graceBeforeMeals: {
+    name: "Grace Before Meals",
+    aliases: ["grace before meals", "table grace", "meal prayer", "grace before eating"],
+    text: "Bless us, O Lord, and these Thy gifts, which we are about to receive from Thy bounty, through Christ our Lord. Amen.",
+  },
+  eternalRest: {
+    name: "Eternal Rest (Prayer for the Dead)",
+    aliases: ["eternal rest", "prayer for the dead"],
+    text: "Eternal rest grant unto them, O Lord, and let perpetual light shine upon them. May they rest in peace. Amen.",
+  },
+};
+
+function findMatchedPrayer(question) {
+  const lower = question.toLowerCase();
+  for (const key of Object.keys(PRAYERS)) {
+    const prayer = PRAYERS[key];
+    if (prayer.aliases.some((alias) => lower.includes(alias))) {
+      return prayer;
+    }
+  }
+  return null;
+}
+
+const NICENE_CREED_PATTERN = /nicene creed/i;
+
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const MAX_REQUESTS_PER_WINDOW = 8;
 const buckets = new Map();
@@ -229,7 +319,7 @@ export default async function handler(req, res) {
     LANGUAGE_INSTRUCTION[language] || LANGUAGE_INSTRUCTION.en;
 
   let readingContext = "";
-  if (isDailyReadingQuestion(question) || isFeastDayQuestion(question)) {
+  if (ENABLE_LITURGICAL_LOOKUP && (isDailyReadingQuestion(question) || isFeastDayQuestion(question))) {
     const { isoDate: targetIso, dayLabel } = resolveTargetDate(question, todayDate);
     try {
       const readings = await fetchTodaysReadingCitations(targetIso);
@@ -251,6 +341,21 @@ IMPORTANT: Only use the feast/memorial/saint name and the citations above — ne
     }
   }
 
+  let prayerContext = "";
+  const matchedPrayer = findMatchedPrayer(question);
+  if (matchedPrayer) {
+    prayerContext = `\n\nPRAYER TEXT (public domain, provided verbatim — reproduce it EXACTLY as given below, preserving all line breaks, do not paraphrase, summarize, or shorten it):
+"""
+${matchedPrayer.text}
+"""
+
+IMPORTANT: This OVERRIDES rule 6 (the 2-4 sentence limit) for this response only. Structure the "text" field as: one warm sentence naming the prayer, then the full prayer text exactly as given above (preserve line breaks using \\n in the JSON string), then optionally one brief closing sentence. Do not add commentary in the middle of the prayer. Include one source with "label": "${matchedPrayer.name}", and "detail" describing its traditional use or origin in one sentence.`;
+  } else if (NICENE_CREED_PATTERN.test(question)) {
+    prayerContext = `\n\nNOTE: The person is asking for the text of the Nicene Creed. The current English wording used at Mass (the 2011 Roman Missal translation, e.g. "consubstantial with the Father," "was incarnate of the Virgin Mary") is copyrighted by ICEL and cannot be reproduced. Do NOT provide any wording of the Creed, full or partial, and do NOT substitute an older translation as if it were the current one. Instead, explain this honestly and warmly, and suggest they check their parish missal, worship aid, or usccb.org for the exact current text. You may briefly describe in your own words what the Creed affirms as a summary of belief, without quoting any translation.`;
+  }
+
+  const maxTokens = matchedPrayer ? 1200 : 1000;
+
   try {
     const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -261,8 +366,8 @@ IMPORTANT: Only use the feast/memorial/saint name and the citations above — ne
       },
       body: JSON.stringify({
         model: process.env.MODEL_ID || "claude-sonnet-4-5",
-        max_tokens: 1000,
-        system: `${SYSTEM_PROMPT}\n\nAudience tone for this response: ${tone}\n\n${languageInstruction}${readingContext}`,
+        max_tokens: maxTokens,
+        system: `${SYSTEM_PROMPT}\n\nAudience tone for this response: ${tone}\n\n${languageInstruction}${readingContext}${prayerContext}`,
         messages: [{ role: "user", content: question }],
       }),
     });
