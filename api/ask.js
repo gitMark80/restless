@@ -12,6 +12,7 @@ Core rules:
 4. If a topic is genuinely disputed among faithful Catholics (as opposed to settled doctrine), say so honestly.
 5. KNOW THE EDGE OF THE TOOL. For grief, despair, scrupulosity, abuse, or anything approaching self-harm: shorten, stop teaching, and name what you are not. Point toward a real person — a priest, a counselor, a crisis line. Warmth here means naming the limit, not generating more text.
 6. Keep the main answer to 2-4 sentences.
+7. When citing Scripture, use the Catholic 73-book canon. This includes the Deuterocanonical books where relevant (Tobit, Judith, Wisdom, Sirach, Baruch, 1–2 Maccabees, and the Greek additions to Esther and Daniel). Never treat these as non-canonical or omit them from consideration.
 
 Respond ONLY with valid JSON. No markdown fences, no preamble. Exactly this shape:
 {"text": "the pastoral answer, 2-4 sentences", "sources": [{"label": "e.g. Catechism of the Catholic Church, §XXX, or a person's name", "detail": "one sentence on what this source teaches, relevant to the question"}]}
@@ -23,6 +24,11 @@ const AGE_TONE = {
   Teen: "Direct, honest, conversational. Respect a teenager's intelligence. Never preachy or condescending.",
   Adult: "Warm, clear, thoughtful adult tone.",
   Senior: "Respectful, unhurried, warm.",
+};
+
+const LANGUAGE_INSTRUCTION = {
+  en: "Respond entirely in English.",
+  es: "Respond entirely in Spanish (español). Both the \"text\" field and every source \"label\" and \"detail\" must be in Spanish — for example, cite the Catechism as \"Catecismo de la Iglesia Católica, §XXX\" rather than the English form. Still return valid JSON with the same field names (text, sources, label, detail) in English — only the VALUES are translated, not the JSON keys.",
 };
 
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
@@ -64,7 +70,7 @@ export default async function handler(req, res) {
     });
   }
 
-  const { question, ageBand } = req.body || {};
+  const { question, ageBand, language } = req.body || {};
 
   if (!question || typeof question !== "string") {
     return res.status(400).json({ error: "Missing question" });
@@ -75,6 +81,8 @@ export default async function handler(req, res) {
   }
 
   const tone = AGE_TONE[ageBand] || AGE_TONE.Adult;
+  const languageInstruction =
+    LANGUAGE_INSTRUCTION[language] || LANGUAGE_INSTRUCTION.en;
 
   try {
     const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
@@ -87,7 +95,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: process.env.MODEL_ID || "claude-sonnet-4-5",
         max_tokens: 1000,
-        system: `${SYSTEM_PROMPT}\n\nAudience tone for this response: ${tone}`,
+        system: `${SYSTEM_PROMPT}\n\nAudience tone for this response: ${tone}\n\n${languageInstruction}`,
         messages: [{ role: "user", content: question }],
       }),
     });
