@@ -103,14 +103,26 @@ function stripHtmlToLines(html) {
 
 async function fetchTodaysReadingCitations(isoDate) {
   const mmddyy = toMMDDYY(isoDate);
-  if (!mmddyy) return null;
+  if (!mmddyy) {
+    console.error("USCCB lookup: invalid isoDate:", isoDate);
+    return null;
+  }
 
   const pageUrl = `https://bible.usccb.org/bible/readings/${mmddyy}.cfm`;
 
   const res = await fetch(pageUrl, {
-    headers: { "User-Agent": "Mozilla/5.0 (compatible; RestlessApp/1.0)" },
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Accept-Language": "en-US,en;q=0.9",
+    },
   });
-  if (!res.ok) return null;
+
+  if (!res.ok) {
+    console.error("USCCB fetch failed:", pageUrl, "status:", res.status);
+    return null;
+  }
 
   const html = await res.text();
 
@@ -150,7 +162,19 @@ async function fetchTodaysReadingCitations(isoDate) {
     }
   }
 
-  if (!liturgicalDay || Object.keys(citations).length === 0) return null;
+  if (!liturgicalDay || Object.keys(citations).length === 0) {
+    console.error(
+      "USCCB parse failed for",
+      pageUrl,
+      "— titleFound:",
+      !!liturgicalDay,
+      "citationsFound:",
+      Object.keys(citations).length,
+      "htmlLength:",
+      html.length
+    );
+    return null;
+  }
 
   return { liturgicalDay, memorialName, citations, pageUrl };
 }
