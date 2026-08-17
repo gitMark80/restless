@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Send, ChevronDown, BookOpen, Cross, Sun, Moon } from "lucide-react";
+import { Send, ChevronDown, BookOpen, Cross, Sun, Moon, Share2, Check } from "lucide-react";
 
 const AGE_BANDS = ["Child", "Teen", "Adult", "Senior"];
 
@@ -40,32 +40,77 @@ const THEMES = {
   },
 };
 
-const SEED_MESSAGES = [
-  { id: 1, role: "user", text: "Why does God let good people suffer?" },
-  {
-    id: 2,
-    role: "companion",
-    text: "This question sits at the very center of the human heart, and you're in good company asking it — even the Psalms are full of this cry. The short answer the Church gives isn't that suffering is good, but that God can bring good even out of what is not good, without ever willing the evil itself. Suffering entered through brokenness and human freedom, not because God delights in it. And in Christ, God didn't stay distant from suffering — He entered into it.",
-    sources: [
-      {
-        label: "Catechism of the Catholic Church, §309–310",
-        detail:
-          "On the mystery of evil and suffering existing alongside a good and provident God, and how this is not fully answered by faith alone but held in hope.",
-      },
-      {
-        label: "Bishop Robert Barron",
-        detail:
-          "Often teaches that the Cross doesn't explain suffering away — it shows that God chooses solidarity with the sufferer rather than distance from them.",
-      },
-    ],
+const STRINGS = {
+  en: {
+    tagline: "Our hearts are restless until they rest in You",
+    ageLabels: { Child: "Child", Teen: "Teen", Adult: "Adult", Senior: "Senior" },
+    placeholder: "Ask about faith, Scripture, or Church teaching…",
+    retryError: "That didn't come through. Tap send again to retry.",
+    langToggleLabel: "Switch to Spanish",
+    shareLabel: "Share this question and answer",
+    shareFooter: "Shared from Restless — restless.faith",
+    copiedLabel: "Copied",
   },
-];
+  es: {
+    tagline: "Nuestro corazón está inquieto hasta que descanse en Ti",
+    ageLabels: { Child: "Niño", Teen: "Adolescente", Adult: "Adulto", Senior: "Mayor" },
+    placeholder: "Pregunta sobre la fe, la Escritura o la enseñanza de la Iglesia…",
+    retryError: "Eso no llegó. Toca enviar para volver a intentarlo.",
+    langToggleLabel: "Cambiar a inglés",
+    shareLabel: "Compartir esta pregunta y respuesta",
+    shareFooter: "Compartido desde Restless — restless.faith",
+    copiedLabel: "Copiado",
+  },
+};
 
-async function askCompanion(question, ageBand) {
+const SEED_MESSAGES = {
+  en: [
+    { id: 1, role: "user", text: "Why does God let good people suffer?" },
+    {
+      id: 2,
+      role: "companion",
+      text: "This question sits at the very center of the human heart, and you're in good company asking it — even the Psalms are full of this cry. The short answer the Church gives isn't that suffering is good, but that God can bring good even out of what is not good, without ever willing the evil itself. Suffering entered through brokenness and human freedom, not because God delights in it. And in Christ, God didn't stay distant from suffering — He entered into it.",
+      sources: [
+        {
+          label: "Catechism of the Catholic Church, §309–310",
+          detail:
+            "On the mystery of evil and suffering existing alongside a good and provident God, and how this is not fully answered by faith alone but held in hope.",
+        },
+        {
+          label: "Bishop Robert Barron",
+          detail:
+            "Often teaches that the Cross doesn't explain suffering away — it shows that God chooses solidarity with the sufferer rather than distance from them.",
+        },
+      ],
+    },
+  ],
+  es: [
+    { id: 1, role: "user", text: "¿Por qué Dios permite que sufra la gente buena?" },
+    {
+      id: 2,
+      role: "companion",
+      text: "Esta pregunta está en el centro mismo del corazón humano, y estás en buena compañía al hacerla — hasta los Salmos están llenos de este clamor. La respuesta breve que da la Iglesia no es que el sufrimiento sea bueno, sino que Dios puede sacar el bien incluso de lo que no es bueno, sin nunca querer el mal en sí. El sufrimiento entró por el quebranto y la libertad humana, no porque Dios se deleite en él. Y en Cristo, Dios no se quedó distante del sufrimiento — entró en él.",
+      sources: [
+        {
+          label: "Catecismo de la Iglesia Católica, §309–310",
+          detail:
+            "Sobre el misterio del mal y el sufrimiento que existen junto a un Dios bueno y provi­dente, y cómo esto no se responde solo con la fe, sino que se sostiene en la esperanza.",
+        },
+        {
+          label: "Obispo Robert Barron",
+          detail:
+            "Suele enseñar que la Cruz no explica el sufrimiento — muestra que Dios elige la solidaridad con quien sufre en lugar de la distancia.",
+        },
+      ],
+    },
+  ],
+};
+
+async function askCompanion(question, ageBand, language) {
   const response = await fetch("/api/ask", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question, ageBand }),
+    body: JSON.stringify({ question, ageBand, language }),
   });
 
   const data = await response.json();
@@ -128,7 +173,53 @@ function CitationCard({ source, isOpen, onToggle, theme }) {
   );
 }
 
-function CompanionMessage({ message, theme }) {
+function ShareButton({ questionText, answerText, theme, strings }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    const shareText = `Q: ${questionText}\n\nA: ${answerText}\n\n${strings.shareFooter}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ text: shareText });
+      } catch (err) {
+        // User cancelled the native share sheet — no action needed.
+      }
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      // Clipboard blocked — nothing more we can do here.
+    }
+  };
+
+  return (
+    <button
+      onClick={handleShare}
+      aria-label={strings.shareLabel}
+      className="flex items-center gap-1.5 shrink-0"
+      style={{ color: theme.subtext, fontSize: "14px", padding: "0.25rem 0" }}
+    >
+      {copied ? (
+        <>
+          <Check className="w-3.5 h-3.5" style={{ color: theme.accent }} />
+          <span style={{ color: theme.accent }}>{strings.copiedLabel}</span>
+        </>
+      ) : (
+        <>
+          <Share2 className="w-3.5 h-3.5" />
+          <span>{strings.shareLabel}</span>
+        </>
+      )}
+    </button>
+  );
+}
+
+function CompanionMessage({ message, questionText, theme, strings }) {
   const [openSources, setOpenSources] = useState({});
   const toggleSource = (idx) =>
     setOpenSources((prev) => ({ ...prev, [idx]: !prev[idx] }));
@@ -160,6 +251,14 @@ function CompanionMessage({ message, theme }) {
             ))}
           </div>
         )}
+        {questionText && (
+          <ShareButton
+            questionText={questionText}
+            answerText={message.text}
+            theme={theme}
+            strings={strings}
+          />
+        )}
       </div>
     </div>
   );
@@ -188,13 +287,15 @@ function UserMessage({ message, theme }) {
 }
 
 export default function Restless() {
-  const [messages, setMessages] = useState(SEED_MESSAGES);
+  const [language, setLanguage] = useState("en");
+  const [messages, setMessages] = useState(SEED_MESSAGES.en);
   const [input, setInput] = useState("");
   const [ageBand, setAgeBand] = useState("Adult");
   const [isTyping, setIsTyping] = useState(false);
   const [mode, setMode] = useState("dark");
   const [error, setError] = useState(null);
   const theme = THEMES[mode];
+  const strings = STRINGS[language];
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -210,6 +311,14 @@ export default function Restless() {
     document.body.style.margin = "0";
   }, []);
 
+  const handleLanguageToggle = () => {
+    const next = language === "en" ? "es" : "en";
+    setLanguage(next);
+    // Reset to that language's seed conversation so the transcript stays coherent.
+    setMessages(SEED_MESSAGES[next]);
+    setError(null);
+  };
+
   const handleSend = async () => {
     const trimmed = input.trim();
     if (!trimmed || isTyping) return;
@@ -219,7 +328,7 @@ export default function Restless() {
     setError(null);
 
     try {
-      const result = await askCompanion(trimmed, ageBand);
+      const result = await askCompanion(trimmed, ageBand, language);
       setIsTyping(false);
       setMessages((prev) => [
         ...prev,
@@ -227,11 +336,7 @@ export default function Restless() {
       ]);
     } catch (err) {
       setIsTyping(false);
-      setError(
-        err && err.message
-          ? err.message
-          : "That didn't come through. Tap send again to retry."
-      );
+      setError(err && err.message ? err.message : strings.retryError);
       setInput(trimmed);
       setMessages((prev) => prev.slice(0, -1));
     }
@@ -275,22 +380,50 @@ export default function Restless() {
                 Restless
               </h1>
               <p className="leading-tight" style={{ color: theme.subtext, fontSize: "16px" }}>
-                Our hearts are restless until they rest in You
+                {strings.tagline}
               </p>
             </div>
           </div>
-          <button
-            onClick={() => setMode(mode === "dark" ? "light" : "dark")}
-            className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-            style={{ backgroundColor: theme.toggleInactiveBg }}
-            aria-label="Toggle light and dark mode"
-          >
-            {mode === "dark" ? (
-              <Sun className="w-4 h-4" style={{ color: theme.accent }} />
-            ) : (
-              <Moon className="w-4 h-4" style={{ color: theme.accent }} />
-            )}
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={handleLanguageToggle}
+              aria-label={strings.langToggleLabel}
+              className="h-9 px-3 rounded-full flex items-center justify-center gap-1"
+              style={{ backgroundColor: theme.toggleInactiveBg }}
+            >
+              <span
+                style={{
+                  color: language === "en" ? theme.accent : theme.subtext,
+                  fontWeight: language === "en" ? 700 : 400,
+                  fontSize: "14px",
+                }}
+              >
+                EN
+              </span>
+              <span style={{ color: theme.subtext, fontSize: "14px" }}>/</span>
+              <span
+                style={{
+                  color: language === "es" ? theme.accent : theme.subtext,
+                  fontWeight: language === "es" ? 700 : 400,
+                  fontSize: "14px",
+                }}
+              >
+                ES
+              </span>
+            </button>
+            <button
+              onClick={() => setMode(mode === "dark" ? "light" : "dark")}
+              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+              style={{ backgroundColor: theme.toggleInactiveBg }}
+              aria-label="Toggle light and dark mode"
+            >
+              {mode === "dark" ? (
+                <Sun className="w-4 h-4" style={{ color: theme.accent }} />
+              ) : (
+                <Moon className="w-4 h-4" style={{ color: theme.accent }} />
+              )}
+            </button>
+          </div>
         </div>
         <div className="max-w-2xl mx-auto w-full mt-3 flex gap-1.5">
           {AGE_BANDS.map((band) => (
@@ -304,7 +437,7 @@ export default function Restless() {
                   : { backgroundColor: theme.toggleInactiveBg, color: theme.subtext, fontSize: "14px" }
               }
             >
-              {band}
+              {strings.ageLabels[band]}
             </button>
           ))}
         </div>
@@ -312,11 +445,17 @@ export default function Restless() {
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-6">
         <div className="max-w-2xl mx-auto w-full space-y-4 min-w-0">
-          {messages.map((msg) =>
+          {messages.map((msg, idx) =>
             msg.role === "user" ? (
               <UserMessage key={msg.id} message={msg} theme={theme} />
             ) : (
-              <CompanionMessage key={msg.id} message={msg} theme={theme} />
+              <CompanionMessage
+                key={msg.id}
+                message={msg}
+                questionText={idx > 0 ? messages[idx - 1].text : null}
+                theme={theme}
+                strings={strings}
+              />
             )
           )}
           {isTyping && (
@@ -359,7 +498,7 @@ export default function Restless() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask about faith, Scripture, or Church teaching…"
+            placeholder={strings.placeholder}
             rows={4}
             className="flex-1 min-w-0 resize-none rounded-xl px-4 py-3 focus:outline-none overflow-y-auto max-h-40"
             style={{ backgroundColor: theme.cardBg, color: theme.text, fontSize: "20px", boxSizing: "border-box", width: "100%" }}
