@@ -42,7 +42,7 @@ const THEMES = {
 
 const STRINGS = {
   en: {
-    tagline: "Modern questions.\nTimeless faith.",
+    tagline: "Modern questions.\nTimeless truth.",
     ageLabels: { Child: "Child", Teen: "Teen", Adult: "Adult", Senior: "Senior" },
     placeholder: "How can I help?",
     retryError: "That didn't come through. Tap send again to retry.",
@@ -69,7 +69,7 @@ const STRINGS = {
     supportUrl: "https://buy.stripe.com/REPLACE_WITH_YOUR_PAYMENT_LINK",
   },
   es: {
-    tagline: "Preguntas modernas.\nFe eterna.",
+    tagline: "Preguntas modernas.\nVerdad eterna.",
     ageLabels: { Child: "Niño", Teen: "Adolescente", Adult: "Adulto", Senior: "Mayor" },
     placeholder: "¿Cómo puedo ayudar?",
     retryError: "Eso no llegó. Toca enviar para volver a intentarlo.",
