@@ -267,6 +267,93 @@ function ShareButton({ questionText, answerText, theme, strings }) {
   );
 }
 
+// Parses plain text with markdown-lite bullet ("- item") or numbered ("1. item")
+// lines into paragraph/list blocks, so answers can render as real lists instead
+// of a single flat paragraph with dashes shown inline.
+function parseMessageBlocks(text) {
+  const lines = (text || "").split("\n");
+  const blocks = [];
+  let currentItems = null;
+  let currentType = null;
+
+  const flush = () => {
+    if (currentItems && currentItems.length > 0) {
+      blocks.push({ type: currentType, items: currentItems });
+    }
+    currentItems = null;
+    currentType = null;
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (line === "") {
+      flush();
+      continue;
+    }
+    const bulletMatch = /^[-•]\s+(.*)$/.exec(line);
+    const numberedMatch = /^\d+[.)]\s+(.*)$/.exec(line);
+
+    if (bulletMatch) {
+      if (currentType !== "ul") {
+        flush();
+        currentType = "ul";
+        currentItems = [];
+      }
+      currentItems.push(bulletMatch[1]);
+    } else if (numberedMatch) {
+      if (currentType !== "ol") {
+        flush();
+        currentType = "ol";
+        currentItems = [];
+      }
+      currentItems.push(numberedMatch[1]);
+    } else {
+      flush();
+      blocks.push({ type: "p", text: line });
+    }
+  }
+  flush();
+  return blocks;
+}
+
+function MessageBlocks({ text, theme }) {
+  const blocks = parseMessageBlocks(text);
+  const textStyle = {
+    color: theme.text,
+    fontSize: "20px",
+    overflowWrap: "break-word",
+    wordBreak: "break-word",
+  };
+
+  return (
+    <div className="space-y-2">
+      {blocks.map((block, i) => {
+        if (block.type === "p") {
+          return (
+            <p key={i} className="leading-relaxed" style={textStyle}>
+              {block.text}
+            </p>
+          );
+        }
+        const ListTag = block.type === "ul" ? "ul" : "ol";
+        return (
+          <ListTag
+            key={i}
+            style={{ ...textStyle, paddingLeft: "1.4rem" }}
+            className={block.type === "ul" ? "list-disc space-y-1" : "list-decimal space-y-1"}
+          >
+            {block.items.map((item, j) => (
+              <li key={j} className="leading-relaxed">
+                {item}
+              </li>
+            ))}
+          </ListTag>
+        );
+      })}
+    </div>
+  );
+}
+
 function CompanionMessage({ message, questionText, theme, strings }) {
   const [openSources, setOpenSources] = useState({});
   const toggleSource = (idx) =>
@@ -279,12 +366,7 @@ function CompanionMessage({ message, questionText, theme, strings }) {
           className="rounded-3xl px-5 py-3.5"
           style={{ backgroundColor: theme.cardBg, borderBottomLeftRadius: "0.5rem" }}
         >
-          <p
-            className="leading-relaxed"
-            style={{ color: theme.text, fontSize: "20px", overflowWrap: "break-word", wordBreak: "break-word" }}
-          >
-            {message.text}
-          </p>
+          <MessageBlocks text={message.text} theme={theme} />
         </div>
         {message.sources && (
           <div className="space-y-2">
