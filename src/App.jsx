@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Send, ChevronDown, BookOpen, Cross, Sun, Moon, Share2, Check } from "lucide-react";
+import { Send, ChevronDown, BookOpen, Cross, Sun, Moon, Share2, Check, X } from "lucide-react";
 
 const AGE_BANDS = ["Child", "Teen", "Adult", "Senior"];
 
@@ -42,7 +42,7 @@ const THEMES = {
 
 const STRINGS = {
   en: {
-    tagline: "Our hearts are restless until they rest in You",
+    tagline: "Modern questions. Timeless faith.",
     ageLabels: { Child: "Child", Teen: "Teen", Adult: "Adult", Senior: "Senior" },
     placeholder: "Ask about faith, Scripture, or Church teaching…",
     retryError: "That didn't come through. Tap send again to retry.",
@@ -51,9 +51,19 @@ const STRINGS = {
     shareFooter: "Shared from Restless — restless.faith",
     copiedLabel: "Copied",
     readFullText: "Read full text ↗",
+    aboutLabel: "About",
+    contactLabel: "Contact",
+    closeLabel: "Close",
+    aboutTitle: "About Restless",
+    aboutBody:
+      "Restless takes its name from a line by St. Augustine: \"Our hearts are restless until they rest in You.\" It's built for the moments faith gets hard — grief, doubt, a question you're not sure it's safe to ask out loud.\n\nEvery answer is grounded in the Catechism of the Catholic Church, Sacred Scripture, the Doctors of the Church, and papal encyclicals. Restless can describe how respected Catholic teachers explain a topic, but it never puts words in their mouths.\n\nThis is a companion for the questions, not a substitute for a priest, a spiritual director, or a real conversation with someone who loves you. When something is bigger than a chat can hold, Restless will say so.",
+    contactTitle: "Contact",
+    contactBody:
+      "Have a question, notice something that doesn't sound right, or want to bring Restless to your parish, school, or ministry website? Reach out below — every message gets read.",
+    contactEmail: "hello@restless.faith",
   },
   es: {
-    tagline: "Nuestro corazón está inquieto hasta que descanse en Ti",
+    tagline: "Preguntas modernas. Fe eterna.",
     ageLabels: { Child: "Niño", Teen: "Adolescente", Adult: "Adulto", Senior: "Mayor" },
     placeholder: "Pregunta sobre la fe, la Escritura o la enseñanza de la Iglesia…",
     retryError: "Eso no llegó. Toca enviar para volver a intentarlo.",
@@ -62,6 +72,16 @@ const STRINGS = {
     shareFooter: "Compartido desde Restless — restless.faith",
     copiedLabel: "Copiado",
     readFullText: "Leer el texto completo ↗",
+    aboutLabel: "Acerca de",
+    contactLabel: "Contacto",
+    closeLabel: "Cerrar",
+    aboutTitle: "Acerca de Restless",
+    aboutBody:
+      "Restless toma su nombre de una frase de San Agustín: \"Nuestro corazón está inquieto hasta que descanse en Ti\". Está hecho para los momentos en que la fe se vuelve difícil — el duelo, la duda, una pregunta que no sabes si es seguro hacer en voz alta.\n\nCada respuesta se basa en el Catecismo de la Iglesia Católica, la Sagrada Escritura, los Doctores de la Iglesia y las encíclicas papales. Restless puede describir cómo respetados maestros católicos explican un tema, pero nunca pone palabras en su boca.\n\nEsto es un acompañante para las preguntas, no un sustituto de un sacerdote, un director espiritual, o una conversación real con alguien que te ama. Cuando algo es más grande de lo que un chat puede sostener, Restless lo dirá.",
+    contactTitle: "Contacto",
+    contactBody:
+      "¿Tienes una pregunta, notaste algo que no suena bien, o quieres llevar Restless a tu parroquia, escuela o sitio de ministerio? Escríbenos abajo — leemos cada mensaje.",
+    contactEmail: "hello@restless.faith",
   },
 };
 
@@ -303,6 +323,52 @@ function UserMessage({ message, theme }) {
   );
 }
 
+function InfoModal({ title, body, isContact, theme, strings, onClose }) {
+  return (
+    <div
+      className="fixed inset-0 flex items-end sm:items-center justify-center"
+      style={{ backgroundColor: "rgba(0,0,0,0.6)", zIndex: 50 }}
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full sm:max-w-md overflow-y-auto"
+        style={{
+          backgroundColor: theme.cardBg,
+          maxHeight: "80vh",
+          padding: "1.5rem",
+          borderTopLeftRadius: "1.5rem",
+          borderTopRightRadius: "1.5rem",
+          borderBottomLeftRadius: "0",
+          borderBottomRightRadius: "0",
+        }}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h2 style={{ color: theme.text, fontSize: "22px", fontWeight: 600 }}>{title}</h2>
+          <button onClick={onClose} aria-label={strings.closeLabel}>
+            <X className="w-5 h-5" style={{ color: theme.subtext }} />
+          </button>
+        </div>
+        <p
+          className="whitespace-pre-line leading-relaxed"
+          style={{ color: theme.subtext, fontSize: "17px" }}
+        >
+          {body}
+        </p>
+        {isContact && (
+          <a
+            href={`mailto:${strings.contactEmail}`}
+            className="inline-block mt-4"
+            style={{ color: theme.accent, fontSize: "17px", fontWeight: 600 }}
+          >
+            {strings.contactEmail}
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Restless() {
   const [language, setLanguage] = useState("en");
   const [messages, setMessages] = useState(SEED_MESSAGES.en);
@@ -311,6 +377,7 @@ export default function Restless() {
   const [isTyping, setIsTyping] = useState(false);
   const [mode, setMode] = useState("dark");
   const [error, setError] = useState(null);
+  const [activeModal, setActiveModal] = useState(null); // 'about' | 'contact' | null
   const theme = THEMES[mode];
   const strings = STRINGS[language];
   const scrollRef = useRef(null);
@@ -533,7 +600,43 @@ export default function Restless() {
             <Send className="w-4 h-4" />
           </button>
         </div>
+        <div className="max-w-2xl mx-auto w-full flex items-center justify-center gap-3 mt-3">
+          <button
+            onClick={() => setActiveModal("about")}
+            style={{ color: theme.subtext, fontSize: "13px" }}
+          >
+            {strings.aboutLabel}
+          </button>
+          <span style={{ color: theme.subtext, fontSize: "13px" }}>·</span>
+          <button
+            onClick={() => setActiveModal("contact")}
+            style={{ color: theme.subtext, fontSize: "13px" }}
+          >
+            {strings.contactLabel}
+          </button>
+        </div>
       </div>
+
+      {activeModal === "about" && (
+        <InfoModal
+          title={strings.aboutTitle}
+          body={strings.aboutBody}
+          isContact={false}
+          theme={theme}
+          strings={strings}
+          onClose={() => setActiveModal(null)}
+        />
+      )}
+      {activeModal === "contact" && (
+        <InfoModal
+          title={strings.contactTitle}
+          body={strings.contactBody}
+          isContact={true}
+          theme={theme}
+          strings={strings}
+          onClose={() => setActiveModal(null)}
+        />
+      )}
     </div>
   );
 }
