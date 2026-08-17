@@ -61,6 +61,12 @@ const STRINGS = {
     contactBody:
       "Have a question, notice something that doesn't sound right, or want to bring Restless to your parish, school, or ministry website? Reach out below — every message gets read.",
     contactEmail: "hello@restless.faith",
+    supportLabel: "Support Restless",
+    supportTitle: "Support Restless",
+    supportBody:
+      "Restless.faith exists to help people bring their questions about faith, doubt, and meaning into conversation with the Catholic tradition — free, for anyone who needs it.\n\nIf Restless has helped you, consider supporting the cost of keeping it free for everyone else.\n\nRestless.faith is an independent project, not a registered nonprofit. Contributions are not tax-deductible.",
+    supportButtonLabel: "Support Restless →",
+    supportUrl: "https://buy.stripe.com/REPLACE_WITH_YOUR_PAYMENT_LINK",
   },
   es: {
     tagline: "Preguntas modernas. Fe eterna.",
@@ -82,6 +88,12 @@ const STRINGS = {
     contactBody:
       "¿Tienes una pregunta, notaste algo que no suena bien, o quieres llevar Restless a tu parroquia, escuela o sitio de ministerio? Escríbenos abajo — leemos cada mensaje.",
     contactEmail: "hello@restless.faith",
+    supportLabel: "Apoyar a Restless",
+    supportTitle: "Apoyar a Restless",
+    supportBody:
+      "Restless.faith existe para ayudar a las personas a llevar sus preguntas sobre la fe, la duda y el sentido de la vida a un diálogo con la tradición católica — de forma gratuita, para quien lo necesite.\n\nSi Restless te ha ayudado, considera apoyar el costo de mantenerlo gratuito para todos los demás.\n\nRestless.faith es un proyecto independiente, no una organización sin fines de lucro registrada. Las contribuciones no son deducibles de impuestos.",
+    supportButtonLabel: "Apoyar a Restless →",
+    supportUrl: "https://buy.stripe.com/REPLACE_WITH_YOUR_PAYMENT_LINK",
   },
 };
 
@@ -323,7 +335,7 @@ function UserMessage({ message, theme }) {
   );
 }
 
-function InfoModal({ title, body, isContact, theme, strings, onClose }) {
+function InfoModal({ title, body, cta, theme, strings, onClose }) {
   return (
     <div
       className="fixed inset-0 flex items-end sm:items-center justify-center"
@@ -355,13 +367,15 @@ function InfoModal({ title, body, isContact, theme, strings, onClose }) {
         >
           {body}
         </p>
-        {isContact && (
+        {cta && (
           <a
-            href={`mailto:${strings.contactEmail}`}
+            href={cta.href}
+            target={cta.href.startsWith("http") ? "_blank" : undefined}
+            rel={cta.href.startsWith("http") ? "noopener noreferrer" : undefined}
             className="inline-block mt-4"
             style={{ color: theme.accent, fontSize: "17px", fontWeight: 600 }}
           >
-            {strings.contactEmail}
+            {cta.label}
           </a>
         )}
       </div>
@@ -614,6 +628,13 @@ export default function Restless() {
           >
             {strings.contactLabel}
           </button>
+          <span style={{ color: theme.subtext, fontSize: "13px" }}>·</span>
+          <button
+            onClick={() => setActiveModal("support")}
+            style={{ color: theme.accent, fontSize: "13px", fontWeight: 600 }}
+          >
+            {strings.supportLabel}
+          </button>
         </div>
       </div>
 
@@ -621,7 +642,6 @@ export default function Restless() {
         <InfoModal
           title={strings.aboutTitle}
           body={strings.aboutBody}
-          isContact={false}
           theme={theme}
           strings={strings}
           onClose={() => setActiveModal(null)}
@@ -631,7 +651,17 @@ export default function Restless() {
         <InfoModal
           title={strings.contactTitle}
           body={strings.contactBody}
-          isContact={true}
+          cta={{ label: strings.contactEmail, href: `mailto:${strings.contactEmail}` }}
+          theme={theme}
+          strings={strings}
+          onClose={() => setActiveModal(null)}
+        />
+      )}
+      {activeModal === "support" && (
+        <InfoModal
+          title={strings.supportTitle}
+          body={strings.supportBody}
+          cta={{ label: strings.supportButtonLabel, href: strings.supportUrl }}
           theme={theme}
           strings={strings}
           onClose={() => setActiveModal(null)}
