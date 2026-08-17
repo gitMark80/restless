@@ -42,7 +42,7 @@ const THEMES = {
 
 const STRINGS = {
   en: {
-    tagline: "Modern questions. Timeless faith.",
+    tagline: "Modern questions.\nTimeless faith.",
     ageLabels: { Child: "Child", Teen: "Teen", Adult: "Adult", Senior: "Senior" },
     placeholder: "How can I help?",
     retryError: "That didn't come through. Tap send again to retry.",
@@ -69,7 +69,7 @@ const STRINGS = {
     supportUrl: "https://buy.stripe.com/REPLACE_WITH_YOUR_PAYMENT_LINK",
   },
   es: {
-    tagline: "Preguntas modernas. Fe eterna.",
+    tagline: "Preguntas modernas.\nFe eterna.",
     ageLabels: { Child: "Niño", Teen: "Adolescente", Adult: "Adulto", Senior: "Mayor" },
     placeholder: "¿Cómo puedo ayudar?",
     retryError: "Eso no llegó. Toca enviar para volver a intentarlo.",
@@ -495,7 +495,10 @@ export default function Restless() {
               <h1 className="font-semibold leading-tight" style={{ color: theme.text, fontSize: "20px" }}>
                 Restless
               </h1>
-              <p className="leading-tight" style={{ color: theme.subtext, fontSize: "16px" }}>
+              <p
+                className="leading-tight"
+                style={{ color: theme.subtext, fontSize: "16px", whiteSpace: "pre-line" }}
+              >
                 {strings.tagline}
               </p>
             </div>
