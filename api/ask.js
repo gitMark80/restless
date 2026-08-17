@@ -38,8 +38,15 @@ const buckets = new Map();
 const DAILY_READING_PATTERN =
   /\b(today'?s?|daily)\b.{0,20}\b(reading|readings|gospel|mass)\b|\b(reading|readings|gospel)\b.{0,20}\btoday\b|lectionary today|today'?s?\s+lectionary/i;
 
+const FEAST_DAY_PATTERN =
+  /\b(feast day|feast of|whose feast|which saint|what saint|saint'?s?\s+day|memorial today|today.{0,15}(saint|memorial|feast|solemnity)|(saint|memorial|feast|solemnity).{0,15}today|liturgical (day|calendar) today|what.{0,15}(are we celebrat|is the church celebrat))/i;
+
 function isDailyReadingQuestion(question) {
   return DAILY_READING_PATTERN.test(question);
+}
+
+function isFeastDayQuestion(question) {
+  return FEAST_DAY_PATTERN.test(question);
 }
 
 function toMMDDYY(isoDate) {
@@ -99,9 +106,25 @@ async function fetchTodaysReadingCitations(isoDate) {
     }
   }
 
+  // USCCB marks optional memorials as a separate line/link, e.g.
+  // "Readings for the Optional Memorial of Our Lady of Mount Carmel"
+  // which HTML-stripping may split across two lines, so check both forms.
+  let memorialName = null;
+  for (let i = 0; i < lines.length; i++) {
+    const inline = /^readings for the (.+)$/i.exec(lines[i]);
+    if (inline) {
+      memorialName = inline[1].trim();
+      break;
+    }
+    if (/^readings for the$/i.test(lines[i]) && lines[i + 1]) {
+      memorialName = lines[i + 1].trim();
+      break;
+    }
+  }
+
   if (!liturgicalDay || Object.keys(citations).length === 0) return null;
 
-  return { liturgicalDay, citations, pageUrl };
+  return { liturgicalDay, memorialName, citations, pageUrl };
 }
 
 function isRateLimited(ip) {
@@ -154,24 +177,24 @@ export default async function handler(req, res) {
     LANGUAGE_INSTRUCTION[language] || LANGUAGE_INSTRUCTION.en;
 
   let readingContext = "";
-  if (isDailyReadingQuestion(question)) {
+  if (isDailyReadingQuestion(question) || isFeastDayQuestion(question)) {
     try {
       const readings = await fetchTodaysReadingCitations(todayDate);
       if (readings) {
-        const { liturgicalDay, citations, pageUrl } = readings;
+        const { liturgicalDay, memorialName, citations, pageUrl } = readings;
         readingContext = `\n\nTODAY'S LITURGICAL CONTEXT (from the USCCB daily readings page, for reference only):
-Liturgical day: ${liturgicalDay}
+Today is: ${liturgicalDay}${memorialName ? ` — with the ${memorialName}` : ""}
 ${Object.entries(citations)
   .map(([label, cite]) => `${label}: ${cite}`)
   .join("\n")}
 
-IMPORTANT: These readings are copyrighted by the USCCB Lectionary. Do NOT quote or reproduce their text, even briefly. Instead, name the liturgical day and the citations, and offer a short original pastoral reflection in your own words on what these readings are about. Include one source with "label": "Today's Readings — USCCB", a "detail" summarizing the theme, and a "url" field set to exactly "${pageUrl}" so the person can read the full text themselves.`;
+IMPORTANT: Only use the feast/memorial/saint name and the citations above — never invent or guess any other observance. The Mass readings are copyrighted by the USCCB Lectionary: do NOT quote or reproduce their text, even briefly. If the person asked about the feast day or saint, answer that directly using the information above. If they asked about the readings, name the citations and offer a short original pastoral reflection in your own words on what they're about — never quoting them. Include one source with "label": "Today's Readings — USCCB", a "detail" summarizing the day, and a "url" field set to exactly "${pageUrl}" so the person can read the full text themselves.`;
       } else {
-        readingContext = `\n\nNOTE: The person is asking about today's Mass readings, but they could not be retrieved right now. Say so honestly and suggest they check bible.usccb.org directly for today's readings. Do not guess or invent citations.`;
+        readingContext = `\n\nNOTE: The person is asking about today's feast day, saint, or Mass readings, but this information could not be retrieved right now. Say so honestly and suggest they check bible.usccb.org directly. Do not guess or invent any feast, saint, or reading citation.`;
       }
     } catch (err) {
       console.error("USCCB fetch error:", err);
-      readingContext = `\n\nNOTE: The person is asking about today's Mass readings, but they could not be retrieved right now. Say so honestly and suggest they check bible.usccb.org directly for today's readings. Do not guess or invent citations.`;
+      readingContext = `\n\nNOTE: The person is asking about today's feast day, saint, or Mass readings, but this information could not be retrieved right now. Say so honestly and suggest they check bible.usccb.org directly. Do not guess or invent any feast, saint, or reading citation.`;
     }
   }
 
