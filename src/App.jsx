@@ -50,6 +50,7 @@ const STRINGS = {
     shareLabel: "Share this question and answer",
     shareFooter: "Shared from Restless — restless.faith",
     copiedLabel: "Copied",
+    readFullText: "Read full text ↗",
   },
   es: {
     tagline: "Nuestro corazón está inquieto hasta que descanse en Ti",
@@ -60,46 +61,47 @@ const STRINGS = {
     shareLabel: "Compartir esta pregunta y respuesta",
     shareFooter: "Compartido desde Restless — restless.faith",
     copiedLabel: "Copiado",
+    readFullText: "Leer el texto completo ↗",
   },
 };
 
 const SEED_MESSAGES = {
   en: [
-    { id: 1, role: "user", text: "Why does God let good people suffer?" },
+    { id: 1, role: "user", text: "How do I know God loves me?" },
     {
       id: 2,
       role: "companion",
-      text: "This question sits at the very center of the human heart, and you're in good company asking it — even the Psalms are full of this cry. The short answer the Church gives isn't that suffering is good, but that God can bring good even out of what is not good, without ever willing the evil itself. Suffering entered through brokenness and human freedom, not because God delights in it. And in Christ, God didn't stay distant from suffering — He entered into it.",
+      text: "You don't have to earn the answer to this — before you did anything at all, you were already loved into existence, and that hasn't wavered since. The clearest proof the Church points to isn't a feeling but a fact: God so loved the world that He gave His only Son, not because we deserved it, but because that's simply who He is. You can trust this even on the days it doesn't feel true, because His love was never based on your feelings in the first place.",
       sources: [
         {
-          label: "Catechism of the Catholic Church, §309–310",
+          label: "Catechism of the Catholic Church, §1",
           detail:
-            "On the mystery of evil and suffering existing alongside a good and provident God, and how this is not fully answered by faith alone but held in hope.",
+            "Teaches that God, in infinite love, freely created man to share in his own blessed life, and constantly draws every person toward himself.",
         },
         {
-          label: "Bishop Robert Barron",
+          label: "John 3:16",
           detail:
-            "Often teaches that the Cross doesn't explain suffering away — it shows that God chooses solidarity with the sufferer rather than distance from them.",
+            "Describes God's love for the world as the reason he gave his only Son, so that everyone who believes in him might have eternal life.",
         },
       ],
     },
   ],
   es: [
-    { id: 1, role: "user", text: "¿Por qué Dios permite que sufra la gente buena?" },
+    { id: 1, role: "user", text: "¿Cómo sé que Dios me ama?" },
     {
       id: 2,
       role: "companion",
-      text: "Esta pregunta está en el centro mismo del corazón humano, y estás en buena compañía al hacerla — hasta los Salmos están llenos de este clamor. La respuesta breve que da la Iglesia no es que el sufrimiento sea bueno, sino que Dios puede sacar el bien incluso de lo que no es bueno, sin nunca querer el mal en sí. El sufrimiento entró por el quebranto y la libertad humana, no porque Dios se deleite en él. Y en Cristo, Dios no se quedó distante del sufrimiento — entró en él.",
+      text: "No tienes que ganarte la respuesta a esto — antes de que hicieras nada, ya eras amado hacia la existencia, y eso no ha cambiado desde entonces. La prueba más clara que señala la Iglesia no es un sentimiento, sino un hecho: Dios amó tanto al mundo que entregó a su Hijo único, no porque lo mereciéramos, sino porque así es Él. Puedes confiar en esto incluso en los días en que no lo sientas, porque su amor nunca dependió de tus sentimientos.",
       sources: [
         {
-          label: "Catecismo de la Iglesia Católica, §309–310",
+          label: "Catecismo de la Iglesia Católica, §1",
           detail:
-            "Sobre el misterio del mal y el sufrimiento que existen junto a un Dios bueno y provi­dente, y cómo esto no se responde solo con la fe, sino que se sostiene en la esperanza.",
+            "Enseña que Dios, en su amor infinito, creó libremente al hombre para compartir su propia vida bienaventurada, y atrae constantemente a cada persona hacia sí.",
         },
         {
-          label: "Obispo Robert Barron",
+          label: "Juan 3:16",
           detail:
-            "Suele enseñar que la Cruz no explica el sufrimiento — muestra que Dios elige la solidaridad con quien sufre en lugar de la distancia.",
+            "Describe el amor de Dios por el mundo como la razón por la que entregó a su Hijo único, para que todo el que crea en él tenga vida eterna.",
         },
       ],
     },
@@ -107,10 +109,13 @@ const SEED_MESSAGES = {
 };
 
 async function askCompanion(question, ageBand, language) {
+  const now = new Date();
+  const todayDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
   const response = await fetch("/api/ask", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question, ageBand, language }),
+    body: JSON.stringify({ question, ageBand, language, todayDate }),
   });
 
   const data = await response.json();
@@ -122,7 +127,7 @@ async function askCompanion(question, ageBand, language) {
   return data;
 }
 
-function CitationCard({ source, isOpen, onToggle, theme }) {
+function CitationCard({ source, isOpen, onToggle, theme, strings }) {
   return (
     <div
       className="min-w-0"
@@ -165,6 +170,17 @@ function CitationCard({ source, isOpen, onToggle, theme }) {
               >
                 {source.detail}
               </p>
+              {source.url && (
+                <a
+                  href={source.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block mt-2"
+                  style={{ color: theme.accent, fontSize: "16px", fontWeight: 500 }}
+                >
+                  {strings.readFullText}
+                </a>
+              )}
             </div>
           </div>
         </div>
@@ -247,6 +263,7 @@ function CompanionMessage({ message, questionText, theme, strings }) {
                 isOpen={!!openSources[idx]}
                 onToggle={() => toggleSource(idx)}
                 theme={theme}
+                strings={strings}
               />
             ))}
           </div>
