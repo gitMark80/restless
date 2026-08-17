@@ -683,7 +683,6 @@ export default function Restless() {
         <InfoModal
           title={strings.supportTitle}
           body={strings.supportBody}
-          cta={{ label: strings.supportButtonLabel, href: strings.supportUrl }}
           theme={theme}
           strings={strings}
           onClose={() => setActiveModal(null)}
