@@ -35,11 +35,17 @@ const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const MAX_REQUESTS_PER_WINDOW = 8;
 const buckets = new Map();
 
-const DAILY_READING_PATTERN =
-  /\b(today'?s?|daily)\b.{0,20}\b(reading|readings|gospel|mass)\b|\b(reading|readings|gospel)\b.{0,20}\btoday\b|lectionary today|today'?s?\s+lectionary/i;
+const DAY_WORD = "(today'?s?|tomorrow'?s?|yesterday'?s?|daily)";
 
-const FEAST_DAY_PATTERN =
-  /\b(feast day|feast of|whose feast|which saint|what saint|saint'?s?\s+day|memorial today|today.{0,15}(saint|memorial|feast|solemnity)|(saint|memorial|feast|solemnity).{0,15}today|liturgical (day|calendar) today|what.{0,15}(are we celebrat|is the church celebrat))/i;
+const DAILY_READING_PATTERN = new RegExp(
+  `\\b${DAY_WORD}\\b.{0,20}\\b(reading|readings|gospel|mass)\\b|\\b(reading|readings|gospel)\\b.{0,20}\\b(today|tomorrow|yesterday)\\b|lectionary (today|tomorrow|yesterday)|${DAY_WORD}\\s+lectionary`,
+  "i"
+);
+
+const FEAST_DAY_PATTERN = new RegExp(
+  `\\b(feast day|feast of|whose feast|which saint|what saint|saint'?s?\\s+day|(memorial|feast|solemnity)\\s+(today|tomorrow|yesterday)|${DAY_WORD}.{0,15}(saint|memorial|feast|solemnity)|(saint|memorial|feast|solemnity).{0,15}(today|tomorrow|yesterday)|liturgical (day|calendar)\\s+(today|tomorrow|yesterday)|what.{0,15}(are we celebrat|is the church celebrat).{0,20}(today|tomorrow|yesterday))`,
+  "i"
+);
 
 function isDailyReadingQuestion(question) {
   return DAILY_READING_PATTERN.test(question);
@@ -47,6 +53,28 @@ function isDailyReadingQuestion(question) {
 
 function isFeastDayQuestion(question) {
   return FEAST_DAY_PATTERN.test(question);
+}
+
+function resolveTargetDate(question, todayIso) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(todayIso || "");
+  if (!match) return { isoDate: null, dayLabel: "today" };
+
+  const base = new Date(Date.UTC(+match[1], +match[2] - 1, +match[3]));
+  let offset = 0;
+  let dayLabel = "today";
+  if (/\byesterday'?s?\b/i.test(question)) {
+    offset = -1;
+    dayLabel = "yesterday";
+  } else if (/\btomorrow'?s?\b/i.test(question)) {
+    offset = 1;
+    dayLabel = "tomorrow";
+  }
+  base.setUTCDate(base.getUTCDate() + offset);
+
+  const y = base.getUTCFullYear();
+  const m = String(base.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(base.getUTCDate()).padStart(2, "0");
+  return { isoDate: `${y}-${m}-${d}`, dayLabel };
 }
 
 function toMMDDYY(isoDate) {
@@ -178,23 +206,24 @@ export default async function handler(req, res) {
 
   let readingContext = "";
   if (isDailyReadingQuestion(question) || isFeastDayQuestion(question)) {
+    const { isoDate: targetIso, dayLabel } = resolveTargetDate(question, todayDate);
     try {
-      const readings = await fetchTodaysReadingCitations(todayDate);
+      const readings = await fetchTodaysReadingCitations(targetIso);
       if (readings) {
         const { liturgicalDay, memorialName, citations, pageUrl } = readings;
-        readingContext = `\n\nTODAY'S LITURGICAL CONTEXT (from the USCCB daily readings page, for reference only):
-Today is: ${liturgicalDay}${memorialName ? ` — with the ${memorialName}` : ""}
+        readingContext = `\n\nLITURGICAL CONTEXT FOR ${dayLabel.toUpperCase()} (from the USCCB daily readings page, for reference only):
+${dayLabel[0].toUpperCase() + dayLabel.slice(1)} is: ${liturgicalDay}${memorialName ? ` — with the ${memorialName}` : ""}
 ${Object.entries(citations)
   .map(([label, cite]) => `${label}: ${cite}`)
   .join("\n")}
 
-IMPORTANT: Only use the feast/memorial/saint name and the citations above — never invent or guess any other observance. The Mass readings are copyrighted by the USCCB Lectionary: do NOT quote or reproduce their text, even briefly. If the person asked about the feast day or saint, answer that directly using the information above. If they asked about the readings, name the citations and offer a short original pastoral reflection in your own words on what they're about — never quoting them. Include one source with "label": "Today's Readings — USCCB", a "detail" summarizing the day, and a "url" field set to exactly "${pageUrl}" so the person can read the full text themselves.`;
+IMPORTANT: Only use the feast/memorial/saint name and the citations above — never invent or guess any other observance, and be clear you're referring to ${dayLabel}, not any other day. The Mass readings are copyrighted by the USCCB Lectionary: do NOT quote or reproduce their text, even briefly. If the person asked about the feast day or saint, answer that directly using the information above. If they asked about the readings, name the citations and offer a short original pastoral reflection in your own words on what they're about — never quoting them. Include one source with "label": "${dayLabel[0].toUpperCase() + dayLabel.slice(1)}'s Readings — USCCB", a "detail" summarizing the day, and a "url" field set to exactly "${pageUrl}" so the person can read the full text themselves.`;
       } else {
-        readingContext = `\n\nNOTE: The person is asking about today's feast day, saint, or Mass readings, but this information could not be retrieved right now. Say so honestly and suggest they check bible.usccb.org directly. Do not guess or invent any feast, saint, or reading citation.`;
+        readingContext = `\n\nNOTE: The person is asking about ${dayLabel}'s feast day, saint, or Mass readings, but this information could not be retrieved right now. Say so honestly and suggest they check bible.usccb.org directly. Do not guess or invent any feast, saint, or reading citation.`;
       }
     } catch (err) {
       console.error("USCCB fetch error:", err);
-      readingContext = `\n\nNOTE: The person is asking about today's feast day, saint, or Mass readings, but this information could not be retrieved right now. Say so honestly and suggest they check bible.usccb.org directly. Do not guess or invent any feast, saint, or reading citation.`;
+      readingContext = `\n\nNOTE: The person is asking about ${dayLabel}'s feast day, saint, or Mass readings, but this information could not be retrieved right now. Say so honestly and suggest they check bible.usccb.org directly. Do not guess or invent any feast, saint, or reading citation.`;
     }
   }
 
