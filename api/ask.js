@@ -13,6 +13,7 @@ Core rules:
 5. KNOW THE EDGE OF THE TOOL. For grief, despair, scrupulosity, abuse, or anything approaching self-harm: shorten, stop teaching, and name what you are not. Point toward a real person — a priest, a counselor, a crisis line. Warmth here means naming the limit, not generating more text.
 6. Keep the main answer to 2-4 sentences of prose. EXCEPTION: if the content is naturally a set of discrete items (e.g. the Ten Commandments, the seven sacraments, steps of an examination of conscience, parts of the Mass), use a short one-sentence pastoral lead-in, then a list with one item per line, each line starting with "- " (a hyphen and a space), separated by \\n in the JSON string. Only use a list when the content genuinely is a set of items — never force a list onto a reflective or pastoral answer that reads better as flowing prose.
 7. When citing Scripture, use the Catholic 73-book canon. This includes the Deuterocanonical books where relevant (Tobit, Judith, Wisdom, Sirach, Baruch, 1–2 Maccabees, and the Greek additions to Esther and Daniel). Never treat these as non-canonical or omit them from consideration.
+8. This may be an ongoing conversation — read the prior turns for context and let your answer build naturally on what's already been said (don't repeat yourself, and refer back to earlier points where it helps). Each answer must still stand doctrinally sound on its own and follow the JSON output format below.
 
 Respond ONLY with valid JSON. No markdown fences, no preamble. Exactly this shape:
 {"text": "the pastoral answer — either 2-4 sentences of prose, or a short lead-in sentence followed by a \\n-separated \"- item\" list per rule 6", "sources": [{"label": "e.g. Catechism of the Catholic Church, §XXX, or a person's name", "detail": "one sentence on what this source teaches, relevant to the question", "url": "optional — only include when explicitly given a URL to use in additional context below"}]}
@@ -149,6 +150,10 @@ const NICENE_CREED_PATTERN = /nicene creed/i;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const MAX_REQUESTS_PER_WINDOW = 8;
 const buckets = new Map();
+
+// Cap how much prior conversation gets replayed to the model each turn —
+// keeps token usage/cost bounded as a conversation grows long.
+const MAX_HISTORY_MESSAGES = 6; // 3 question/answer exchanges
 
 const DAY_WORD = "(today'?s?|tomorrow'?s?|yesterday'?s?|daily)";
 
@@ -329,7 +334,7 @@ export default async function handler(req, res) {
     });
   }
 
-  const { question, ageBand, language, todayDate } = req.body || {};
+  const { question, ageBand, language, todayDate, history } = req.body || {};
 
   if (!question || typeof question !== "string") {
     return res.status(400).json({ error: "Missing question" });
@@ -392,6 +397,26 @@ Include exactly one source with "label": "${matchedPrayer.name}", and "detail" d
 
   const maxTokens = matchedPrayer ? 1500 : 1300;
 
+  const safeHistory = Array.isArray(history) ? history.slice(-MAX_HISTORY_MESSAGES) : [];
+  const apiMessages = [];
+  for (const turn of safeHistory) {
+    if (!turn || typeof turn.text !== "string") continue;
+    if (turn.role === "user") {
+      apiMessages.push({ role: "user", content: turn.text });
+    } else if (turn.role === "companion") {
+      // Reconstruct exactly what the model previously produced (JSON shape)
+      // so the conversation it sees matches what it actually said.
+      apiMessages.push({
+        role: "assistant",
+        content: JSON.stringify({
+          text: turn.text,
+          sources: Array.isArray(turn.sources) ? turn.sources : [],
+        }),
+      });
+    }
+  }
+  apiMessages.push({ role: "user", content: question });
+
   try {
     const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -404,7 +429,7 @@ Include exactly one source with "label": "${matchedPrayer.name}", and "detail" d
         model: process.env.MODEL_ID || "claude-sonnet-5",
         max_tokens: maxTokens,
         system: `${SYSTEM_PROMPT}${CURRENT_POPE_CONTEXT}\n\nAudience tone for this response: ${tone}\n\n${languageInstruction}${readingContext}${prayerContext}`,
-        messages: [{ role: "user", content: question }],
+        messages: apiMessages,
       }),
     });
 
