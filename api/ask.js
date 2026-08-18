@@ -390,7 +390,7 @@ Include exactly one source with "label": "${matchedPrayer.name}", and "detail" d
     prayerContext = `\n\nNOTE: The person is asking for the text of the Nicene Creed. The current English wording used at Mass (the 2011 Roman Missal translation, e.g. "consubstantial with the Father," "was incarnate of the Virgin Mary") is copyrighted by ICEL and cannot be reproduced. Do NOT provide any wording of the Creed, full or partial, and do NOT substitute an older translation as if it were the current one. Instead, explain this honestly and warmly, and suggest they check their parish missal, worship aid, or usccb.org for the exact current text. You may briefly describe in your own words what the Creed affirms as a summary of belief, without quoting any translation.`;
   }
 
-  const maxTokens = matchedPrayer ? 1500 : 1000;
+  const maxTokens = matchedPrayer ? 1500 : 1300;
 
   try {
     const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
