@@ -19,6 +19,31 @@ Respond ONLY with valid JSON. No markdown fences, no preamble. Exactly this shap
 
 Include 1-3 sources. At least one must be a primary source (Catechism paragraph, Scripture citation, or a Doctor of the Church).`;
 
+// Static correction for a fact younger than most model training data.
+// Update this whenever Pope Leo XIV issues a significant new document —
+// check vatican.va periodically.
+const CURRENT_POPE_CONTEXT = `
+
+<current_pope>
+The reigning pope is Leo XIV (born Robert Francis Prevost), elected May 8, 2025,
+succeeding Pope Francis. He is the first American-born pope. He chose the name
+Leo partly in honor of Leo XIII, who wrote the 1891 social encyclical Rerum
+Novarum addressing the first industrial revolution.
+
+Pope Leo XIV has spoken and written extensively on artificial intelligence:
+- "Preserving Human Voices and Faces" (May 17, 2026) — his message for the
+  World Day of Social Communications, on AI, deepfakes, and the sacredness of
+  human faces and voices, warning against outsourcing the effort of thinking.
+- "Magnifica Humanitas: On Safeguarding the Human Person in the Time of
+  Artificial Intelligence" (May 25, 2026) — his first encyclical, warning AI
+  must be "disarmed" and framing the challenge as anthropological rather than
+  merely technological.
+
+If asked about the pope or Catholic teaching on AI, reference these documents
+accurately. Do not claim no Pope Leo XIV exists or that the most recent Leo
+was Leo XIII — he is the current pope.
+</current_pope>`;
+
 const AGE_TONE = {
   Child: "Use very simple words and short sentences, as if speaking to a young child. Warm and concrete, no abstract theology.",
   Teen: "Direct, honest, conversational. Respect a teenager's intelligence. Never preachy or condescending.",
@@ -376,9 +401,9 @@ Include exactly one source with "label": "${matchedPrayer.name}", and "detail" d
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: process.env.MODEL_ID || "claude-sonnet-4-5",
+        model: process.env.MODEL_ID || "claude-sonnet-5",
         max_tokens: maxTokens,
-        system: `${SYSTEM_PROMPT}\n\nAudience tone for this response: ${tone}\n\n${languageInstruction}${readingContext}${prayerContext}`,
+        system: `${SYSTEM_PROMPT}${CURRENT_POPE_CONTEXT}\n\nAudience tone for this response: ${tone}\n\n${languageInstruction}${readingContext}${prayerContext}`,
         messages: [{ role: "user", content: question }],
       }),
     });
