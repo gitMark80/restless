@@ -99,10 +99,11 @@ const STRINGS = {
 
 const SEED_MESSAGES = {
   en: [
-    { id: 1, role: "user", text: "Can I be forgiven?" },
+    { id: 1, role: "user", text: "Can I be forgiven?", isSeed: true },
     {
       id: 2,
       role: "companion",
+      isSeed: true,
       text: "Yes — completely, and there's nothing you've done that outruns that. God's mercy isn't a reluctant concession; it's who He is, and He wants your \"yes\" more than He remembers your worst day. The only thing that can close that door is refusing to walk through it — confession exists precisely so it stays open, every time. Whatever it is, bring it to Him; He isn't waiting to shame you, He's waiting to embrace you.",
       sources: [
         {
@@ -119,10 +120,11 @@ const SEED_MESSAGES = {
     },
   ],
   es: [
-    { id: 1, role: "user", text: "¿Puedo ser perdonado?" },
+    { id: 1, role: "user", text: "¿Puedo ser perdonado?", isSeed: true },
     {
       id: 2,
       role: "companion",
+      isSeed: true,
       text: "Sí — por completo, y no hay nada que hayas hecho que esté fuera del alcance de eso. La misericordia de Dios no es una concesión a regañadientes; es quien Él es, y desea tu \"sí\" más de lo que recuerda tu peor día. Lo único que puede cerrar esa puerta es negarte a cruzarla — la confesión existe precisamente para que permanezca abierta, cada vez. Sea lo que sea, llévaselo a Él; no está esperando para avergonzarte, está esperando para abrazarte.",
       sources: [
         {
@@ -140,14 +142,14 @@ const SEED_MESSAGES = {
   ],
 };
 
-async function askCompanion(question, ageBand, language) {
+async function askCompanion(question, ageBand, language, history) {
   const now = new Date();
   const todayDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
   const response = await fetch("/api/ask", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question, ageBand, language, todayDate }),
+    body: JSON.stringify({ question, ageBand, language, todayDate, history }),
   });
 
   const data = await response.json();
@@ -520,13 +522,21 @@ export default function Restless() {
   const handleSend = async () => {
     const trimmed = input.trim();
     if (!trimmed || isTyping) return;
+
+    // Build history from the real conversation so far (seed examples excluded),
+    // capped to the last few exchanges to match the backend's limit.
+    const history = messages
+      .filter((m) => !m.isSeed)
+      .map((m) => ({ role: m.role, text: m.text, sources: m.sources }))
+      .slice(-6);
+
     setMessages((prev) => [...prev, { id: Date.now(), role: "user", text: trimmed }]);
     setInput("");
     setIsTyping(true);
     setError(null);
 
     try {
-      const result = await askCompanion(trimmed, ageBand, language);
+      const result = await askCompanion(trimmed, ageBand, language, history);
       setIsTyping(false);
       setMessages((prev) => [
         ...prev,
