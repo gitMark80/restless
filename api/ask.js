@@ -348,6 +348,10 @@ export default async function handler(req, res) {
   const languageInstruction =
     LANGUAGE_INSTRUCTION[language] || LANGUAGE_INSTRUCTION.en;
 
+  const currentDateContext = todayDate
+    ? `\n\nTODAY'S DATE: ${todayDate} (YYYY-MM-DD). If the person asks something involving today's date, someone's current age, or how long ago something happened, calculate the answer yourself using this date and state it directly — never say "do the math" or leave it to the person to figure out.`
+    : "";
+
   let readingContext = "";
   if (ENABLE_LITURGICAL_LOOKUP && (isDailyReadingQuestion(question) || isFeastDayQuestion(question))) {
     const { isoDate: targetIso, dayLabel } = resolveTargetDate(question, todayDate);
@@ -428,7 +432,7 @@ Include exactly one source with "label": "${matchedPrayer.name}", and "detail" d
       body: JSON.stringify({
         model: process.env.MODEL_ID || "claude-sonnet-5",
         max_tokens: maxTokens,
-        system: `${SYSTEM_PROMPT}${CURRENT_POPE_CONTEXT}\n\nAudience tone for this response: ${tone}\n\n${languageInstruction}${readingContext}${prayerContext}`,
+        system: `${SYSTEM_PROMPT}${CURRENT_POPE_CONTEXT}${currentDateContext}\n\nAudience tone for this response: ${tone}\n\n${languageInstruction}${readingContext}${prayerContext}`,
         messages: apiMessages,
       }),
     });
