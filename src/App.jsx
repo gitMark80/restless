@@ -44,7 +44,7 @@ const STRINGS = {
   en: {
     tagline: "Modern questions.\nTimeless truth.",
     ageLabels: { Child: "Child", Teen: "Teen", Adult: "Adult", Senior: "Senior" },
-    placeholder: "How can I help?",
+    placeholder: "What's on your mind?",
     retryError: "That didn't come through. Tap send again to retry.",
     langToggleLabel: "Switch to Spanish",
     shareLabel: "Share this question and answer",
@@ -99,45 +99,19 @@ const STRINGS = {
 
 const SEED_MESSAGES = {
   en: [
-    { id: 1, role: "user", text: "Can I be forgiven?", isSeed: true },
     {
-      id: 2,
+      id: 1,
       role: "companion",
       isSeed: true,
-      text: "Yes — completely, and there's nothing you've done that outruns that. God's mercy isn't a reluctant concession; it's who He is, and He wants your \"yes\" more than He remembers your worst day. The only thing that can close that door is refusing to walk through it — confession exists precisely so it stays open, every time. Whatever it is, bring it to Him; He isn't waiting to shame you, He's waiting to embrace you.",
-      sources: [
-        {
-          label: "Catechism of the Catholic Church, §982",
-          detail:
-            "Teaches that there is no sin, however serious, that the Church cannot forgive, and that anyone who is honestly repentant can confidently hope for God's mercy.",
-        },
-        {
-          label: "Luke 15:11–32 (The Prodigal Son)",
-          detail:
-            "Describes a father running to embrace his returning son before a word of apology is even finished, showing how eagerly God receives anyone who turns back to him.",
-        },
-      ],
+      text: "Hi there — I'm here for your questions about the faith, big or small. What would you like to know?",
     },
   ],
   es: [
-    { id: 1, role: "user", text: "¿Puedo ser perdonado?", isSeed: true },
     {
-      id: 2,
+      id: 1,
       role: "companion",
       isSeed: true,
-      text: "Sí — por completo, y no hay nada que hayas hecho que esté fuera del alcance de eso. La misericordia de Dios no es una concesión a regañadientes; es quien Él es, y desea tu \"sí\" más de lo que recuerda tu peor día. Lo único que puede cerrar esa puerta es negarte a cruzarla — la confesión existe precisamente para que permanezca abierta, cada vez. Sea lo que sea, llévaselo a Él; no está esperando para avergonzarte, está esperando para abrazarte.",
-      sources: [
-        {
-          label: "Catecismo de la Iglesia Católica, §982",
-          detail:
-            "Enseña que no hay pecado, por grave que sea, que la Iglesia no pueda perdonar, y que quien se arrepiente sinceramente puede esperar con confianza la misericordia de Dios.",
-        },
-        {
-          label: "Lucas 15:11–32 (El Hijo Pródigo)",
-          detail:
-            "Describe a un padre que corre a abrazar a su hijo que regresa antes de que termine de pedir perdón, mostrando cuán ansiosamente recibe Dios a quien vuelve a él.",
-        },
-      ],
+      text: "Bienvenido — me alegra que estés aquí. Sin importar cuán grande o pequeña sea la pregunta, haré lo posible por acompañarte a resolverla. Adelante, pregúntame lo que quieras.",
     },
   ],
 };
@@ -585,7 +559,7 @@ export default function Restless() {
             </div>
             <div>
               <h1 className="font-semibold leading-tight" style={{ color: theme.text, fontSize: "20px" }}>
-                Restless
+                Restless<span style={{ color: theme.subtext, fontWeight: 400 }}>.faith</span>
               </h1>
               <p
                 className="leading-tight"
