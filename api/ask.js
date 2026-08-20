@@ -14,6 +14,9 @@ Core rules:
 6. Keep the main answer to 2-4 sentences of prose. EXCEPTION: if the content is naturally a set of discrete items (e.g. the Ten Commandments, the seven sacraments, steps of an examination of conscience, parts of the Mass), use a short one-sentence pastoral lead-in, then a list with one item per line, each line starting with "- " (a hyphen and a space), separated by \\n in the JSON string. Only use a list when the content genuinely is a set of items — never force a list onto a reflective or pastoral answer that reads better as flowing prose.
 7. When citing Scripture, use the Catholic 73-book canon. This includes the Deuterocanonical books where relevant (Tobit, Judith, Wisdom, Sirach, Baruch, 1–2 Maccabees, and the Greek additions to Esther and Daniel). Never treat these as non-canonical or omit them from consideration.
 8. This may be an ongoing conversation — read the prior turns for context and let your answer build naturally on what's already been said (don't repeat yourself, and refer back to earlier points where it helps). Each answer must still stand doctrinally sound on its own and follow the JSON output format below.
+9. Give your most complete and precise answer the FIRST time, not just after being challenged. Do not offer a simplified or loosely-worded version of a teaching and wait for the person to push back before adding the real nuance — most people will not push back. If a topic needs care (e.g. a phrase like "outside the Church there is no salvation" that is often misunderstood in shorthand), build that care into the first response.
+10. Match your certainty to the Church's actual certainty. For settled dogma, state it plainly per rule 3. But for things the Church holds as a hope or a possibility rather than a defined guarantee (e.g. the effect of praying for a specific soul in purgatory, the eternal fate of a specific person), say what the Church teaches is possible and trustworthy — never state a specific, personal outcome as a flat fact (e.g. prefer "our prayers can truly help her" over "this really does help her get to heaven").
+11. STAY INSIDE YOUR OUTPUT BUDGET. You must always finish with complete, valid, closed JSON — never end mid-sentence or mid-object. If a topic tempts you to run long, favor the shorter end of the sentence range (rule 6) and keep source "detail" fields to one short sentence each, so the full JSON object always finishes cleanly.
 
 Respond ONLY with valid JSON. No markdown fences, no preamble. Exactly this shape:
 {"text": "the pastoral answer — either 2-4 sentences of prose, or a short lead-in sentence followed by a \\n-separated \"- item\" list per rule 6", "sources": [{"label": "e.g. Catechism of the Catholic Church, §XXX, or a person's name", "detail": "one sentence on what this source teaches, relevant to the question", "url": "optional — only include when explicitly given a URL to use in additional context below"}]}
@@ -399,7 +402,7 @@ Include exactly one source with "label": "${matchedPrayer.name}", and "detail" d
     prayerContext = `\n\nNOTE: The person is asking for the text of the Nicene Creed. The current English wording used at Mass (the 2011 Roman Missal translation, e.g. "consubstantial with the Father," "was incarnate of the Virgin Mary") is copyrighted by ICEL and cannot be reproduced. Do NOT provide any wording of the Creed, full or partial, and do NOT substitute an older translation as if it were the current one. Instead, explain this honestly and warmly, and suggest they check their parish missal, worship aid, or usccb.org for the exact current text. You may briefly describe in your own words what the Creed affirms as a summary of belief, without quoting any translation.`;
   }
 
-  const maxTokens = matchedPrayer ? 1500 : 1300;
+  const maxTokens = matchedPrayer ? 1500 : 2000;
 
   const safeHistory = Array.isArray(history) ? history.slice(-MAX_HISTORY_MESSAGES) : [];
   const apiMessages = [];
@@ -453,20 +456,44 @@ Include exactly one source with "label": "${matchedPrayer.name}", and "detail" d
 
     const cleaned = raw.replace(/```json/g, "").replace(/```/g, "").trim();
 
+    // Best-effort salvage of just the readable "text" field from a
+    // truncated/malformed response — used only when full JSON parsing
+    // fails, so the user never sees raw JSON on screen.
+    function extractPartialText(str) {
+      const match = str.match(/"text"\s*:\s*"((?:\\.|[^"\\])*)/);
+      if (!match) return null;
+      try {
+        return JSON.parse(`"${match[1]}"`);
+      } catch {
+        return match[1].replace(/\\n/g, "\n").replace(/\\"/g, '"');
+      }
+    }
+
+    const FALLBACK_TEXT =
+      "I started an answer but it didn't come through completely. Could you ask that again?";
+
     let parsed;
     try {
       parsed = JSON.parse(cleaned);
     } catch (e) {
       const start = cleaned.indexOf("{");
       const end = cleaned.lastIndexOf("}");
+      let salvaged = null;
       if (start !== -1 && end > start) {
         try {
           parsed = JSON.parse(cleaned.slice(start, end + 1));
         } catch (e2) {
-          parsed = { text: cleaned, sources: [] };
+          salvaged = extractPartialText(cleaned);
         }
       } else {
-        parsed = { text: cleaned, sources: [] };
+        salvaged = extractPartialText(cleaned);
+      }
+      if (!parsed) {
+        console.error("Truncated/malformed model response:", cleaned.slice(0, 300));
+        parsed = {
+          text: salvaged && salvaged.trim() ? salvaged.trim() : FALLBACK_TEXT,
+          sources: [],
+        };
       }
     }
 
