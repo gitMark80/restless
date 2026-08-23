@@ -435,6 +435,7 @@ Include exactly one source with "label": "${matchedPrayer.name}", and "detail" d
       body: JSON.stringify({
         model: process.env.MODEL_ID || "claude-sonnet-5",
         max_tokens: maxTokens,
+        thinking: { type: "disabled" },
         system: `${SYSTEM_PROMPT}${CURRENT_POPE_CONTEXT}${currentDateContext}\n\nAudience tone for this response: ${tone}\n\n${languageInstruction}${readingContext}${prayerContext}`,
         messages: apiMessages,
       }),
