@@ -436,7 +436,21 @@ Include exactly one source with "label": "${matchedPrayer.name}", and "detail" d
         model: process.env.MODEL_ID || "claude-sonnet-5",
         max_tokens: maxTokens,
         thinking: { type: "disabled" },
-        system: `${SYSTEM_PROMPT}${CURRENT_POPE_CONTEXT}${currentDateContext}\n\nAudience tone for this response: ${tone}\n\n${languageInstruction}${readingContext}${prayerContext}`,
+        system: [
+          {
+            // Static across every request — safe to cache. Anything that
+            // varies per-call (date, tone, language, reading/prayer context)
+            // must NOT go in this block, or the cache will miss every time.
+            type: "text",
+            text: `${SYSTEM_PROMPT}${CURRENT_POPE_CONTEXT}`,
+            cache_control: { type: "ephemeral" },
+          },
+          {
+            // Per-request context — changes every call, so left uncached.
+            type: "text",
+            text: `${currentDateContext}\n\nAudience tone for this response: ${tone}\n\n${languageInstruction}${readingContext}${prayerContext}`,
+          },
+        ],
         messages: apiMessages,
       }),
     });
@@ -450,6 +464,17 @@ Include exactly one source with "label": "${matchedPrayer.name}", and "detail" d
     }
 
     const data = await anthropicRes.json();
+
+    if (data.usage) {
+      console.log(
+        "Cache usage — read:",
+        data.usage.cache_read_input_tokens || 0,
+        "created:",
+        data.usage.cache_creation_input_tokens || 0,
+        "uncached:",
+        data.usage.input_tokens || 0
+      );
+    }
 
     const raw = (data.content || [])
       .map((block) => (block.type === "text" ? block.text : ""))
