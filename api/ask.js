@@ -17,6 +17,7 @@ Core rules:
 9. Give your most complete and precise answer the FIRST time, not just after being challenged. Do not offer a simplified or loosely-worded version of a teaching and wait for the person to push back before adding the real nuance — most people will not push back. If a topic needs care (e.g. a phrase like "outside the Church there is no salvation" that is often misunderstood in shorthand), build that care into the first response.
 10. Match your certainty to the Church's actual certainty. For settled dogma, state it plainly per rule 3. But for things the Church holds as a hope or a possibility rather than a defined guarantee (e.g. the effect of praying for a specific soul in purgatory, the eternal fate of a specific person), say what the Church teaches is possible and trustworthy — never state a specific, personal outcome as a flat fact (e.g. prefer "our prayers can truly help her" over "this really does help her get to heaven").
 11. STAY INSIDE YOUR OUTPUT BUDGET. You must always finish with complete, valid, closed JSON — never end mid-sentence or mid-object. If a topic tempts you to run long, favor the shorter end of the sentence range (rule 6) and keep source "detail" fields to one short sentence each, so the full JSON object always finishes cleanly.
+12. For students, make the answer understandable without diluting Catholic teaching. Define specialized terms, distinguish a study aid from a student's own work, and point to the primary sources that let them verify and learn more.
 
 Respond ONLY with valid JSON. No markdown fences, no preamble. Exactly this shape:
 {"text": "the pastoral answer — either 2-4 sentences of prose, or a short lead-in sentence followed by a \\n-separated \"- item\" list per rule 6", "sources": [{"label": "e.g. Catechism of the Catholic Church, §XXX, or a person's name", "detail": "one sentence on what this source teaches, relevant to the question", "url": "optional — only include when explicitly given a URL to use in additional context below"}]}
@@ -49,10 +50,11 @@ was Leo XIII — he is the current pope.
 </current_pope>`;
 
 const AGE_TONE = {
-  Child: "Use very simple words and short sentences, as if speaking to a young child. Warm and concrete, no abstract theology.",
-  Teen: "Direct, honest, conversational. Respect a teenager's intelligence. Never preachy or condescending.",
+  "Middle School": "Use concrete language and short explanations for a middle-school student. Define theological words when you use them, but preserve the full Catholic teaching.",
+  "High School": "Write for a high-school theology student: direct, clear, and conversational. Explain necessary terms without sounding preachy or condescending.",
+  College: "Write for a college student. Be intellectually serious and concise, distinguish doctrine from theological opinion, and make the primary sources useful for further study.",
+  OCIA: "Write for someone in OCIA who may be new to Catholic vocabulary. Explain terms plainly, connect the teaching to Christian life, and never assume prior formation.",
   Adult: "Warm, clear, thoughtful adult tone.",
-  Senior: "Respectful, unhurried, warm.",
 };
 
 const LANGUAGE_INSTRUCTION = {
@@ -157,6 +159,7 @@ const buckets = new Map();
 // Cap how much prior conversation gets replayed to the model each turn —
 // keeps token usage/cost bounded as a conversation grows long.
 const MAX_HISTORY_MESSAGES = 6; // 3 question/answer exchanges
+const MAX_HISTORY_CHARS_PER_MESSAGE = 2000;
 
 const DAY_WORD = "(today'?s?|tomorrow'?s?|yesterday'?s?|daily)";
 
@@ -323,7 +326,77 @@ function isRateLimited(ip) {
   return bucket.count > MAX_REQUESTS_PER_WINDOW;
 }
 
+export function parseModelResponse(raw) {
+  if (typeof raw !== "string" || !raw.trim()) return null;
+  const cleaned = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
+  const candidates = [cleaned];
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  if (start !== -1 && end > start) candidates.push(cleaned.slice(start, end + 1));
+
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate);
+      if (parsed && typeof parsed.text === "string" && parsed.text.trim()) {
+        return {
+          text: parsed.text.trim(),
+          sources: Array.isArray(parsed.sources)
+            ? parsed.sources
+                .filter((source) => source && typeof source.label === "string" && typeof source.detail === "string")
+                .slice(0, 3)
+            : [],
+        };
+      }
+    } catch {
+      // Try the next candidate; an incomplete object is retried upstream.
+    }
+  }
+  return null;
+}
+
+async function requestModel({ apiMessages, systemContext, maxTokens }) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 40000);
+  try {
+    const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: process.env.MODEL_ID || "claude-sonnet-5",
+        max_tokens: maxTokens,
+        thinking: { type: "disabled" },
+        system: [
+          {
+            type: "text",
+            text: `${SYSTEM_PROMPT}${CURRENT_POPE_CONTEXT}`,
+            cache_control: { type: "ephemeral" },
+          },
+          { type: "text", text: systemContext },
+        ],
+        messages: apiMessages,
+      }),
+      signal: controller.signal,
+    });
+
+    if (!anthropicRes.ok) {
+      const detail = await anthropicRes.text();
+      console.error("Anthropic error:", anthropicRes.status, detail.slice(0, 500));
+      const error = new Error("Model request failed");
+      error.status = anthropicRes.status;
+      throw error;
+    }
+    return anthropicRes.json();
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export default async function handler(req, res) {
+  res.setHeader("Cache-Control", "no-store");
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -343,21 +416,28 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Missing question" });
   }
 
-  if (question.length > 1000) {
+  const cleanQuestion = question.trim();
+  if (!cleanQuestion) {
+    return res.status(400).json({ error: "Missing question" });
+  }
+
+  if (cleanQuestion.length > 1000) {
     return res.status(400).json({ error: "Question is too long." });
   }
 
   const tone = AGE_TONE[ageBand] || AGE_TONE.Adult;
+  const safeLanguage = language === "es" ? "es" : "en";
+  const safeTodayDate = /^\d{4}-\d{2}-\d{2}$/.test(todayDate || "") ? todayDate : null;
   const languageInstruction =
-    LANGUAGE_INSTRUCTION[language] || LANGUAGE_INSTRUCTION.en;
+    LANGUAGE_INSTRUCTION[safeLanguage];
 
-  const currentDateContext = todayDate
-    ? `\n\nTODAY'S DATE: ${todayDate} (YYYY-MM-DD). If the person asks something involving today's date, someone's current age, or how long ago something happened, calculate the answer yourself using this date and state it directly — never say "do the math" or leave it to the person to figure out.`
+  const currentDateContext = safeTodayDate
+    ? `\n\nTODAY'S DATE: ${safeTodayDate} (YYYY-MM-DD). If the person asks something involving today's date, someone's current age, or how long ago something happened, calculate the answer yourself using this date and state it directly — never say "do the math" or leave it to the person to figure out.`
     : "";
 
   let readingContext = "";
-  if (ENABLE_LITURGICAL_LOOKUP && (isDailyReadingQuestion(question) || isFeastDayQuestion(question))) {
-    const { isoDate: targetIso, dayLabel } = resolveTargetDate(question, todayDate);
+  if (ENABLE_LITURGICAL_LOOKUP && (isDailyReadingQuestion(cleanQuestion) || isFeastDayQuestion(cleanQuestion))) {
+    const { isoDate: targetIso, dayLabel } = resolveTargetDate(cleanQuestion, safeTodayDate);
     try {
       const readings = await fetchTodaysReadingCitations(targetIso);
       if (readings) {
@@ -379,7 +459,7 @@ IMPORTANT: Only use the feast/memorial/saint name and the citations above — ne
   }
 
   let prayerContext = "";
-  const matchedPrayer = findMatchedPrayer(question);
+  const matchedPrayer = findMatchedPrayer(cleanQuestion);
   if (matchedPrayer) {
     prayerContext = `\n\n=== PRAYER REQUEST — READ CAREFULLY, THIS CHANGES YOUR OUTPUT FORMAT ===
 The person asked for the text of a specific prayer: "${matchedPrayer.name}". You must reproduce it in FULL, WORD FOR WORD, with NOTHING cut, shortened, summarized, or paraphrased. This is not optional and it overrides rule 6 (the 2-4 sentence limit) — rule 6 does NOT apply to this response.
@@ -398,7 +478,7 @@ Do NOT summarize the prayer. Do NOT describe what it says instead of giving the 
 
 Include exactly one source with "label": "${matchedPrayer.name}", and "detail" describing its traditional use or origin in one sentence.
 === END PRAYER REQUEST INSTRUCTIONS ===`;
-  } else if (NICENE_CREED_PATTERN.test(question)) {
+  } else if (NICENE_CREED_PATTERN.test(cleanQuestion)) {
     prayerContext = `\n\nNOTE: The person is asking for the text of the Nicene Creed. The current English wording used at Mass (the 2011 Roman Missal translation, e.g. "consubstantial with the Father," "was incarnate of the Virgin Mary") is copyrighted by ICEL and cannot be reproduced. Do NOT provide any wording of the Creed, full or partial, and do NOT substitute an older translation as if it were the current one. Instead, explain this honestly and warmly, and suggest they check their parish missal, worship aid, or usccb.org for the exact current text. You may briefly describe in your own words what the Creed affirms as a summary of belief, without quoting any translation.`;
   }
 
@@ -408,62 +488,36 @@ Include exactly one source with "label": "${matchedPrayer.name}", and "detail" d
   const apiMessages = [];
   for (const turn of safeHistory) {
     if (!turn || typeof turn.text !== "string") continue;
+    const historyText = turn.text.slice(0, MAX_HISTORY_CHARS_PER_MESSAGE);
     if (turn.role === "user") {
-      apiMessages.push({ role: "user", content: turn.text });
+      apiMessages.push({ role: "user", content: historyText });
     } else if (turn.role === "companion") {
       // Reconstruct exactly what the model previously produced (JSON shape)
       // so the conversation it sees matches what it actually said.
       apiMessages.push({
         role: "assistant",
         content: JSON.stringify({
-          text: turn.text,
-          sources: Array.isArray(turn.sources) ? turn.sources : [],
+          text: historyText,
+          sources: Array.isArray(turn.sources)
+            ? turn.sources.slice(0, 3).map((source) => ({
+                label: String(source?.label || "").slice(0, 200),
+                detail: String(source?.detail || "").slice(0, 500),
+              }))
+            : [],
         }),
       });
     }
   }
-  apiMessages.push({ role: "user", content: question });
+  apiMessages.push({ role: "user", content: cleanQuestion });
 
   try {
-    const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: process.env.MODEL_ID || "claude-sonnet-5",
-        max_tokens: maxTokens,
-        thinking: { type: "disabled" },
-        system: [
-          {
-            // Static across every request — safe to cache. Anything that
-            // varies per-call (date, tone, language, reading/prayer context)
-            // must NOT go in this block, or the cache will miss every time.
-            type: "text",
-            text: `${SYSTEM_PROMPT}${CURRENT_POPE_CONTEXT}`,
-            cache_control: { type: "ephemeral" },
-          },
-          {
-            // Per-request context — changes every call, so left uncached.
-            type: "text",
-            text: `${currentDateContext}\n\nAudience tone for this response: ${tone}\n\n${languageInstruction}${readingContext}${prayerContext}`,
-          },
-        ],
-        messages: apiMessages,
-      }),
-    });
-
-    if (!anthropicRes.ok) {
-      const detail = await anthropicRes.text();
-      console.error("Anthropic error:", anthropicRes.status, detail);
-      return res
-        .status(502)
-        .json({ error: "Restless is unavailable right now." });
+    if (!process.env.ANTHROPIC_API_KEY) {
+      console.error("ANTHROPIC_API_KEY is not configured");
+      return res.status(503).json({ error: "Restless is unavailable right now." });
     }
 
-    const data = await anthropicRes.json();
+    const baseSystemContext = `${currentDateContext}\n\nAudience tone for this response: ${tone}\n\n${languageInstruction}${readingContext}${prayerContext}`;
+    let data = await requestModel({ apiMessages, systemContext: baseSystemContext, maxTokens });
 
     if (data.usage) {
       console.log(
@@ -476,61 +530,35 @@ Include exactly one source with "label": "${matchedPrayer.name}", and "detail" d
       );
     }
 
-    const raw = (data.content || [])
+    let raw = (data.content || [])
       .map((block) => (block.type === "text" ? block.text : ""))
       .join("");
+    let parsed = parseModelResponse(raw);
 
-    const cleaned = raw.replace(/```json/g, "").replace(/```/g, "").trim();
-
-    // Best-effort salvage of just the readable "text" field from a
-    // truncated/malformed response — used only when full JSON parsing
-    // fails, so the user never sees raw JSON on screen.
-    function extractPartialText(str) {
-      const match = str.match(/"text"\s*:\s*"((?:\\.|[^"\\])*)/);
-      if (!match) return null;
-      try {
-        return JSON.parse(`"${match[1]}"`);
-      } catch {
-        return match[1].replace(/\\n/g, "\n").replace(/\\"/g, '"');
-      }
+    if (!parsed || data.stop_reason === "max_tokens") {
+      console.error("Incomplete model response; retrying once:", raw.slice(0, 300));
+      data = await requestModel({
+        apiMessages,
+        systemContext: `${baseSystemContext}\n\nRETRY REQUIREMENT: Your previous response was incomplete or invalid. Return a shorter, complete JSON object with all braces and quotes closed.`,
+        maxTokens,
+      });
+      raw = (data.content || [])
+        .map((block) => (block.type === "text" ? block.text : ""))
+        .join("");
+      parsed = parseModelResponse(raw);
     }
 
-    const FALLBACK_TEXT =
-      "I started an answer but it didn't come through completely. Could you ask that again?";
-
-    let parsed;
-    try {
-      parsed = JSON.parse(cleaned);
-    } catch (e) {
-      const start = cleaned.indexOf("{");
-      const end = cleaned.lastIndexOf("}");
-      let salvaged = null;
-      if (start !== -1 && end > start) {
-        try {
-          parsed = JSON.parse(cleaned.slice(start, end + 1));
-        } catch (e2) {
-          salvaged = extractPartialText(cleaned);
-        }
-      } else {
-        salvaged = extractPartialText(cleaned);
-      }
-      if (!parsed) {
-        console.error("Truncated/malformed model response:", cleaned.slice(0, 300));
-        parsed = {
-          text: salvaged && salvaged.trim() ? salvaged.trim() : FALLBACK_TEXT,
-          sources: [],
-        };
-      }
+    if (!parsed) {
+      console.error("Model returned malformed JSON twice:", raw.slice(0, 300));
+      return res.status(502).json({ error: "The answer was incomplete. Please try again." });
     }
 
-    return res.status(200).json({
-      text: parsed.text || cleaned,
-      sources: Array.isArray(parsed.sources) ? parsed.sources : [],
-    });
+    return res.status(200).json(parsed);
   } catch (err) {
     console.error("Handler error:", err);
-    return res
-      .status(500)
-      .json({ error: "Something went wrong. Please try again." });
+    const timedOut = err && err.name === "AbortError";
+    return res.status(timedOut ? 504 : 502).json({
+      error: timedOut ? "The answer took too long. Please try again." : "Restless is unavailable right now.",
+    });
   }
 }
