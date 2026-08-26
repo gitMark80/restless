@@ -1,7 +1,20 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Send, ChevronDown, BookOpen, Cross, Sun, Moon, Share2, Check, X } from "lucide-react";
+import {
+  Send,
+  ChevronDown,
+  BookOpen,
+  Cross,
+  Sun,
+  Moon,
+  Share2,
+  Check,
+  X,
+  GraduationCap,
+  ImageDown,
+  RefreshCcw,
+} from "lucide-react";
 
-const AGE_BANDS = ["Child", "Teen", "Adult", "Senior"];
+const AUDIENCES = ["Middle School", "High School", "College", "OCIA", "Adult"];
 
 const THEMES = {
   dark: {
@@ -43,13 +56,32 @@ const THEMES = {
 const STRINGS = {
   en: {
     tagline: "Modern questions.\nTimeless truth.",
-    ageLabels: { Child: "Child", Teen: "Teen", Adult: "Adult", Senior: "Senior" },
+    ageLabels: {
+      "Middle School": "Middle school",
+      "High School": "High school",
+      College: "College",
+      OCIA: "OCIA",
+      Adult: "Adult",
+    },
+    audienceLabel: "Choose the answer level",
+    studentTitle: "Studying theology? Ask anything.",
+    studentBody: "Get a clear answer grounded in Catholic teaching, with sources you can use to keep studying.",
+    starterQuestions: [
+      "Why was the Arian heresy wrong?",
+      "How do Catholics know Jesus is God?",
+      "What is the Eucharist?",
+      "Why do Catholics pray to saints?",
+    ],
+    startersLabel: "Try a question",
     placeholder: "What's on your mind?",
     retryError: "That didn't come through. Tap send again to retry.",
+    retryLabel: "Try again",
     langToggleLabel: "Switch to Spanish",
     shareLabel: "Share this question and answer",
     shareFooter: "Shared from Restless — restless.faith",
     copiedLabel: "Copied",
+    cardLabel: "Share card",
+    cardSavedLabel: "Card saved",
     readFullText: "Read full text ↗",
     aboutLabel: "About",
     contactLabel: "Contact",
@@ -70,13 +102,32 @@ const STRINGS = {
   },
   es: {
     tagline: "Preguntas modernas.\nVerdad eterna.",
-    ageLabels: { Child: "Niño", Teen: "Adolescente", Adult: "Adulto", Senior: "Mayor" },
+    ageLabels: {
+      "Middle School": "Secundaria",
+      "High School": "Preparatoria",
+      College: "Universidad",
+      OCIA: "OCIA",
+      Adult: "Adulto",
+    },
+    audienceLabel: "Elige el nivel de la respuesta",
+    studentTitle: "¿Estudias teología? Pregunta lo que quieras.",
+    studentBody: "Recibe una respuesta clara basada en la enseñanza católica, con fuentes para seguir estudiando.",
+    starterQuestions: [
+      "¿Por qué estaba equivocada la herejía arriana?",
+      "¿Cómo saben los católicos que Jesús es Dios?",
+      "¿Qué es la Eucaristía?",
+      "¿Por qué rezan los católicos a los santos?",
+    ],
+    startersLabel: "Prueba una pregunta",
     placeholder: "¿Cómo puedo ayudar?",
     retryError: "Eso no llegó. Toca enviar para volver a intentarlo.",
+    retryLabel: "Intentar de nuevo",
     langToggleLabel: "Cambiar a inglés",
     shareLabel: "Compartir esta pregunta y respuesta",
     shareFooter: "Compartido desde Restless — restless.faith",
     copiedLabel: "Copiado",
+    cardLabel: "Tarjeta para compartir",
+    cardSavedLabel: "Tarjeta guardada",
     readFullText: "Leer el texto completo ↗",
     aboutLabel: "Acerca de",
     contactLabel: "Contacto",
@@ -120,19 +171,100 @@ async function askCompanion(question, ageBand, language, history) {
   const now = new Date();
   const todayDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-  const response = await fetch("/api/ask", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question, ageBand, language, todayDate, history }),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 45000);
+  let response;
+  try {
+    response = await fetch("/api/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question, ageBand, language, todayDate, history }),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
 
-  const data = await response.json();
+  const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
     throw new Error(data.error || "Something went wrong. Please try again.");
   }
 
+  if (!data.text || typeof data.text !== "string") {
+    throw new Error("The answer was incomplete. Please try again.");
+  }
+
   return data;
+}
+
+function wrapCanvasText(ctx, text, maxWidth, maxLines) {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  const words = normalized.split(" ");
+  const lines = [];
+  let line = "";
+  for (const word of words) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (ctx.measureText(candidate).width <= maxWidth) {
+      line = candidate;
+    } else {
+      if (line) lines.push(line);
+      line = word;
+      if (lines.length === maxLines - 1) break;
+    }
+  }
+  if (line && lines.length < maxLines) lines.push(line);
+  if (lines.join(" ").length < normalized.length && lines.length) {
+    lines[lines.length - 1] = `${lines[lines.length - 1].replace(/[.,;:!?]?$/, "")}…`;
+  }
+  return lines;
+}
+
+async function createShareCard(questionText, answerText) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1080;
+  canvas.height = 1350;
+  const ctx = canvas.getContext("2d");
+  const gradient = ctx.createLinearGradient(0, 0, 1080, 1350);
+  gradient.addColorStop(0, "#0F1420");
+  gradient.addColorStop(1, "#1B2233");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#C9A15C";
+  ctx.fillRect(76, 78, 8, 90);
+  ctx.font = "700 48px Arial";
+  ctx.fillText("Restless", 112, 120);
+  ctx.fillStyle = "#B8AF9C";
+  ctx.font = "400 30px Arial";
+  ctx.fillText(".faith", 300, 120);
+  ctx.fillText("Modern questions. Timeless truth.", 112, 162);
+
+  ctx.fillStyle = "#C9A15C";
+  ctx.font = "700 28px Arial";
+  ctx.fillText("QUESTION", 76, 264);
+  ctx.fillStyle = "#EDE7DA";
+  ctx.font = "700 48px Arial";
+  const questionLines = wrapCanvasText(ctx, questionText, 928, 4);
+  questionLines.forEach((line, index) => ctx.fillText(line, 76, 330 + index * 62));
+
+  const answerTop = 380 + questionLines.length * 62;
+  ctx.strokeStyle = "rgba(201,161,92,0.35)";
+  ctx.beginPath();
+  ctx.moveTo(76, answerTop);
+  ctx.lineTo(1004, answerTop);
+  ctx.stroke();
+  ctx.fillStyle = "#EDE7DA";
+  ctx.font = "400 38px Arial";
+  const availableAnswerLines = Math.max(4, Math.floor((1180 - (answerTop + 76)) / 51) + 1);
+  const answerLines = wrapCanvasText(ctx, answerText, 928, availableAnswerLines);
+  answerLines.forEach((line, index) => ctx.fillText(line, 76, answerTop + 76 + index * 51));
+
+  ctx.fillStyle = "#C9A15C";
+  ctx.font = "700 30px Arial";
+  ctx.fillText("Explore the question at restless.faith", 76, 1264);
+  return new Promise((resolve, reject) =>
+    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Could not create card"))), "image/png")
+  );
 }
 
 function CitationCard({ source, isOpen, onToggle, theme, strings }) {
@@ -199,13 +331,14 @@ function CitationCard({ source, isOpen, onToggle, theme, strings }) {
 
 function ShareButton({ questionText, answerText, theme, strings }) {
   const [copied, setCopied] = useState(false);
+  const [cardSaved, setCardSaved] = useState(false);
 
   const handleShare = async () => {
     const shareText = `Q: ${questionText}\n\nA: ${answerText}\n\n${strings.shareFooter}`;
 
     if (navigator.share) {
       try {
-        await navigator.share({ text: shareText });
+        await navigator.share({ title: "Restless.faith", text: shareText, url: "https://restless.faith" });
       } catch (err) {
         // User cancelled the native share sheet — no action needed.
       }
@@ -221,25 +354,50 @@ function ShareButton({ questionText, answerText, theme, strings }) {
     }
   };
 
+  const handleCardShare = async () => {
+    try {
+      const blob = await createShareCard(questionText, answerText);
+      const file = new File([blob], "restless-faith-answer.png", { type: "image/png" });
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: "Restless.faith" });
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = file.name;
+      link.click();
+      URL.revokeObjectURL(url);
+      setCardSaved(true);
+      setTimeout(() => setCardSaved(false), 2000);
+    } catch (err) {
+      // A cancelled share sheet needs no follow-up.
+    }
+  };
+
   return (
-    <button
-      onClick={handleShare}
-      aria-label={strings.shareLabel}
-      className="flex items-center gap-1.5 shrink-0"
-      style={{ color: theme.subtext, fontSize: "14px", padding: "0.25rem 0" }}
-    >
-      {copied ? (
-        <>
-          <Check className="w-3.5 h-3.5" style={{ color: theme.accent }} />
-          <span style={{ color: theme.accent }}>{strings.copiedLabel}</span>
-        </>
-      ) : (
-        <>
-          <Share2 className="w-3.5 h-3.5" />
-          <span>{strings.shareLabel}</span>
-        </>
-      )}
-    </button>
+    <div className="flex items-center gap-4 flex-wrap">
+      <button
+        onClick={handleShare}
+        aria-label={strings.shareLabel}
+        className="flex items-center gap-1.5 shrink-0"
+        style={{ color: theme.subtext, fontSize: "14px", padding: "0.25rem 0" }}
+      >
+        {copied ? <Check className="w-3.5 h-3.5" style={{ color: theme.accent }} /> : <Share2 className="w-3.5 h-3.5" />}
+        <span style={copied ? { color: theme.accent } : undefined}>
+          {copied ? strings.copiedLabel : strings.shareLabel}
+        </span>
+      </button>
+      <button
+        onClick={handleCardShare}
+        aria-label={strings.cardLabel}
+        className="flex items-center gap-1.5 shrink-0"
+        style={{ color: cardSaved ? theme.accent : theme.subtext, fontSize: "14px", padding: "0.25rem 0" }}
+      >
+        {cardSaved ? <Check className="w-3.5 h-3.5" /> : <ImageDown className="w-3.5 h-3.5" />}
+        <span>{cardSaved ? strings.cardSavedLabel : strings.cardLabel}</span>
+      </button>
+    </div>
   );
 }
 
@@ -445,7 +603,7 @@ export default function Restless() {
   const [language, setLanguage] = useState("en");
   const [messages, setMessages] = useState(SEED_MESSAGES.en);
   const [input, setInput] = useState("");
-  const [ageBand, setAgeBand] = useState("Adult");
+  const [ageBand, setAgeBand] = useState("High School");
   const [isTyping, setIsTyping] = useState(false);
   const [mode, setMode] = useState("dark");
   const [error, setError] = useState(null);
@@ -531,6 +689,11 @@ export default function Restless() {
     }
   };
 
+  const chooseStarter = (question) => {
+    setInput(question);
+    requestAnimationFrame(() => document.querySelector("textarea")?.focus());
+  };
+
   return (
     <div
       className="flex flex-col overflow-x-hidden"
@@ -610,8 +773,11 @@ export default function Restless() {
             </button>
           </div>
         </div>
-        <div className="max-w-2xl mx-auto w-full mt-3 flex gap-1.5">
-          {AGE_BANDS.map((band) => (
+        <p className="max-w-2xl mx-auto w-full mt-3" style={{ color: theme.subtext, fontSize: "12px" }}>
+          {strings.audienceLabel}
+        </p>
+        <div className="max-w-2xl mx-auto w-full mt-1.5 flex gap-1.5 overflow-x-auto pb-1">
+          {AUDIENCES.map((band) => (
             <button
               key={band}
               onClick={() => setAgeBand(band)}
@@ -630,6 +796,39 @@ export default function Restless() {
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-6">
         <div className="max-w-2xl mx-auto w-full space-y-4 min-w-0">
+          {messages.length === 1 && (
+            <section
+              className="rounded-2xl p-5"
+              style={{ backgroundColor: theme.citationBg, border: `1px solid ${theme.citationBorder}` }}
+            >
+              <div className="flex items-start gap-3">
+                <GraduationCap className="w-6 h-6 shrink-0 mt-0.5" style={{ color: theme.accent }} />
+                <div>
+                  <h2 style={{ color: theme.text, fontSize: "21px", fontWeight: 700 }}>
+                    {strings.studentTitle}
+                  </h2>
+                  <p className="mt-1 leading-relaxed" style={{ color: theme.subtext, fontSize: "16px" }}>
+                    {strings.studentBody}
+                  </p>
+                </div>
+              </div>
+              <p className="mt-4 mb-2" style={{ color: theme.subtext, fontSize: "13px", fontWeight: 600 }}>
+                {strings.startersLabel}
+              </p>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {strings.starterQuestions.map((question) => (
+                  <button
+                    key={question}
+                    onClick={() => chooseStarter(question)}
+                    className="shrink-0 rounded-full px-3 py-2 text-left"
+                    style={{ backgroundColor: theme.cardBg, color: theme.text, fontSize: "14px", border: `1px solid ${theme.border}` }}
+                  >
+                    {question}
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
           {messages.map((msg, idx) => (
             <div key={msg.id} ref={idx === messages.length - 1 ? lastMessageRef : null}>
               {msg.role === "user" ? (
@@ -673,10 +872,18 @@ export default function Restless() {
         style={{ borderTop: `1px solid ${theme.border}`, backgroundColor: theme.bg }}
       >
         {error && (
-          <div className="max-w-2xl mx-auto w-full mb-2">
+          <div className="max-w-2xl mx-auto w-full mb-2 flex items-center justify-between gap-3">
             <p style={{ color: theme.accentSecondary, fontSize: "14px" }}>
               {error}
             </p>
+            <button
+              onClick={handleSend}
+              className="flex items-center gap-1.5 shrink-0"
+              style={{ color: theme.accent, fontSize: "14px", fontWeight: 600 }}
+            >
+              <RefreshCcw className="w-3.5 h-3.5" />
+              {strings.retryLabel}
+            </button>
           </div>
         )}
         <div className="max-w-2xl mx-auto w-full flex items-end gap-2.5 min-w-0">
@@ -684,6 +891,8 @@ export default function Restless() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
+            maxLength={1000}
+            aria-label={strings.placeholder}
             placeholder={strings.placeholder}
             rows={2}
             className="flex-1 min-w-0 resize-none rounded-xl px-4 py-3 focus:outline-none overflow-y-auto max-h-40"
@@ -692,6 +901,7 @@ export default function Restless() {
           <button
             onClick={handleSend}
             disabled={!input.trim()}
+            aria-label="Send question"
             className="shrink-0 w-11 h-11 rounded-xl flex items-center justify-center transition-colors"
             style={
               input.trim()
