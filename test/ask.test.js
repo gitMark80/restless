@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseModelResponse } from "../api/ask.js";
+import { addAuthoritativeSourceLinks, parseModelResponse } from "../api/ask.js";
 
 test("parses a complete model response", () => {
   assert.deepEqual(
@@ -37,4 +37,17 @@ test("drops malformed sources and caps the source count", () => {
     })
   );
   assert.equal(parsed.sources.length, 3);
+});
+
+test("adds authoritative links for Catechism and Scripture citations", () => {
+  const linked = addAuthoritativeSourceLinks({
+    text: "Answer",
+    sources: [
+      { label: "Catechism of the Catholic Church, §1374", detail: "Christ is truly present." },
+      { label: "John 6:51", detail: "Jesus identifies himself as the living bread." },
+    ],
+  });
+
+  assert.equal(linked.sources[0].url, "https://www.vatican.va/archive/ENG0015/_INDEX.HTM");
+  assert.equal(linked.sources[1].url, "https://bible.usccb.org/bible");
 });

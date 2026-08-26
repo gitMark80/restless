@@ -5,7 +5,7 @@ Address the PERSON before you address the QUESTION. Someone asking "why did God 
 
 Core rules:
 1. Ground every answer in the Catechism of the Catholic Church, Sacred Scripture, the Doctors of the Church (Aquinas, Augustine, etc.), and papal encyclicals. These are your doctrinal spine.
-2. You may CITE modern Catholic communicators by name to describe how they teach on a topic — e.g. "Bishop Barron often explains..." NEVER write as if you ARE one of these living people, and NEVER invent a quote and attribute to them. Only describe general, well-known public teaching positions.
+2. Prefer authoritative primary sources: Scripture, the Catechism, ecumenical councils, papal documents, canon law, and the Doctors or Fathers of the Church. Cite a modern Catholic communicator only when their explanation adds something particularly useful; never use one in place of an available primary Church source. You may describe how a living teacher presents a topic, but NEVER write as if you ARE that person and NEVER invent a quotation.
    - Pastoral/healing voices (prefer when the person is hurting): Sr. Miriam James Heidland SOLT, Fr. Mark-Mary Ames CFR, Fr. Dave Pivonka TOR, Fr. Columba Jordan CFR, Jennifer Fulwiler.
    - Doctrinal/apologetic voices: Bishop Robert Barron, Fr. Mike Schmitz, Trent Horn, Matthew Kelly, Jimmy Akin, Karlo Broussard, Joe Heschmeyer, Scott Hahn, Jeff Cavins.
 3. Tone: Bishop Barron's model — clarity delivered gently, not traded away. State Church teaching plainly, without hedging and without apologizing for it. Never shame. Use beauty and reason as entry points, not just rules.
@@ -22,7 +22,7 @@ Core rules:
 Respond ONLY with valid JSON. No markdown fences, no preamble. Exactly this shape:
 {"text": "the pastoral answer — either 2-4 sentences of prose, or a short lead-in sentence followed by a \\n-separated \"- item\" list per rule 6", "sources": [{"label": "e.g. Catechism of the Catholic Church, §XXX, or a person's name", "detail": "one sentence on what this source teaches, relevant to the question", "url": "optional — only include when explicitly given a URL to use in additional context below"}]}
 
-Include 1-3 sources. At least one must be a primary source (Catechism paragraph, Scripture citation, or a Doctor of the Church).`;
+Include 1-3 sources. Normally provide at least two authoritative primary sources when the topic supports them, including the exact Catechism paragraph, Scripture passage, council, or document section needed for verification. Do not pad the list with a general personality citation.`;
 
 // Static correction for a fact younger than most model training data.
 // Update this whenever Pope Leo XIV issues a significant new document —
@@ -354,6 +354,33 @@ export function parseModelResponse(raw) {
   return null;
 }
 
+function authoritativeSourceUrl(label, suppliedUrl) {
+  if (typeof suppliedUrl === "string" && /^https:\/\//i.test(suppliedUrl)) return suppliedUrl;
+  if (/catechism|catecismo/i.test(label)) {
+    return "https://www.vatican.va/archive/ENG0015/_INDEX.HTM";
+  }
+  if (/\b\d{1,3}:\d{1,3}\b/.test(label)) {
+    return "https://bible.usccb.org/bible";
+  }
+  return undefined;
+}
+
+export function addAuthoritativeSourceLinks(parsed) {
+  return {
+    ...parsed,
+    sources: parsed.sources.map((source) => {
+      const url = authoritativeSourceUrl(source.label, source.url);
+      return url ? { ...source, url } : source;
+    }),
+  };
+}
+
+function logRequest(level, event, fields = {}) {
+  const payload = { level, event, route: "/api/ask", ...fields };
+  const method = level === "error" ? "error" : "log";
+  console[method](JSON.stringify(payload));
+}
+
 async function requestModel({ apiMessages, systemContext, maxTokens }) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 40000);
@@ -396,8 +423,12 @@ async function requestModel({ apiMessages, systemContext, maxTokens }) {
 }
 
 export default async function handler(req, res) {
+  const startedAt = Date.now();
+  const requestId = req.headers["x-vercel-id"] || req.headers["x-request-id"] || "local";
   res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Request-ID", requestId);
   if (req.method !== "POST") {
+    logRequest("info", "rejected", { requestId, status: 405, durationMs: Date.now() - startedAt });
     return res.status(405).json({ error: "Method not allowed" });
   }
 
@@ -405,6 +436,7 @@ export default async function handler(req, res) {
     (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "unknown";
 
   if (isRateLimited(ip)) {
+    logRequest("info", "rate_limited", { requestId, status: 429, durationMs: Date.now() - startedAt });
     return res.status(429).json({
       error: "Please wait a moment before asking again.",
     });
@@ -413,15 +445,18 @@ export default async function handler(req, res) {
   const { question, ageBand, language, todayDate, history } = req.body || {};
 
   if (!question || typeof question !== "string") {
+    logRequest("info", "rejected", { requestId, status: 400, reason: "missing_question", durationMs: Date.now() - startedAt });
     return res.status(400).json({ error: "Missing question" });
   }
 
   const cleanQuestion = question.trim();
   if (!cleanQuestion) {
+    logRequest("info", "rejected", { requestId, status: 400, reason: "empty_question", durationMs: Date.now() - startedAt });
     return res.status(400).json({ error: "Missing question" });
   }
 
   if (cleanQuestion.length > 1000) {
+    logRequest("info", "rejected", { requestId, status: 400, reason: "question_too_long", durationMs: Date.now() - startedAt });
     return res.status(400).json({ error: "Question is too long." });
   }
 
@@ -511,8 +546,14 @@ Include exactly one source with "label": "${matchedPrayer.name}", and "detail" d
   apiMessages.push({ role: "user", content: cleanQuestion });
 
   try {
+    logRequest("info", "started", {
+      requestId,
+      audience: AGE_TONE[ageBand] ? ageBand : "Adult",
+      language: safeLanguage,
+      historyTurns: apiMessages.length - 1,
+    });
     if (!process.env.ANTHROPIC_API_KEY) {
-      console.error("ANTHROPIC_API_KEY is not configured");
+      logRequest("error", "failed", { requestId, status: 503, reason: "missing_api_key", durationMs: Date.now() - startedAt });
       return res.status(503).json({ error: "Restless is unavailable right now." });
     }
 
@@ -535,8 +576,14 @@ Include exactly one source with "label": "${matchedPrayer.name}", and "detail" d
       .join("");
     let parsed = parseModelResponse(raw);
 
+    let retried = false;
     if (!parsed || data.stop_reason === "max_tokens") {
-      console.error("Incomplete model response; retrying once:", raw.slice(0, 300));
+      retried = true;
+      logRequest("info", "retrying_incomplete_response", {
+        requestId,
+        stopReason: data.stop_reason || "invalid_json",
+        durationMs: Date.now() - startedAt,
+      });
       data = await requestModel({
         apiMessages,
         systemContext: `${baseSystemContext}\n\nRETRY REQUIREMENT: Your previous response was incomplete or invalid. Return a shorter, complete JSON object with all braces and quotes closed.`,
@@ -549,14 +596,28 @@ Include exactly one source with "label": "${matchedPrayer.name}", and "detail" d
     }
 
     if (!parsed) {
-      console.error("Model returned malformed JSON twice:", raw.slice(0, 300));
+      logRequest("error", "failed", { requestId, status: 502, reason: "malformed_response_twice", retried, durationMs: Date.now() - startedAt });
       return res.status(502).json({ error: "The answer was incomplete. Please try again." });
     }
 
-    return res.status(200).json(parsed);
+    const responseBody = addAuthoritativeSourceLinks(parsed);
+    logRequest("info", "completed", {
+      requestId,
+      status: 200,
+      retried,
+      sourceCount: responseBody.sources.length,
+      durationMs: Date.now() - startedAt,
+    });
+    return res.status(200).json(responseBody);
   } catch (err) {
-    console.error("Handler error:", err);
     const timedOut = err && err.name === "AbortError";
+    logRequest("error", "failed", {
+      requestId,
+      status: timedOut ? 504 : 502,
+      reason: timedOut ? "timeout" : "model_error",
+      error: err instanceof Error ? err.message : String(err),
+      durationMs: Date.now() - startedAt,
+    });
     return res.status(timedOut ? 504 : 502).json({
       error: timedOut ? "The answer took too long. Please try again." : "Restless is unavailable right now.",
     });
