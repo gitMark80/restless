@@ -80,8 +80,10 @@ const STRINGS = {
     shareLabel: "Share this question and answer",
     shareFooter: "Shared from Restless — restless.faith",
     copiedLabel: "Copied",
+    shareFailedLabel: "Copy failed — select and copy the answer",
     cardLabel: "Share card",
     cardSavedLabel: "Card saved",
+    cardFailedLabel: "Card couldn't be shared",
     readFullText: "Read full text ↗",
     aboutLabel: "About",
     contactLabel: "Contact",
@@ -126,8 +128,10 @@ const STRINGS = {
     shareLabel: "Compartir esta pregunta y respuesta",
     shareFooter: "Compartido desde Restless — restless.faith",
     copiedLabel: "Copiado",
+    shareFailedLabel: "No se pudo copiar — selecciona y copia la respuesta",
     cardLabel: "Tarjeta para compartir",
     cardSavedLabel: "Tarjeta guardada",
+    cardFailedLabel: "No se pudo compartir la tarjeta",
     readFullText: "Leer el texto completo ↗",
     aboutLabel: "Acerca de",
     contactLabel: "Contacto",
@@ -332,6 +336,28 @@ function CitationCard({ source, isOpen, onToggle, theme, strings }) {
 function ShareButton({ questionText, answerText, theme, strings }) {
   const [copied, setCopied] = useState(false);
   const [cardSaved, setCardSaved] = useState(false);
+  const [shareError, setShareError] = useState(false);
+  const [cardError, setCardError] = useState(false);
+
+  const copyShareText = async (shareText) => {
+    try {
+      await navigator.clipboard.writeText(shareText);
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = shareText;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      const copiedWithFallback = document.execCommand("copy");
+      textarea.remove();
+      if (!copiedWithFallback) throw new Error("Clipboard unavailable");
+    }
+    setShareError(false);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleShare = async () => {
     const shareText = `Q: ${questionText}\n\nA: ${answerText}\n\n${strings.shareFooter}`;
@@ -339,18 +365,19 @@ function ShareButton({ questionText, answerText, theme, strings }) {
     if (navigator.share) {
       try {
         await navigator.share({ title: "Restless.faith", text: shareText, url: "https://restless.faith" });
+        setShareError(false);
+        return;
       } catch (err) {
-        // User cancelled the native share sheet — no action needed.
+        if (err?.name === "AbortError") return;
+        // Some embedded browsers expose navigator.share but cannot complete it.
+        // Fall through to a clipboard copy so the user still has a usable result.
       }
-      return;
     }
 
     try {
-      await navigator.clipboard.writeText(shareText);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      // Clipboard blocked — nothing more we can do here.
+      await copyShareText(shareText);
+    } catch {
+      setShareError(true);
     }
   };
 
@@ -359,24 +386,31 @@ function ShareButton({ questionText, answerText, theme, strings }) {
       const blob = await createShareCard(questionText, answerText);
       const file = new File([blob], "restless-faith-answer.png", { type: "image/png" });
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: "Restless.faith" });
-        return;
+        try {
+          await navigator.share({ files: [file], title: "Restless.faith", text: strings.shareFooter });
+          setCardError(false);
+          return;
+        } catch (err) {
+          if (err?.name === "AbortError") return;
+          // Fall back to a download when file sharing is exposed but fails.
+        }
       }
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
       link.download = file.name;
       link.click();
-      URL.revokeObjectURL(url);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setCardError(false);
       setCardSaved(true);
       setTimeout(() => setCardSaved(false), 2000);
-    } catch (err) {
-      // A cancelled share sheet needs no follow-up.
+    } catch {
+      setCardError(true);
     }
   };
 
   return (
-    <div className="flex items-center gap-4 flex-wrap">
+    <div className="flex items-center gap-4 flex-wrap" aria-live="polite">
       <button
         onClick={handleShare}
         aria-label={strings.shareLabel}
@@ -385,7 +419,7 @@ function ShareButton({ questionText, answerText, theme, strings }) {
       >
         {copied ? <Check className="w-3.5 h-3.5" style={{ color: theme.accent }} /> : <Share2 className="w-3.5 h-3.5" />}
         <span style={copied ? { color: theme.accent } : undefined}>
-          {copied ? strings.copiedLabel : strings.shareLabel}
+          {shareError ? strings.shareFailedLabel : copied ? strings.copiedLabel : strings.shareLabel}
         </span>
       </button>
       <button
@@ -395,7 +429,7 @@ function ShareButton({ questionText, answerText, theme, strings }) {
         style={{ color: cardSaved ? theme.accent : theme.subtext, fontSize: "14px", padding: "0.25rem 0" }}
       >
         {cardSaved ? <Check className="w-3.5 h-3.5" /> : <ImageDown className="w-3.5 h-3.5" />}
-        <span>{cardSaved ? strings.cardSavedLabel : strings.cardLabel}</span>
+        <span>{cardError ? strings.cardFailedLabel : cardSaved ? strings.cardSavedLabel : strings.cardLabel}</span>
       </button>
     </div>
   );
@@ -773,14 +807,19 @@ export default function Restless() {
             </button>
           </div>
         </div>
-        <p className="max-w-2xl mx-auto w-full mt-3" style={{ color: theme.subtext, fontSize: "12px" }}>
+        <p id="answer-level-label" className="max-w-2xl mx-auto w-full mt-3" style={{ color: theme.subtext, fontSize: "12px" }}>
           {strings.audienceLabel}
         </p>
-        <div className="max-w-2xl mx-auto w-full mt-1.5 flex gap-1.5 overflow-x-auto pb-1">
+        <div
+          role="group"
+          aria-labelledby="answer-level-label"
+          className="max-w-2xl mx-auto w-full mt-1.5 flex gap-1.5 overflow-x-auto pb-1"
+        >
           {AUDIENCES.map((band) => (
             <button
               key={band}
               onClick={() => setAgeBand(band)}
+              aria-pressed={ageBand === band}
               className="px-3 py-1 rounded-full transition-colors"
               style={
                 ageBand === band
