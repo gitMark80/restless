@@ -7,7 +7,6 @@ const UI_TEXT = {
     notesPlaceholder: "My notes…",
     talk: "3. Bring it to a person",
     followUp: "Ask a follow-up",
-    readSource: "Read source",
   },
   es: {
     tagline: "Pregunta con valentía. Aprende a fondo. Sigue siendo humano.",
@@ -17,7 +16,6 @@ const UI_TEXT = {
     notesPlaceholder: "Mis notas…",
     talk: "3. Llévalo a una persona",
     followUp: "Haz una pregunta de seguimiento",
-    readSource: "Leer fuente",
   },
 };
 
@@ -65,9 +63,13 @@ function addSourceList(section, verifyCard, language) {
   const sources = sourceCardsFor(section);
   if (!sources.length) return;
 
-  verifyCard.querySelectorAll("[data-restless-source-list]").forEach((node) => node.remove());
+  const key = sources.map((source) => `${source.label}|${source.href}`).join("||");
+  const currentList = verifyCard.querySelector("[data-restless-source-list]");
+  if (currentList && verifyCard.dataset.restlessSourcesKey === key) return;
+  currentList?.remove();
 
   const existingLinks = Array.from(verifyCard.querySelectorAll("a"));
+  const sourceColor = existingLinks[0] ? getComputedStyle(existingLinks[0]).color : "";
   existingLinks.forEach((link) => link.remove());
   Array.from(verifyCard.querySelectorAll("p")).forEach((paragraph, index) => {
     if (index > 0) paragraph.remove();
@@ -78,7 +80,7 @@ function addSourceList(section, verifyCard, language) {
   list.style.marginTop = "0.7rem";
   list.style.display = "flex";
   list.style.flexDirection = "column";
-  list.style.gap = "0.5rem";
+  list.style.gap = "0.55rem";
 
   sources.forEach((source) => {
     const row = document.createElement("a");
@@ -91,14 +93,23 @@ function addSourceList(section, verifyCard, language) {
     row.style.fontSize = "13px";
     row.style.fontWeight = "700";
     row.style.lineHeight = "1.35";
-    row.style.color = "inherit";
+    row.style.color = sourceColor || "inherit";
     row.style.textDecoration = "none";
-    row.innerHTML = `<span aria-hidden="true" style="margin-top:1px">↗</span><span>${source.label}</span>`;
+
+    const arrow = document.createElement("span");
+    arrow.setAttribute("aria-hidden", "true");
+    arrow.textContent = "↗";
+    arrow.style.marginTop = "1px";
+
+    const label = document.createElement("span");
+    label.textContent = source.label;
+
+    row.append(arrow, label);
     list.appendChild(row);
   });
 
   verifyCard.appendChild(list);
-  verifyCard.dataset.restlessSources = String(sources.length);
+  verifyCard.dataset.restlessSourcesKey = key;
   verifyCard.title = `${sources.length} ${language === "es" ? "fuentes" : "sources"}`;
 }
 
@@ -140,7 +151,7 @@ function polishGrowthSection(section, language) {
       section.insertAdjacentElement("afterend", followWrap);
     }
 
-    if (!followWrap.contains(followButton)) followWrap.appendChild(followButton);
+    followWrap.appendChild(followButton);
     followButton.style.fontSize = "17px";
     followButton.style.fontWeight = "800";
     followButton.style.display = "inline-flex";
