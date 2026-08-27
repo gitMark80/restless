@@ -18,7 +18,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-const AUDIENCES = ["Middle School", "High School", "College", "OCIA", "Adult"];
+const AUDIENCES = ["Middle School", "High School", "College", "Adult"];
 
 const THEMES = {
   dark: {
@@ -81,7 +81,6 @@ const STRINGS = {
       "Middle School": "Middle school",
       "High School": "High school",
       College: "College",
-      OCIA: "OCIA",
       Adult: "Adult",
     },
     audienceLabel: "Answer level",
@@ -106,6 +105,10 @@ const STRINGS = {
     cardLabel: "Share card",
     cardSavedLabel: "Card saved",
     cardFailedLabel: "Card couldn't be shared",
+    siteShareLabel: "Share site",
+    siteShareCopied: "Link copied",
+    siteShareFailed: "Copy failed",
+    siteShareText: "Check out Restless.faith — clear Catholic answers for modern questions.",
     readFullText: "Read source ↗",
     aboutLabel: "About",
     contactLabel: "Contact",
@@ -155,7 +158,6 @@ const STRINGS = {
       "Middle School": "Secundaria",
       "High School": "Preparatoria",
       College: "Universidad",
-      OCIA: "OCIA",
       Adult: "Adulto",
     },
     audienceLabel: "Nivel de respuesta",
@@ -180,6 +182,10 @@ const STRINGS = {
     cardLabel: "Tarjeta",
     cardSavedLabel: "Tarjeta guardada",
     cardFailedLabel: "No se pudo compartir",
+    siteShareLabel: "Compartir sitio",
+    siteShareCopied: "Enlace copiado",
+    siteShareFailed: "No se pudo copiar",
+    siteShareText: "Conoce Restless.faith — respuestas católicas claras para preguntas actuales.",
     readFullText: "Leer fuente ↗",
     aboutLabel: "Acerca de",
     contactLabel: "Contacto",
@@ -216,24 +222,7 @@ const STRINGS = {
   },
 };
 
-const SEED_MESSAGES = {
-  en: [
-    {
-      id: 1,
-      role: "companion",
-      isSeed: true,
-      text: "Hi — bring the question you actually have. I'll help you find what the Catholic Church teaches and where to verify it.",
-    },
-  ],
-  es: [
-    {
-      id: 1,
-      role: "companion",
-      isSeed: true,
-      text: "Hola — trae la pregunta que de verdad tienes. Te ayudaré a encontrar lo que enseña la Iglesia Católica y dónde verificarlo.",
-    },
-  ],
-};
+const SEED_MESSAGES = { en: [], es: [] };
 
 async function askCompanion(question, ageBand, language, history) {
   const now = new Date();
@@ -589,7 +578,10 @@ function GrowthGuide({ message, questionText, theme, strings, onFollowUp }) {
         background: `linear-gradient(145deg, ${theme.citationBg}, ${theme.cardBg})`,
       }}
     >
-      <div className="px-4 py-4 flex items-start justify-between gap-3" style={{ borderBottom: `1px solid ${theme.border}` }}>
+      <div
+        className="px-4 py-4 flex items-start justify-between gap-3"
+        style={{ borderBottom: `1px solid ${theme.border}` }}
+      >
         <div>
           <div className="flex items-center gap-2">
             <Compass className="w-4 h-4" style={{ color: theme.accent }} />
@@ -630,10 +622,7 @@ function GrowthGuide({ message, questionText, theme, strings, onFollowUp }) {
 
         <div
           className="p-4"
-          style={{
-            borderBottom: `1px solid ${theme.border}`,
-            borderLeft: `1px solid ${theme.border}`,
-          }}
+          style={{ borderBottom: `1px solid ${theme.border}`, borderLeft: `1px solid ${theme.border}` }}
         >
           <div className="flex items-center gap-2">
             <Lightbulb className="w-4 h-4" style={{ color: theme.accent }} />
@@ -672,10 +661,7 @@ function GrowthGuide({ message, questionText, theme, strings, onFollowUp }) {
 
         <div
           className="p-4"
-          style={{
-            borderBottom: `1px solid ${theme.border}`,
-            borderLeft: `1px solid ${theme.border}`,
-          }}
+          style={{ borderBottom: `1px solid ${theme.border}`, borderLeft: `1px solid ${theme.border}` }}
         >
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4" style={{ color: theme.accent }} />
@@ -738,7 +724,7 @@ function CompanionMessage({ message, questionText, theme, strings, growthMode, o
               theme={theme}
               strings={strings}
             />
-            {growthMode && !message.isSeed && (
+            {growthMode && (
               <GrowthGuide
                 message={message}
                 questionText={questionText}
@@ -851,29 +837,33 @@ function WelcomePanel({ theme, strings, chooseStarter }) {
           {strings.heroBody}
         </p>
 
-        <div className="grid grid-cols-3 gap-2 mt-5">
+        <div className="grid grid-cols-3 gap-1.5 mt-4">
           {strings.principles.map((item, idx) => {
             const Icon = idx === 0 ? Lightbulb : idx === 1 ? BookOpen : Users;
             return (
               <div
                 key={item.title}
-                className="rounded-2xl p-3"
+                className="rounded-xl px-2.5 py-2 flex items-center gap-1.5 min-w-0"
                 style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.border}` }}
+                title={item.body}
               >
-                <Icon className="w-4 h-4" style={{ color: theme.accent }} />
-                <p className="mt-2" style={{ color: theme.text, fontSize: "13px", fontWeight: 700 }}>
+                <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: theme.accent }} />
+                <span
+                  className="truncate whitespace-nowrap"
+                  style={{ color: theme.text, fontSize: "12px", fontWeight: 700 }}
+                >
                   {item.title}
-                </p>
-                <p className="mt-1 leading-snug hidden sm:block" style={{ color: theme.subtext, fontSize: "12px" }}>
-                  {item.body}
-                </p>
+                </span>
               </div>
             );
           })}
         </div>
       </div>
 
-      <div className="px-5 sm:px-6 py-4" style={{ backgroundColor: theme.citationBg, borderTop: `1px solid ${theme.border}` }}>
+      <div
+        className="px-5 sm:px-6 py-4"
+        style={{ backgroundColor: theme.citationBg, borderTop: `1px solid ${theme.border}` }}
+      >
         <div className="flex items-start gap-3">
           <GraduationCap className="w-5 h-5 shrink-0 mt-0.5" style={{ color: theme.accent }} />
           <div>
@@ -919,6 +909,8 @@ export default function Restless() {
   const [error, setError] = useState(null);
   const [activeModal, setActiveModal] = useState(null);
   const [growthMode, setGrowthMode] = useState(true);
+  const [siteShareCopied, setSiteShareCopied] = useState(false);
+  const [siteShareError, setSiteShareError] = useState(false);
 
   const theme = THEMES[mode];
   const strings = STRINGS[language];
@@ -956,7 +948,6 @@ export default function Restless() {
     if (!trimmed || isTyping) return;
 
     const history = messages
-      .filter((m) => !m.isSeed)
       .map((m) => ({ role: m.role, text: m.text, sources: m.sources }))
       .slice(-6);
 
@@ -966,7 +957,8 @@ export default function Restless() {
     setError(null);
 
     try {
-      const result = await askCompanion(trimmed, ageBand, language, history);
+      const responseAgeBand = ageBand === "Adult" ? "OCIA" : ageBand;
+      const result = await askCompanion(trimmed, responseAgeBand, language, history);
       setIsTyping(false);
       setMessages((prev) => [
         ...prev,
@@ -998,6 +990,40 @@ export default function Restless() {
         ? `Help me go one level deeper on this: ${questionText}`
         : `Ayúdame a profundizar un nivel más en esto: ${questionText}`;
     chooseStarter(prompt);
+  };
+
+  const handleSiteShare = async () => {
+    const url = "https://restless.faith";
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Restless.faith", text: strings.siteShareText, url });
+        setSiteShareError(false);
+        return;
+      } catch (err) {
+        if (err?.name === "AbortError") return;
+      }
+    }
+
+    try {
+      try {
+        await navigator.clipboard.writeText(url);
+      } catch {
+        const textarea = document.createElement("textarea");
+        textarea.value = url;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        const ok = document.execCommand("copy");
+        textarea.remove();
+        if (!ok) throw new Error("Clipboard unavailable");
+      }
+      setSiteShareError(false);
+      setSiteShareCopied(true);
+      setTimeout(() => setSiteShareCopied(false), 1800);
+    } catch {
+      setSiteShareError(true);
+    }
   };
 
   return (
@@ -1117,7 +1143,7 @@ export default function Restless() {
 
       <main ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden px-3 sm:px-5 py-5">
         <div className="max-w-3xl mx-auto w-full space-y-4 min-w-0">
-          {messages.length === 1 && (
+          {messages.length === 0 && (
             <WelcomePanel theme={theme} strings={strings} chooseStarter={chooseStarter} />
           )}
 
@@ -1210,7 +1236,7 @@ export default function Restless() {
             </button>
           </div>
 
-          <div className="flex items-center justify-center gap-3 mt-2.5">
+          <div className="flex items-center justify-start gap-2.5 mt-2.5 flex-wrap" aria-live="polite">
             <button onClick={() => setActiveModal("about")} style={{ color: theme.subtext, fontSize: "12px" }}>
               {strings.aboutLabel}
             </button>
@@ -1224,6 +1250,19 @@ export default function Restless() {
               style={{ color: theme.accent, fontSize: "12px", fontWeight: 700 }}
             >
               {strings.supportLabel}
+            </button>
+            <span style={{ color: theme.muted, fontSize: "12px" }}>·</span>
+            <button
+              onClick={handleSiteShare}
+              className="inline-flex items-center gap-1"
+              style={{ color: siteShareCopied ? theme.accent : theme.subtext, fontSize: "12px", fontWeight: 600 }}
+            >
+              {siteShareCopied ? <Check className="w-3 h-3" /> : <Share2 className="w-3 h-3" />}
+              {siteShareError
+                ? strings.siteShareFailed
+                : siteShareCopied
+                  ? strings.siteShareCopied
+                  : strings.siteShareLabel}
             </button>
           </div>
         </div>
