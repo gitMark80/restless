@@ -22,5 +22,116 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      (() => {
+        const normalize = (value) =>
+          String(value || "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .replace(/[.,;()]/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+
+        const BOOKS = {
+          genesis: "genesis", gen: "genesis", genesis_es: "genesis",
+          exodus: "exodus", ex: "exodus", exodo: "exodus",
+          leviticus: "leviticus", lev: "leviticus", levitico: "leviticus",
+          numbers: "numbers", num: "numbers", numeros: "numbers",
+          deuteronomy: "deuteronomy", deut: "deuteronomy", deuteronomio: "deuteronomy",
+          joshua: "joshua", josue: "joshua",
+          judges: "judges", jueces: "judges",
+          ruth: "ruth", rut: "ruth",
+          "1 samuel": "1samuel", "2 samuel": "2samuel",
+          "1 kings": "1kings", "2 kings": "2kings", "1 reyes": "1kings", "2 reyes": "2kings",
+          "1 chronicles": "1chronicles", "2 chronicles": "2chronicles", "1 cronicas": "1chronicles", "2 cronicas": "2chronicles",
+          ezra: "ezra", esdras: "ezra", nehemiah: "nehemiah", nehemias: "nehemiah",
+          tobit: "tobit", tobias: "tobit", judith: "judith", judit: "judith", esther: "esther", ester: "esther",
+          "1 maccabees": "1maccabees", "2 maccabees": "2maccabees", "1 macabeos": "1maccabees", "2 macabeos": "2maccabees",
+          job: "job", psalms: "psalms", psalm: "psalms", salmos: "psalms", salmo: "psalms",
+          proverbs: "proverbs", proverbios: "proverbs", ecclesiastes: "ecclesiastes", eclesiastes: "ecclesiastes",
+          "song of songs": "songofsongs", "song of solomon": "songofsongs", "cantar de los cantares": "songofsongs",
+          wisdom: "wisdom", sabiduria: "wisdom", sirach: "sirach", eclesiastico: "sirach", siracida: "sirach",
+          isaiah: "isaiah", isaias: "isaiah", jeremiah: "jeremiah", jeremias: "jeremiah", lamentations: "lamentations", lamentaciones: "lamentations",
+          baruch: "baruch", baruc: "baruch", ezekiel: "ezekiel", ezequiel: "ezekiel", daniel: "daniel",
+          hosea: "hosea", oseas: "hosea", joel: "joel", amos: "amos", obadiah: "obadiah", abdias: "obadiah",
+          jonah: "jonah", jonas: "jonah", micah: "micah", miqueas: "micah", nahum: "nahum", habakkuk: "habakkuk", habacuc: "habakkuk",
+          zephaniah: "zephaniah", sofonias: "zephaniah", haggai: "haggai", ageo: "haggai", zechariah: "zechariah", zacarias: "zechariah", malachi: "malachi", malaquias: "malachi",
+          matthew: "matthew", mt: "matthew", mateo: "matthew",
+          mark: "mark", mk: "mark", marcos: "mark", mc: "mark",
+          luke: "luke", lk: "luke", lucas: "luke", lc: "luke",
+          john: "john", jn: "john", juan: "john",
+          acts: "acts", hechos: "acts", romans: "romans", romanos: "romans", rom: "romans",
+          "1 corinthians": "1corinthians", "2 corinthians": "2corinthians", "1 corintios": "1corinthians", "2 corintios": "2corinthians", "1 cor": "1corinthians", "2 cor": "2corinthians",
+          galatians: "galatians", galatas: "galatians", ephesians: "ephesians", efesios: "ephesians",
+          philippians: "philippians", filipenses: "philippians", colossians: "colossians", colosenses: "colossians",
+          "1 thessalonians": "1thessalonians", "2 thessalonians": "2thessalonians", "1 tesalonicenses": "1thessalonians", "2 tesalonicenses": "2thessalonians",
+          "1 timothy": "1timothy", "2 timothy": "2timothy", "1 timoteo": "1timothy", "2 timoteo": "2timothy",
+          titus: "titus", tito: "titus", philemon: "philemon", filemon: "philemon", hebrews: "hebrews", hebreos: "hebrews",
+          james: "james", santiago: "james", "1 peter": "1peter", "2 peter": "2peter", "1 pedro": "1peter", "2 pedro": "2peter",
+          "1 john": "1john", "2 john": "2john", "3 john": "3john", "1 juan": "1john", "2 juan": "2john", "3 juan": "3john",
+          jude: "jude", judas: "jude", revelation: "revelation", apocalypse: "revelation", apocalipsis: "revelation"
+        };
+        BOOKS.genesis_es = BOOKS.genesis;
+        const BOOK_KEYS = Object.keys(BOOKS).filter((key) => key !== "genesis_es").sort((a, b) => b.length - a.length);
+
+        function sourceLabel(anchor) {
+          const own = anchor.textContent.trim();
+          if (/catechism|catecismo|\bccc\b|\d{1,3}\s*:\s*\d{1,3}/i.test(own)) return own;
+          let node = anchor.parentElement;
+          while (node && node !== document.body) {
+            const button = node.querySelector("button");
+            if (button) {
+              const span = button.querySelector("span");
+              if (span?.textContent) return span.textContent.trim();
+            }
+            node = node.parentElement;
+          }
+          return own;
+        }
+
+        function exactBibleUrl(label) {
+          const match = String(label || "").match(/^(.*?)(\d{1,3})\s*:\s*(\d{1,3})/);
+          if (!match) return null;
+          const bookText = normalize(match[1]);
+          const key = BOOK_KEYS.find((candidate) => bookText === candidate || bookText.endsWith(` ${candidate}`));
+          if (!key) return null;
+          return `https://bible.usccb.org/bible/${BOOKS[key]}/${Number(match[2])}?${Number(match[3])}`;
+        }
+
+        function exactCatechismUrl(label) {
+          if (!/catechism|catecismo|\bccc\b/i.test(String(label || ""))) return null;
+          const match = String(label || "").match(/(?:§{1,2}\s*)?(\d{1,4})/);
+          if (!match) return null;
+          const paragraph = Number(match[1]);
+          if (paragraph < 1 || paragraph > 2865) return null;
+          return `/api/source?ccc=${paragraph}`;
+        }
+
+        document.addEventListener(
+          "click",
+          (event) => {
+            const anchor = event.target.closest?.("a");
+            if (!anchor) return;
+            let url;
+            try {
+              url = new URL(anchor.href, window.location.origin);
+            } catch {
+              return;
+            }
+
+            const genericBible = url.hostname === "bible.usccb.org" && url.pathname.replace(/\/$/, "") === "/bible";
+            const genericCatechism =
+              url.hostname.endsWith("vatican.va") && /\/archive\/ENG0015\/_INDEX\.HTM$/i.test(url.pathname);
+            if (!genericBible && !genericCatechism) return;
+
+            const label = sourceLabel(anchor);
+            const exact = genericBible ? exactBibleUrl(label) : exactCatechismUrl(label);
+            if (exact) anchor.href = exact;
+          },
+          true
+        );
+      })();
+    </script>
   </body>
 </html>
