@@ -16,6 +16,9 @@ import {
   Users,
   Compass,
   ArrowRight,
+  Accessibility,
+  Minus,
+  Plus,
 } from "lucide-react";
 
 const AUDIENCES = ["Middle School", "High School", "College", "Adult"];
@@ -65,6 +68,30 @@ const THEMES = {
   },
 };
 
+const FONT_SCALES = [0.9, 1, 1.15];
+const THEME_STORAGE_KEY = "restless-theme";
+const FONT_SCALE_STORAGE_KEY = "restless-font-scale";
+
+function readStoredMode() {
+  if (typeof window === "undefined") return "dark";
+  try {
+    const storedMode = window.localStorage.getItem(THEME_STORAGE_KEY);
+    return storedMode === "light" || storedMode === "dark" ? storedMode : "dark";
+  } catch {
+    return "dark";
+  }
+}
+
+function readStoredFontScale() {
+  if (typeof window === "undefined") return 1;
+  try {
+    const storedScale = Number(window.localStorage.getItem(FONT_SCALE_STORAGE_KEY));
+    return FONT_SCALES.includes(storedScale) ? storedScale : 1;
+  } catch {
+    return 1;
+  }
+}
+
 const STRINGS = {
   en: {
     tagline: "Modern questions. Timeless truth.",
@@ -88,10 +115,10 @@ const STRINGS = {
     studentBody:
       "Get a clear answer grounded in Catholic teaching, then use Go Deeper to verify it and make it your own.",
     starterQuestions: [
-      "Why do Catholics believe the Eucharist is really Jesus?",
-      "Is praying to saints the same as worshiping them?",
-      "Why do Catholics believe Peter was the first Pope?",
-      "Why do Catholics baptize babies?",
+      "Is Jesus really in the Eucharist?",
+      "Do Catholics pray to saints?",
+      "Was Peter the first pope?",
+      "Why baptize babies?",
     ],
     startersLabel: "Try a question",
     placeholder: "Ask a question about faith, Scripture, morality, or the Church…",
@@ -109,6 +136,14 @@ const STRINGS = {
     siteShareCopied: "Link copied",
     siteShareFailed: "Copy failed",
     siteShareText: "Check out Restless.faith — clear Catholic answers for modern questions.",
+    accessibilityLabel: "Accessibility",
+    accessibilityTitle: "Display settings",
+    textSizeLabel: "Text size",
+    smallerText: "Smaller text",
+    defaultText: "Default text",
+    largerText: "Larger text",
+    lightMode: "Use light mode",
+    darkMode: "Use dark mode",
     readFullText: "Read source ↗",
     aboutLabel: "About",
     contactLabel: "Contact",
@@ -165,10 +200,10 @@ const STRINGS = {
     studentBody:
       "Recibe una respuesta clara basada en la enseñanza católica y usa Profundiza para verificarla y hacerla tuya.",
     starterQuestions: [
-      "¿Por qué creen los católicos que la Eucaristía es realmente Jesús?",
-      "¿Rezar a los santos es lo mismo que adorarlos?",
-      "¿Por qué creen los católicos que Pedro fue el primer Papa?",
-      "¿Por qué bautizan los católicos a los bebés?",
+      "¿Está Jesús realmente en la Eucaristía?",
+      "¿Rezan los católicos a los santos?",
+      "¿Fue Pedro el primer Papa?",
+      "¿Por qué bautizar a los bebés?",
     ],
     startersLabel: "Prueba una pregunta",
     placeholder: "Pregunta sobre la fe, la Escritura, la moral o la Iglesia…",
@@ -186,6 +221,14 @@ const STRINGS = {
     siteShareCopied: "Enlace copiado",
     siteShareFailed: "No se pudo copiar",
     siteShareText: "Conoce Restless.faith — respuestas católicas claras para preguntas actuales.",
+    accessibilityLabel: "Accesibilidad",
+    accessibilityTitle: "Ajustes de pantalla",
+    textSizeLabel: "Tamaño del texto",
+    smallerText: "Texto más pequeño",
+    defaultText: "Texto predeterminado",
+    largerText: "Texto más grande",
+    lightMode: "Usar modo claro",
+    darkMode: "Usar modo oscuro",
     readFullText: "Leer fuente ↗",
     aboutLabel: "Acerca de",
     contactLabel: "Contacto",
@@ -803,6 +846,131 @@ function InfoModal({ title, body, cta, theme, strings, onClose }) {
   );
 }
 
+function AccessibilityControls({ fontScale, setFontScale, mode, setMode, theme, strings }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const panelRef = useRef(null);
+  const triggerRef = useRef(null);
+  const fontSizeLabels = [strings.smallerText, strings.defaultText, strings.largerText];
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (!panelRef.current?.contains(event.target) && !triggerRef.current?.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
+
+  return (
+    <div className="relative ml-auto">
+      {isOpen ? (
+        <div
+          id="display-settings-panel"
+          ref={panelRef}
+          role="dialog"
+          aria-label={strings.accessibilityTitle}
+          className="absolute right-0 bottom-full mb-2 w-64 rounded-2xl p-4"
+          style={{
+            backgroundColor: theme.cardBg,
+            border: `1px solid ${theme.border}`,
+            boxShadow: "0 18px 48px rgba(0,0,0,0.28)",
+            zIndex: 40,
+          }}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <h2 style={{ color: theme.text, fontSize: "15px", fontWeight: 700 }}>
+              {strings.accessibilityTitle}
+            </h2>
+            <button
+              onClick={() => setIsOpen(false)}
+              aria-label={strings.closeLabel}
+              autoFocus
+              className="w-8 h-8 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: theme.toggleInactiveBg }}
+            >
+              <X className="w-4 h-4" style={{ color: theme.subtext }} />
+            </button>
+          </div>
+
+          <p className="mt-3 mb-2" style={{ color: theme.subtext, fontSize: "12px", fontWeight: 700 }}>
+            {strings.textSizeLabel}
+          </p>
+          <div className="grid grid-cols-3 gap-2" role="group" aria-label={strings.textSizeLabel}>
+            {FONT_SCALES.map((scale, index) => {
+              const isSelected = scale === fontScale;
+              return (
+                <button
+                  key={scale}
+                  onClick={() => setFontScale(scale)}
+                  aria-label={fontSizeLabels[index]}
+                  aria-pressed={isSelected}
+                  className="h-10 rounded-xl flex items-center justify-center"
+                  style={{
+                    backgroundColor: isSelected ? theme.accent : theme.toggleInactiveBg,
+                    color: isSelected ? theme.accentText : theme.subtext,
+                    border: `1px solid ${isSelected ? theme.accent : theme.border}`,
+                    fontSize: `${12 + index * 3}px`,
+                    fontWeight: 800,
+                  }}
+                >
+                  {index === 0 ? <Minus className="w-3 h-3 mr-0.5" /> : null}
+                  A
+                  {index === 2 ? <Plus className="w-3 h-3 ml-0.5" /> : null}
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            onClick={() => setMode(mode === "dark" ? "light" : "dark")}
+            className="mt-3 w-full h-10 rounded-xl px-3 flex items-center justify-center gap-2"
+            style={{ backgroundColor: theme.toggleInactiveBg, color: theme.text, fontSize: "13px", fontWeight: 700 }}
+          >
+            {mode === "dark" ? (
+              <Sun className="w-4 h-4" style={{ color: theme.accent }} />
+            ) : (
+              <Moon className="w-4 h-4" style={{ color: theme.accent }} />
+            )}
+            {mode === "dark" ? strings.lightMode : strings.darkMode}
+          </button>
+        </div>
+      ) : null}
+
+      <button
+        ref={triggerRef}
+        onClick={() => setIsOpen((value) => !value)}
+        aria-label={strings.accessibilityLabel}
+        aria-expanded={isOpen}
+        aria-controls="display-settings-panel"
+        className="h-8 rounded-full px-3 inline-flex items-center gap-1.5"
+        style={{
+          backgroundColor: isOpen ? theme.elevated : theme.toggleInactiveBg,
+          color: isOpen ? theme.accent : theme.subtext,
+          fontSize: "12px",
+          fontWeight: 700,
+        }}
+      >
+        <Accessibility className="w-3.5 h-3.5" />
+        {strings.accessibilityLabel}
+      </button>
+    </div>
+  );
+}
+
 function WelcomePanel({ theme, strings, chooseStarter }) {
   return (
     <section
@@ -905,7 +1073,8 @@ export default function Restless() {
   const [input, setInput] = useState("");
   const [ageBand, setAgeBand] = useState("High School");
   const [isTyping, setIsTyping] = useState(false);
-  const [mode, setMode] = useState("dark");
+  const [mode, setMode] = useState(readStoredMode);
+  const [fontScale, setFontScale] = useState(readStoredFontScale);
   const [error, setError] = useState(null);
   const [activeModal, setActiveModal] = useState(null);
   const [growthMode, setGrowthMode] = useState(true);
@@ -934,6 +1103,22 @@ export default function Restless() {
     document.body.style.overflowX = "hidden";
     document.body.style.margin = "0";
   }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, mode);
+    } catch {
+      // The preference still works for this visit if storage is unavailable.
+    }
+  }, [mode]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(FONT_SCALE_STORAGE_KEY, String(fontScale));
+    } catch {
+      // The preference still works for this visit if storage is unavailable.
+    }
+  }, [fontScale]);
 
   const handleLanguageToggle = () => {
     const next = language === "en" ? "es" : "en";
@@ -1031,7 +1216,12 @@ export default function Restless() {
       className="flex flex-col overflow-x-hidden"
       style={{
         position: "fixed",
-        inset: 0,
+        top: 0,
+        left: 0,
+        width: `${100 / fontScale}%`,
+        height: `${100 / fontScale}%`,
+        transform: `scale(${fontScale})`,
+        transformOrigin: "top left",
         backgroundColor: theme.bg,
         fontFamily: 'Arial, Helvetica, "Helvetica Neue", sans-serif',
         overscrollBehaviorX: "none",
@@ -1086,18 +1276,6 @@ export default function Restless() {
                 {language === "en" ? "ES" : "EN"}
               </button>
 
-              <button
-                onClick={() => setMode(mode === "dark" ? "light" : "dark")}
-                className="w-9 h-9 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: theme.toggleInactiveBg }}
-                aria-label="Toggle light and dark mode"
-              >
-                {mode === "dark" ? (
-                  <Sun className="w-4 h-4" style={{ color: theme.accent }} />
-                ) : (
-                  <Moon className="w-4 h-4" style={{ color: theme.accent }} />
-                )}
-              </button>
             </div>
           </div>
 
@@ -1264,6 +1442,14 @@ export default function Restless() {
                   ? strings.siteShareCopied
                   : strings.siteShareLabel}
             </button>
+            <AccessibilityControls
+              fontScale={fontScale}
+              setFontScale={setFontScale}
+              mode={mode}
+              setMode={setMode}
+              theme={theme}
+              strings={strings}
+            />
           </div>
         </div>
       </footer>
