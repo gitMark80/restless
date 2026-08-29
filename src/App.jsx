@@ -88,10 +88,10 @@ const STRINGS = {
     studentBody:
       "Get a clear answer grounded in Catholic teaching, then use Go Deeper to verify it and make it your own.",
     starterQuestions: [
-      "Why was the Arian heresy wrong?",
-      "How do Catholics know Jesus is God?",
-      "What is the Eucharist?",
-      "Why do Catholics pray to saints?",
+      "Why do Catholics believe the Eucharist is really Jesus?",
+      "Is praying to saints the same as worshiping them?",
+      "Why do Catholics believe Peter was the first Pope?",
+      "Why do Catholics baptize babies?",
     ],
     startersLabel: "Try a question",
     placeholder: "Ask a question about faith, Scripture, morality, or the Church…",
@@ -165,10 +165,10 @@ const STRINGS = {
     studentBody:
       "Recibe una respuesta clara basada en la enseñanza católica y usa Profundiza para verificarla y hacerla tuya.",
     starterQuestions: [
-      "¿Por qué estaba equivocada la herejía arriana?",
-      "¿Cómo saben los católicos que Jesús es Dios?",
-      "¿Qué es la Eucaristía?",
-      "¿Por qué rezan los católicos a los santos?",
+      "¿Por qué creen los católicos que la Eucaristía es realmente Jesús?",
+      "¿Rezar a los santos es lo mismo que adorarlos?",
+      "¿Por qué creen los católicos que Pedro fue el primer Papa?",
+      "¿Por qué bautizan los católicos a los bebés?",
     ],
     startersLabel: "Prueba una pregunta",
     placeholder: "Pregunta sobre la fe, la Escritura, la moral o la Iglesia…",
