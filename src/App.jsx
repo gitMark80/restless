@@ -1123,9 +1123,7 @@ export default function Restless() {
   const handleLanguageToggle = () => {
     const next = language === "en" ? "es" : "en";
     setLanguage(next);
-    setMessages(SEED_MESSAGES[next]);
     setError(null);
-    setInput("");
   };
 
   const handleSend = async () => {
