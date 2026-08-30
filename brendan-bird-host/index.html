@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#70c7e8" />
+  <title>Brendan Bird</title>
+  <style>
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;height:100%;overflow:hidden;background:#65c7e8;font-family:ui-rounded,"SF Pro Rounded",system-ui,-apple-system,Segoe UI,sans-serif;touch-action:none}
+    #wrap{position:fixed;inset:0;display:grid;place-items:center;background:linear-gradient(#68c8ea 0 62%,#18a9c2 62% 100%)}
+    canvas{display:block;width:100vw;height:100vh;max-width:520px;box-shadow:0 0 40px #0a648655;background:#74d2ef}
+    .hud{position:fixed;inset:0;pointer-events:none;display:flex;justify-content:center}
+    .topbar{width:min(100vw,520px);padding:max(14px,env(safe-area-inset-top)) 16px 0;display:flex;justify-content:space-between;align-items:flex-start;color:white;text-shadow:0 3px 0 #1b6f87;font-weight:900;font-size:18px}
+    .score{font-size:42px;line-height:1}
+    .pill{background:#0b6d8799;border:2px solid #ffffff99;border-radius:999px;padding:7px 11px;backdrop-filter:blur(5px)}
+    .overlay{position:fixed;inset:0;display:grid;place-items:center;padding:22px;pointer-events:none}
+    .card{pointer-events:auto;width:min(90vw,390px);background:#fffdf2eF;border:4px solid #174e63;border-radius:28px;padding:22px;text-align:center;box-shadow:0 14px 0 #174e63,0 24px 50px #0b536766;color:#153e4e}
+    h1{font-size:46px;line-height:.9;margin:0 0 10px;letter-spacing:-2px;color:#e15f45;text-shadow:0 3px 0 #ffd268}
+    .sub{font-weight:800;margin:0 0 15px;font-size:16px}
+    .btns{display:grid;gap:10px;margin-top:14px}
+    button{appearance:none;border:0;border-radius:16px;padding:13px 14px;font:900 18px inherit;cursor:pointer;color:white;background:#e15f45;box-shadow:0 5px 0 #9d3b2b}
+    button:active{transform:translateY(3px);box-shadow:0 2px 0 #9d3b2b}
+    button.secondary{background:#1d9abb;box-shadow:0 5px 0 #126d85}
+    .tiny{font-size:13px;opacity:.8;margin-top:12px;font-weight:700}
+    .hidden{display:none}
+  </style>
+</head>
+<body>
+<div id="wrap"><canvas id="game"></canvas></div>
+<div class="hud"><div class="topbar"><div class="pill">🏆 <span id="best">0</span></div><div class="score" id="score">0</div><div class="pill" id="skinLabel">SEAGULL</div></div></div>
+<div class="overlay" id="overlay">
+  <div class="card">
+    <h1>BRENDAN<br>BIRD</h1>
+    <p class="sub" id="message">Tap to flap through the harbor and dodge the boat traffic!</p>
+    <div class="btns">
+      <button id="play">PLAY</button>
+      <button class="secondary" id="skin">SWITCH TO BROWN BIRD</button>
+    </div>
+    <div class="tiny">Tap anywhere or press SPACE to flap • Best score saves on this device</div>
+  </div>
+</div>
+<script>
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const overlay = document.getElementById('overlay');
+  const playBtn = document.getElementById('play');
+  const skinBtn = document.getElementById('skin');
+  const message = document.getElementById('message');
+  const scoreEl = document.getElementById('score');
+  const bestEl = document.getElementById('best');
+  const skinLabel = document.getElementById('skinLabel');
+
+  let W=390,H=844,dpr=1;
+  let running=false, started=false, last=0, score=0, best=+(localStorage.getItem('brendanBirdBest')||0);
+  let skin=localStorage.getItem('brendanBirdSkin')||'seagull';
+  let bird, obstacles=[], bubbles=[], clouds=[], spawnTimer=0, speed=190;
+
+  bestEl.textContent=best;
+  syncSkinUI();
+
+  function resize(){
+    const maxW=520;
+    const cssW=Math.min(innerWidth,maxW), cssH=innerHeight;
+    dpr=Math.min(devicePixelRatio||1,2);
+    canvas.width=Math.round(cssW*dpr); canvas.height=Math.round(cssH*dpr);
+    canvas.style.width=cssW+'px'; canvas.style.height=cssH+'px';
+    W=cssW; H=cssH; ctx.setTransform(dpr,0,0,dpr,0,0);
+    makeClouds();
+  }
+  addEventListener('resize',resize,{passive:true}); resize();
+
+  function makeClouds(){
+    clouds=Array.from({length:7},(_,i)=>({x:(i/7)*W+Math.random()*70,y:50+Math.random()*H*.42,s:20+Math.random()*28,v:8+Math.random()*10}));
+  }
+
+  function reset(){
+    score=0; speed=190; spawnTimer=0; obstacles=[]; bubbles=[];
+    bird={x:W*.27,y:H*.38,vy:0,r:18,rot:0,wing:0};
+    scoreEl.textContent='0';
+    running=true; started=false; overlay.classList.add('hidden');
+  }
+
+  function startGame(){ reset(); setTimeout(()=>flap(),80); }
+  playBtn.addEventListener('click',startGame);
+  skinBtn.addEventListener('click',()=>{skin=skin==='seagull'?'brown':'seagull';localStorage.setItem('brendanBirdSkin',skin);syncSkinUI();});
+  function syncSkinUI(){
+    skinLabel.textContent=skin==='seagull'?'SEAGULL':'BROWN BIRD';
+    skinBtn.textContent=skin==='seagull'?'SWITCH TO BROWN BIRD':'SWITCH TO SEAGULL';
+  }
+
+  function flap(){
+    if(!running) return;
+    started=true; bird.vy=-360; bird.wing=1;
+    tone(520,.035,.025);
+  }
+  function input(e){
+    if(e?.target?.tagName==='BUTTON') return;
+    if(running){ e?.preventDefault?.(); flap(); }
+  }
+  addEventListener('pointerdown',input,{passive:false});
+  addEventListener('keydown',e=>{ if(e.code==='Space'){e.preventDefault(); if(running) flap(); else startGame();}});
+
+  let audioCtx;
+  function tone(freq,dur,vol){
+    try{audioCtx ||= new (AudioContext||webkitAudioContext)(); const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='triangle';o.frequency.value=freq;g.gain.setValueAtTime(vol,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);o.connect(g).connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+dur)}catch{}
+  }
+
+  function spawnObstacle(){
+    const types=['speed','sail','fishing'];
+    const type=types[Math.floor(Math.random()*types.length)];
+    const dir=Math.random()<.28?-1:1;
+    const h=type==='sail'?142:type==='fishing'?92:62;
+    const w=type==='sail'?96:type==='fishing'?112:105;
+    const waterTop=H*.64;
+    const x=dir===1?W+80:-w-80;
+    const vx=(dir===1?-speed:speed*.8);
+    obstacles.push({x,y:waterTop-h*.25,w,h,type,vx,passed:false,bob:Math.random()*6.28});
+  }
+
+  function collide(b,o){
+    const pad=5, bx=b.x-pad, by=b.y-pad, br=b.r-pad;
+    let rx=o.x+8, rw=o.w-16, top;
+    if(o.type==='sail') top=o.y-o.h*.72;
+    else if(o.type==='fishing') top=o.y-o.h*.35;
+    else top=o.y-o.h*.12;
+    const bottom=H*.79;
+    const cx=Math.max(rx,Math.min(bx,rx+rw));
+    const cy=Math.max(top,Math.min(by, bottom));
+    return (bx-cx)*(bx-cx)+(by-cy)*(by-cy) < br*br;
+  }
+
+  function gameOver(){
+    running=false; tone(120,.18,.05);
+    if(score>best){best=score;localStorage.setItem('brendanBirdBest',best);bestEl.textContent=best;message.textContent=`New best: ${score}! Brendan Bird owns the harbor.`;}
+    else message.textContent=`Score: ${score}. Tap PLAY and take another flight!`;
+    playBtn.textContent='PLAY AGAIN'; overlay.classList.remove('hidden');
+  }
+
+  function update(dt){
+    for(const c of clouds){c.x-=c.v*dt;if(c.x<-80)c.x=W+80;}
+    if(!running) return;
+    if(started){
+      bird.vy += 1040*dt; bird.y += bird.vy*dt; bird.rot=Math.max(-.45,Math.min(1.15,bird.vy/520)); bird.wing=Math.max(0,bird.wing-dt*4);
+    }
+    spawnTimer-=dt;
+    if(spawnTimer<=0){spawnObstacle(); spawnTimer=Math.max(.82,1.5-score*.012)+Math.random()*.45;}
+    speed=Math.min(320,190+score*3.2);
+    for(const o of obstacles){
+      o.x+=o.vx*dt*(speed/190); o.bob+=dt*2.8;
+      if(!o.passed && ((o.vx<0 && o.x+o.w<bird.x)||(o.vx>0 && o.x>bird.x))){o.passed=true;score++;scoreEl.textContent=score;tone(780,.05,.03);}
+      if(collide(bird,o)) gameOver();
+    }
+    obstacles=obstacles.filter(o=>o.x>-220&&o.x<W+220);
+    if(bird.y<-25 || bird.y>H*.82) gameOver();
+    if(Math.random()<dt*8)bubbles.push({x:Math.random()*W,y:H*.87+Math.random()*H*.1,r:1+Math.random()*3,v:12+Math.random()*24});
+    for(const b of bubbles)b.y-=b.v*dt;
+    bubbles=bubbles.filter(b=>b.y>H*.62);
+  }
+
+  function drawCloud(c){
+    ctx.fillStyle='#fff';ctx.globalAlpha=.82;ctx.beginPath();ctx.arc(c.x,c.y,c.s*.55,0,7);ctx.arc(c.x+c.s*.55,c.y-5,c.s*.7,0,7);ctx.arc(c.x+c.s*1.1,c.y,c.s*.5,0,7);ctx.fill();ctx.globalAlpha=1;
+  }
+  function drawBackground(t){
+    const water=H*.64;
+    const sky=ctx.createLinearGradient(0,0,0,water);sky.addColorStop(0,'#65c6e9');sky.addColorStop(1,'#d6f6ff');ctx.fillStyle=sky;ctx.fillRect(0,0,W,water);
+    clouds.forEach(drawCloud);
+    ctx.fillStyle='#0c91b3';ctx.fillRect(0,water,W,H-water);
+    ctx.fillStyle='#32bdd4';for(let y=water+18;y<H;y+=28){for(let x=-40;x<W+40;x+=72){const ox=((t*.025+y*.7)%72);ctx.fillRect(x+ox,y,36,3)}}
+    ctx.fillStyle='#d6ae65';ctx.fillRect(0,H*.84,W,H*.16);
+    ctx.fillStyle='#edd28e';ctx.fillRect(0,H*.84,W,8);
+    for(const b of bubbles){ctx.strokeStyle='#bdf6ff99';ctx.lineWidth=1;ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,7);ctx.stroke();}
+    ctx.fillStyle='#166b6888';
+    for(let x=0;x<W;x+=56){ctx.beginPath();ctx.moveTo(x,water);ctx.lineTo(x+22,water-12-(x%3)*3);ctx.lineTo(x+50,water);ctx.fill();}
+  }
+
+  function drawBoat(o){
+    const bob=Math.sin(o.bob)*3; const x=o.x,y=o.y+bob,w=o.w,h=o.h;
+    ctx.save(); if(o.vx>0){ctx.translate(x+w/2,0);ctx.scale(-1,1);ctx.translate(-(x+w/2),0)}
+    ctx.fillStyle='#153e50';ctx.beginPath();ctx.moveTo(x+4,y);ctx.lineTo(x+w-4,y);ctx.lineTo(x+w-22,y+28);ctx.lineTo(x+20,y+28);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#f6f2df';ctx.fillRect(x+w*.34,y-18,w*.36,18);
+    if(o.type==='speed'){
+      ctx.fillStyle='#e65643';ctx.fillRect(x+16,y-5,w*.65,6);ctx.fillStyle='#9de8f5';ctx.fillRect(x+w*.42,y-15,w*.2,9);
+    } else if(o.type==='fishing'){
+      ctx.fillStyle='#e8c75d';ctx.fillRect(x+w*.28,y-24,w*.28,7);ctx.strokeStyle='#49372a';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(x+w*.47,y-24);ctx.lineTo(x+w*.47,y-h*.62);ctx.stroke();ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x+w*.47,y-h*.55);ctx.lineTo(x+w*.82,y-18);ctx.stroke();
+    } else {
+      ctx.strokeStyle='#4b3f35';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(x+w*.5,y-8);ctx.lineTo(x+w*.5,y-h*.88);ctx.stroke();
+      ctx.fillStyle='#fff8e8';ctx.beginPath();ctx.moveTo(x+w*.52,y-h*.82);ctx.lineTo(x+w*.52,y-18);ctx.lineTo(x+w*.92,y-18);ctx.closePath();ctx.fill();
+      ctx.fillStyle='#e9654c';ctx.beginPath();ctx.moveTo(x+w*.48,y-h*.76);ctx.lineTo(x+w*.48,y-20);ctx.lineTo(x+w*.18,y-20);ctx.closePath();ctx.fill();
+    }
+    ctx.strokeStyle='#d8fbff';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x-20,y+24);ctx.quadraticCurveTo(x-5,y+12,x+16,y+25);ctx.stroke();ctx.restore();
+  }
+
+  function drawBird(){
+    const b=bird||{x:W*.27,y:H*.38,rot:0,wing:0};ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.rot||0);
+    if(skin==='seagull'){
+      ctx.fillStyle='#f7f5ec';ctx.beginPath();ctx.ellipse(0,0,22,15,0,0,7);ctx.fill();
+      ctx.fillStyle='#dfe4e4';ctx.beginPath();ctx.ellipse(-4,5,18,7,-.35,0,7);ctx.fill();
+      ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(15,-8,10,0,7);ctx.fill();
+      ctx.fillStyle='#222';ctx.beginPath();ctx.arc(18,-10,2.2,0,7);ctx.fill();
+      ctx.fillStyle='#f2ae32';ctx.beginPath();ctx.moveTo(24,-8);ctx.lineTo(36,-4);ctx.lineTo(24,-1);ctx.closePath();ctx.fill();
+      ctx.strokeStyle='#253b43';ctx.lineWidth=4;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(-7,3);ctx.lineTo(-23, -4-(b.wing||0)*10);ctx.stroke();
+    } else {
+      ctx.fillStyle='#8f5b35';ctx.beginPath();ctx.ellipse(0,0,21,16,0,0,7);ctx.fill();
+      ctx.fillStyle='#a96f43';ctx.beginPath();ctx.arc(14,-8,10,0,7);ctx.fill();
+      ctx.fillStyle='#5e3a22';ctx.beginPath();ctx.ellipse(-8,4,14,7,-.3,0,7);ctx.fill();
+      ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(18,-10,4,0,7);ctx.fill();ctx.fillStyle='#111';ctx.beginPath();ctx.arc(19,-10,2,0,7);ctx.fill();
+      ctx.fillStyle='#e0a326';ctx.beginPath();ctx.moveTo(24,-8);ctx.lineTo(34,-4);ctx.lineTo(24,-1);ctx.closePath();ctx.fill();
+      ctx.strokeStyle='#5e3a22';ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(-8,4);ctx.lineTo(-24,-4-(b.wing||0)*10);ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function draw(t){
+    ctx.clearRect(0,0,W,H);drawBackground(t);obstacles.forEach(drawBoat);drawBird();
+    if(running&&!started){ctx.fillStyle='#174e63aa';ctx.font='900 18px system-ui';ctx.textAlign='center';ctx.fillText('TAP TO FLAP',W/2,H*.52)}
+  }
+
+  function loop(t){const dt=Math.min(.035,(t-last)/1000||0);last=t;update(dt);draw(t);requestAnimationFrame(loop)}
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
