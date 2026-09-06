@@ -14,9 +14,6 @@ import {
   RefreshCcw,
   Lightbulb,
   Users,
-  Compass,
-  ArrowRight,
-  Accessibility,
   Minus,
   Plus,
 } from "lucide-react";
@@ -113,7 +110,7 @@ const STRINGS = {
     audienceLabel: "Answer level",
     studentTitle: "Studying theology? Ask anything.",
     studentBody:
-      "Get a clear answer grounded in Catholic teaching, then use Go Deeper to verify it and make it your own.",
+      "Get a clear answer grounded in Catholic teaching, then open the sources to verify it and make it your own.",
     starterQuestions: [
       "Is Jesus really in the Eucharist?",
       "Do Catholics pray to saints?",
@@ -136,8 +133,8 @@ const STRINGS = {
     siteShareCopied: "Link copied",
     siteShareFailed: "Copy failed",
     siteShareText: "Check out Restless.faith — clear Catholic answers for modern questions.",
-    accessibilityLabel: "Accessibility",
-    accessibilityTitle: "Display settings",
+    accessibilityLabel: "Text size",
+    accessibilityTitle: "Text size",
     textSizeLabel: "Text size",
     smallerText: "Smaller text",
     defaultText: "Default text",
@@ -161,22 +158,6 @@ const STRINGS = {
       "Restless.faith exists to help people bring questions about faith, doubt, and meaning into conversation with the Catholic tradition — free for anyone who needs it.\n\nIf Restless has helped you, you can support the cost of keeping it available.\n\nRestless.faith is an independent project, not a registered nonprofit. Contributions are not tax-deductible.",
     supportButtonLabel: "Support Restless →",
     supportUrl: "https://donate.stripe.com/00wbJ191k25t9cO5RK0Jq00",
-    growthModeOn: "Go Deeper on",
-    growthModeOff: "Go Deeper off",
-    growthTitle: "Go deeper",
-    growthSubtitle: "Don't just take the AI's word for it.",
-    readTitle: "1. Verify it",
-    readBody: "Open the sources and see the teaching in context.",
-    thinkTitle: "2. Think without AI",
-    thinkBody: "Explain the answer in your own words before asking another question.",
-    thinkPrompt: "In my own words…",
-    talkTitle: "3. Bring it to a person",
-    talkBody:
-      "For something important, ask a parent, teacher, priest, sponsor, youth minister, or trusted mentor what this looks like in real life.",
-    saveReflection: "Keep reflection",
-    reflectionSaved: "Saved on this screen",
-    newQuestion: "Ask a follow-up",
-    sourceFallback: "Open the cited source above.",
   },
   es: {
     tagline: "Preguntas modernas. Verdad eterna.",
@@ -198,7 +179,7 @@ const STRINGS = {
     audienceLabel: "Nivel de respuesta",
     studentTitle: "¿Estudias teología? Pregunta lo que quieras.",
     studentBody:
-      "Recibe una respuesta clara basada en la enseñanza católica y usa Profundiza para verificarla y hacerla tuya.",
+      "Recibe una respuesta clara basada en la enseñanza católica, abre las fuentes para verificarla y hazla tuya.",
     starterQuestions: [
       "¿Está Jesús realmente en la Eucaristía?",
       "¿Rezan los católicos a los santos?",
@@ -221,8 +202,8 @@ const STRINGS = {
     siteShareCopied: "Enlace copiado",
     siteShareFailed: "No se pudo copiar",
     siteShareText: "Conoce Restless.faith — respuestas católicas claras para preguntas actuales.",
-    accessibilityLabel: "Accesibilidad",
-    accessibilityTitle: "Ajustes de pantalla",
+    accessibilityLabel: "Tamaño del texto",
+    accessibilityTitle: "Tamaño del texto",
     textSizeLabel: "Tamaño del texto",
     smallerText: "Texto más pequeño",
     defaultText: "Texto predeterminado",
@@ -246,22 +227,6 @@ const STRINGS = {
       "Restless.faith existe para ayudar a las personas a llevar preguntas sobre la fe, la duda y el sentido de la vida a un diálogo con la tradición católica — gratis para quien lo necesite.\n\nSi Restless te ha ayudado, puedes apoyar el costo de mantenerlo disponible.\n\nRestless.faith es un proyecto independiente, no una organización sin fines de lucro registrada. Las contribuciones no son deducibles de impuestos.",
     supportButtonLabel: "Apoyar Restless →",
     supportUrl: "https://donate.stripe.com/00wbJ191k25t9cO5RK0Jq00",
-    growthModeOn: "Profundiza activado",
-    growthModeOff: "Profundiza desactivado",
-    growthTitle: "Profundiza",
-    growthSubtitle: "No aceptes algo solo porque lo dijo la IA.",
-    readTitle: "1. Verifícalo",
-    readBody: "Abre las fuentes y lee la enseñanza en contexto.",
-    thinkTitle: "2. Piensa sin IA",
-    thinkBody: "Explica la respuesta con tus propias palabras antes de hacer otra pregunta.",
-    thinkPrompt: "Con mis propias palabras…",
-    talkTitle: "3. Llévalo a una persona",
-    talkBody:
-      "Si es importante, háblalo con un padre, maestro, sacerdote, padrino, ministro juvenil o mentor de confianza.",
-    saveReflection: "Guardar reflexión",
-    reflectionSaved: "Guardado en esta pantalla",
-    newQuestion: "Haz una pregunta de seguimiento",
-    sourceFallback: "Abre la fuente citada arriba.",
   },
 };
 
@@ -603,136 +568,29 @@ function ShareButtons({ questionText, answerText, theme, strings }) {
   );
 }
 
-function GrowthGuide({ message, questionText, theme, strings, onFollowUp }) {
-  const [reflection, setReflection] = useState("");
-  const [saved, setSaved] = useState(false);
-  const firstSource = message.sources?.find((source) => source.url);
-
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1800);
-  };
-
+function NextStepAnchor({ questionText, theme }) {
   return (
-    <section
-      className="rounded-2xl overflow-hidden"
-      style={{
-        border: `1px solid ${theme.citationBorder}`,
-        background: `linear-gradient(145deg, ${theme.citationBg}, ${theme.cardBg})`,
-      }}
+    <span
+      hidden
+      data-restless-next-step-anchor="true"
+      data-question={questionText}
+      data-background={theme.citationBg}
+      data-border={theme.citationBorder}
+      data-text={theme.text}
+      data-subtext={theme.subtext}
+      data-accent={theme.accent}
     >
-      <div
-        className="px-4 py-4 flex items-start justify-between gap-3"
-        style={{ borderBottom: `1px solid ${theme.border}` }}
-      >
-        <div>
-          <div className="flex items-center gap-2">
-            <Compass className="w-4 h-4" style={{ color: theme.accent }} />
-            <h3 style={{ color: theme.text, fontSize: "17px", fontWeight: 700 }}>{strings.growthTitle}</h3>
-          </div>
-          <p className="mt-1" style={{ color: theme.subtext, fontSize: "14px" }}>
-            {strings.growthSubtitle}
-          </p>
-        </div>
-      </div>
-
-      <div className="grid sm:grid-cols-3">
-        <div className="p-4" style={{ borderBottom: `1px solid ${theme.border}` }}>
-          <div className="flex items-center gap-2">
-            <BookOpen className="w-4 h-4" style={{ color: theme.accent }} />
-            <h4 style={{ color: theme.text, fontSize: "15px", fontWeight: 700 }}>{strings.readTitle}</h4>
-          </div>
-          <p className="mt-2 leading-relaxed" style={{ color: theme.subtext, fontSize: "14px" }}>
-            {strings.readBody}
-          </p>
-          {firstSource ? (
-            <a
-              href={firstSource.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 mt-3"
-              style={{ color: theme.accent, fontSize: "13px", fontWeight: 700 }}
-            >
-              {firstSource.label}
-              <ArrowRight className="w-3.5 h-3.5" />
-            </a>
-          ) : (
-            <p className="mt-3" style={{ color: theme.muted, fontSize: "13px" }}>
-              {strings.sourceFallback}
-            </p>
-          )}
-        </div>
-
-        <div
-          className="p-4"
-          style={{ borderBottom: `1px solid ${theme.border}`, borderLeft: `1px solid ${theme.border}` }}
-        >
-          <div className="flex items-center gap-2">
-            <Lightbulb className="w-4 h-4" style={{ color: theme.accent }} />
-            <h4 style={{ color: theme.text, fontSize: "15px", fontWeight: 700 }}>{strings.thinkTitle}</h4>
-          </div>
-          <p className="mt-2 leading-relaxed" style={{ color: theme.subtext, fontSize: "14px" }}>
-            {strings.thinkBody}
-          </p>
-          <textarea
-            value={reflection}
-            onChange={(e) => setReflection(e.target.value)}
-            placeholder={strings.thinkPrompt}
-            rows={3}
-            maxLength={500}
-            className="mt-3 w-full resize-none rounded-xl px-3 py-2 focus:outline-none"
-            style={{
-              backgroundColor: theme.surface,
-              border: `1px solid ${theme.border}`,
-              color: theme.text,
-              fontSize: "14px",
-            }}
-          />
-          <button
-            onClick={handleSave}
-            disabled={!reflection.trim()}
-            className="mt-2"
-            style={{
-              color: reflection.trim() ? theme.accent : theme.muted,
-              fontSize: "12px",
-              fontWeight: 700,
-            }}
-          >
-            {saved ? strings.reflectionSaved : strings.saveReflection}
-          </button>
-        </div>
-
-        <div
-          className="p-4"
-          style={{ borderBottom: `1px solid ${theme.border}`, borderLeft: `1px solid ${theme.border}` }}
-        >
-          <div className="flex items-center gap-2">
-            <Users className="w-4 h-4" style={{ color: theme.accent }} />
-            <h4 style={{ color: theme.text, fontSize: "15px", fontWeight: 700 }}>{strings.talkTitle}</h4>
-          </div>
-          <p className="mt-2 leading-relaxed" style={{ color: theme.subtext, fontSize: "14px" }}>
-            {strings.talkBody}
-          </p>
-          <button
-            onClick={() => onFollowUp(questionText)}
-            className="inline-flex items-center gap-1 mt-3"
-            style={{ color: theme.accent, fontSize: "13px", fontWeight: 700 }}
-          >
-            {strings.newQuestion}
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
-    </section>
+      {theme.bg}
+    </span>
   );
 }
 
-function CompanionMessage({ message, questionText, theme, strings, growthMode, onFollowUp }) {
+function CompanionMessage({ message, questionText, theme, strings }) {
   const [openSources, setOpenSources] = useState({});
 
   return (
     <div className="flex justify-start min-w-0">
-      <div className="space-y-3 min-w-0 flex-1" style={{ maxWidth: "100%" }}>
+      <div className="space-y-4 min-w-0 flex-1" style={{ maxWidth: "100%" }}>
         <div
           className="rounded-2xl px-5 py-4"
           style={{
@@ -767,15 +625,7 @@ function CompanionMessage({ message, questionText, theme, strings, growthMode, o
               theme={theme}
               strings={strings}
             />
-            {growthMode && (
-              <GrowthGuide
-                message={message}
-                questionText={questionText}
-                theme={theme}
-                strings={strings}
-                onFollowUp={onFollowUp}
-              />
-            )}
+            <NextStepAnchor questionText={questionText} theme={theme} />
           </>
         )}
       </div>
@@ -846,7 +696,7 @@ function InfoModal({ title, body, cta, theme, strings, onClose }) {
   );
 }
 
-function AccessibilityControls({ fontScale, setFontScale, mode, setMode, theme, strings }) {
+function TextSizeControls({ fontScale, setFontScale, theme, strings }) {
   const [isOpen, setIsOpen] = useState(false);
   const panelRef = useRef(null);
   const triggerRef = useRef(null);
@@ -879,7 +729,7 @@ function AccessibilityControls({ fontScale, setFontScale, mode, setMode, theme, 
     <div className="relative ml-auto">
       {isOpen ? (
         <div
-          id="display-settings-panel"
+          id="text-size-panel"
           ref={panelRef}
           role="dialog"
           aria-label={strings.accessibilityTitle}
@@ -906,10 +756,7 @@ function AccessibilityControls({ fontScale, setFontScale, mode, setMode, theme, 
             </button>
           </div>
 
-          <p className="mt-3 mb-2" style={{ color: theme.subtext, fontSize: "12px", fontWeight: 700 }}>
-            {strings.textSizeLabel}
-          </p>
-          <div className="grid grid-cols-3 gap-2" role="group" aria-label={strings.textSizeLabel}>
+          <div className="grid grid-cols-3 gap-2 mt-3" role="group" aria-label={strings.textSizeLabel}>
             {FONT_SCALES.map((scale, index) => {
               const isSelected = scale === fontScale;
               return (
@@ -935,18 +782,6 @@ function AccessibilityControls({ fontScale, setFontScale, mode, setMode, theme, 
             })}
           </div>
 
-          <button
-            onClick={() => setMode(mode === "dark" ? "light" : "dark")}
-            className="mt-3 w-full h-10 rounded-xl px-3 flex items-center justify-center gap-2"
-            style={{ backgroundColor: theme.toggleInactiveBg, color: theme.text, fontSize: "13px", fontWeight: 700 }}
-          >
-            {mode === "dark" ? (
-              <Sun className="w-4 h-4" style={{ color: theme.accent }} />
-            ) : (
-              <Moon className="w-4 h-4" style={{ color: theme.accent }} />
-            )}
-            {mode === "dark" ? strings.lightMode : strings.darkMode}
-          </button>
         </div>
       ) : null}
 
@@ -955,7 +790,7 @@ function AccessibilityControls({ fontScale, setFontScale, mode, setMode, theme, 
         onClick={() => setIsOpen((value) => !value)}
         aria-label={strings.accessibilityLabel}
         aria-expanded={isOpen}
-        aria-controls="display-settings-panel"
+        aria-controls="text-size-panel"
         className="h-8 rounded-full px-3 inline-flex items-center gap-1.5"
         style={{
           backgroundColor: isOpen ? theme.elevated : theme.toggleInactiveBg,
@@ -964,8 +799,11 @@ function AccessibilityControls({ fontScale, setFontScale, mode, setMode, theme, 
           fontWeight: 700,
         }}
       >
-        <Accessibility className="w-3.5 h-3.5" />
-        {strings.accessibilityLabel}
+        <span className="inline-flex items-end gap-0.5" aria-hidden="true">
+          <span style={{ fontSize: "10px", lineHeight: 1 }}>A</span>
+          <span style={{ fontSize: "15px", lineHeight: 1 }}>A</span>
+        </span>
+        {strings.textSizeLabel}
       </button>
     </div>
   );
@@ -1077,7 +915,6 @@ export default function Restless() {
   const [fontScale, setFontScale] = useState(readStoredFontScale);
   const [error, setError] = useState(null);
   const [activeModal, setActiveModal] = useState(null);
-  const [growthMode, setGrowthMode] = useState(true);
   const [siteShareCopied, setSiteShareCopied] = useState(false);
   const [siteShareError, setSiteShareError] = useState(false);
 
@@ -1167,14 +1004,6 @@ export default function Restless() {
     requestAnimationFrame(() => document.querySelector("textarea[data-question-input]")?.focus());
   };
 
-  const handleFollowUp = (questionText) => {
-    const prompt =
-      language === "en"
-        ? `Help me go one level deeper on this: ${questionText}`
-        : `Ayúdame a profundizar un nivel más en esto: ${questionText}`;
-    chooseStarter(prompt);
-  };
-
   const handleSiteShare = async () => {
     const url = "https://restless.faith";
     if (navigator.share) {
@@ -1251,21 +1080,6 @@ export default function Restless() {
 
             <div className="flex items-center gap-2 shrink-0">
               <button
-                onClick={() => setGrowthMode((value) => !value)}
-                aria-pressed={growthMode}
-                className="hidden sm:flex h-9 px-3 rounded-full items-center gap-2"
-                style={{
-                  backgroundColor: growthMode ? theme.elevated : theme.toggleInactiveBg,
-                  color: growthMode ? theme.accent : theme.subtext,
-                  fontSize: "12px",
-                  fontWeight: 700,
-                }}
-              >
-                <Compass className="w-3.5 h-3.5" />
-                {growthMode ? strings.growthModeOn : strings.growthModeOff}
-              </button>
-
-              <button
                 onClick={handleLanguageToggle}
                 aria-label={strings.langToggleLabel}
                 className="h-9 px-3 rounded-full"
@@ -1274,46 +1088,39 @@ export default function Restless() {
                 {language === "en" ? "ES" : "EN"}
               </button>
 
+              <button
+                onClick={() => setMode(mode === "dark" ? "light" : "dark")}
+                aria-label={mode === "dark" ? strings.lightMode : strings.darkMode}
+                title={mode === "dark" ? strings.lightMode : strings.darkMode}
+                className="w-9 h-9 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: theme.toggleInactiveBg, color: theme.accent }}
+              >
+                {mode === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 
-          <div className="mt-3 flex items-center gap-2">
-            <p id="answer-level-label" className="shrink-0" style={{ color: theme.muted, fontSize: "11px", fontWeight: 700 }}>
-              {strings.audienceLabel}
-            </p>
-            <div role="group" aria-labelledby="answer-level-label" className="flex gap-1.5 overflow-x-auto pb-1">
-              {AUDIENCES.map((band) => (
-                <button
-                  key={band}
-                  onClick={() => setAgeBand(band)}
-                  aria-pressed={ageBand === band}
-                  className="px-3 py-1 rounded-full shrink-0"
-                  style={
-                    ageBand === band
-                      ? { backgroundColor: theme.accent, color: theme.accentText, fontSize: "12px", fontWeight: 700 }
-                      : { backgroundColor: theme.toggleInactiveBg, color: theme.subtext, fontSize: "12px" }
-                  }
-                >
-                  {strings.ageLabels[band]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <button
-            onClick={() => setGrowthMode((value) => !value)}
-            aria-pressed={growthMode}
-            className="sm:hidden mt-2 inline-flex h-8 px-3 rounded-full items-center gap-2"
-            style={{
-              backgroundColor: growthMode ? theme.elevated : theme.toggleInactiveBg,
-              color: growthMode ? theme.accent : theme.subtext,
-              fontSize: "11px",
-              fontWeight: 700,
-            }}
+          <div
+            role="group"
+            aria-label={strings.audienceLabel}
+            className="mt-3 flex gap-1.5 overflow-x-auto pb-1"
           >
-            <Compass className="w-3.5 h-3.5" />
-            {growthMode ? strings.growthModeOn : strings.growthModeOff}
-          </button>
+            {AUDIENCES.map((band) => (
+              <button
+                key={band}
+                onClick={() => setAgeBand(band)}
+                aria-pressed={ageBand === band}
+                className="px-3 py-1 rounded-full shrink-0"
+                style={
+                  ageBand === band
+                    ? { backgroundColor: theme.accent, color: theme.accentText, fontSize: "12px", fontWeight: 700 }
+                    : { backgroundColor: theme.toggleInactiveBg, color: theme.subtext, fontSize: "12px" }
+                }
+              >
+                {strings.ageLabels[band]}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 
@@ -1333,8 +1140,6 @@ export default function Restless() {
                   questionText={idx > 0 ? messages[idx - 1].text : null}
                   theme={theme}
                   strings={strings}
-                  growthMode={growthMode}
-                  onFollowUp={handleFollowUp}
                 />
               )}
             </div>
@@ -1440,11 +1245,9 @@ export default function Restless() {
                   ? strings.siteShareCopied
                   : strings.siteShareLabel}
             </button>
-            <AccessibilityControls
+            <TextSizeControls
               fontScale={fontScale}
               setFontScale={setFontScale}
-              mode={mode}
-              setMode={setMode}
               theme={theme}
               strings={strings}
             />
