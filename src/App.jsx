@@ -160,7 +160,7 @@ const STRINGS = {
     supportBody:
       "Restless.faith exists to help people bring questions about faith, doubt, and meaning into conversation with the Catholic tradition — free for anyone who needs it.\n\nIf Restless has helped you, you can support the cost of keeping it available.\n\nRestless.faith is an independent project, not a registered nonprofit. Contributions are not tax-deductible.",
     supportButtonLabel: "Support Restless →",
-    supportUrl: "https://buy.stripe.com/REPLACE_WITH_YOUR_PAYMENT_LINK",
+    supportUrl: "https://donate.stripe.com/00wbJ191k25t9cO5RK0Jq00",
     growthModeOn: "Go Deeper on",
     growthModeOff: "Go Deeper off",
     growthTitle: "Go deeper",
@@ -245,7 +245,7 @@ const STRINGS = {
     supportBody:
       "Restless.faith existe para ayudar a las personas a llevar preguntas sobre la fe, la duda y el sentido de la vida a un diálogo con la tradición católica — gratis para quien lo necesite.\n\nSi Restless te ha ayudado, puedes apoyar el costo de mantenerlo disponible.\n\nRestless.faith es un proyecto independiente, no una organización sin fines de lucro registrada. Las contribuciones no son deducibles de impuestos.",
     supportButtonLabel: "Apoyar Restless →",
-    supportUrl: "https://buy.stripe.com/REPLACE_WITH_YOUR_PAYMENT_LINK",
+    supportUrl: "https://donate.stripe.com/00wbJ191k25t9cO5RK0Jq00",
     growthModeOn: "Profundiza activado",
     growthModeOff: "Profundiza desactivado",
     growthTitle: "Profundiza",
