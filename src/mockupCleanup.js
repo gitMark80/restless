@@ -1,15 +1,87 @@
 const CLEANUP_CSS = `
-/* Keep the approved mockup language consistent throughout the app. */
-:root { --rf-blue: #2087e8; --rf-blue-soft: #eaf4ff; --rf-navy: #0f2a44; --rf-paper: #ffffff; --rf-line: #dbe6ef; }
+:root {
+  --rf-blue: #2087e8;
+  --rf-blue-soft: #eaf4ff;
+  --rf-navy: #0f2a44;
+  --rf-paper: #ffffff;
+  --rf-line: #dbe6ef;
+  --rf-light-bg: #f7fafc;
+}
 
-/* Remove the redundant three-card strip added beneath the hero. */
+/* Keep the homepage clean and remove duplicate promotional blocks. */
 .restless-mockup-strip { display: none !important; }
-
-/* Remove the old Studying Theology promo and the extra conversion promo it generated,
-   while leaving the Try a question choices available. */
 main section.rounded-3xl > div:last-child > .flex.items-start.gap-3 { display: none !important; }
 main section.rounded-3xl > div:last-child > p.mt-4 { margin-top: 0 !important; }
 [data-restless-conversion-path] { display: none !important; }
+
+/* Light mode should resemble the approved mockup: bright paper, navy type, soft blue accents. */
+body[data-restless-theme="light"] {
+  --rf-cream: var(--rf-light-bg) !important;
+  --rf-paper: #ffffff !important;
+  --rf-ink: #10263d !important;
+  --rf-muted: #60758a !important;
+  --rf-line: #dbe6ef !important;
+  background: var(--rf-light-bg) !important;
+}
+body[data-restless-theme="light"] > #root > div,
+body[data-restless-theme="light"] header,
+body[data-restless-theme="light"] main,
+body[data-restless-theme="light"] footer {
+  background: var(--rf-light-bg) !important;
+}
+body[data-restless-theme="light"] header > div,
+body[data-restless-theme="light"] footer > div,
+body[data-restless-theme="light"] main section.rounded-3xl,
+body[data-restless-theme="light"] main .rounded-2xl {
+  background-color: #ffffff !important;
+}
+body[data-restless-theme="light"] main section.rounded-3xl::before {
+  background:
+    radial-gradient(circle at 82% 22%, rgba(255,226,185,.55), transparent 27%),
+    linear-gradient(135deg, rgba(240,248,255,.98), rgba(255,249,239,.96)) !important;
+}
+
+/* The question field should read as blue, not yellow/gold. */
+body[data-restless-theme="light"] footer textarea {
+  background: #eef6ff !important;
+  border: 1.5px solid #9ccdf8 !important;
+  color: var(--rf-navy) !important;
+  box-shadow: inset 0 0 0 1px rgba(32,135,232,.03) !important;
+}
+body[data-restless-theme="light"] footer textarea:focus {
+  border-color: var(--rf-blue) !important;
+  box-shadow: 0 0 0 3px rgba(32,135,232,.12) !important;
+}
+body[data-restless-theme="light"] footer textarea::placeholder { color:#6f8da9 !important; }
+footer .w-12.h-12:not(:disabled) { background: var(--rf-blue) !important; color:#fff!important; }
+
+/* Keep the three homepage promises side-by-side, including on phones. */
+main section.rounded-3xl .grid.grid-cols-3 {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0,1fr)) !important;
+  gap: 8px !important;
+}
+main section.rounded-3xl .grid.grid-cols-3 > div {
+  min-width: 0 !important;
+  padding: 10px 7px !important;
+  justify-content: center !important;
+  text-align: center !important;
+  flex-direction: column !important;
+  gap: 5px !important;
+}
+main section.rounded-3xl .grid.grid-cols-3 svg {
+  color: var(--rf-blue) !important;
+  width: 18px !important;
+  height: 18px !important;
+}
+main section.rounded-3xl .grid.grid-cols-3 span {
+  color: var(--rf-navy) !important;
+  font-size: 11px !important;
+  line-height: 1.1 !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
 
 /* Blue replaces the legacy gold/yellow accent throughout answer/source/next-step UI. */
 main svg,
@@ -18,12 +90,10 @@ main button,
 [data-restless-next-step] > p:first-child,
 [data-restless-next-step] a,
 [data-restless-next-step] button { color: var(--rf-blue) !important; }
-
-/* Source cards: restore the light-blue book/chevron treatment. */
 main .space-y-2 button svg { color: var(--rf-blue) !important; }
 main .space-y-2 button svg:first-child { color: #55aaf2 !important; }
 
-/* About, Contact, Support and text-size sheets should use the same white/navy/blue system. */
+/* About, Contact and Support use the same white/navy/blue system. */
 div.fixed.inset-0 > div {
   background: var(--rf-paper) !important;
   border-color: var(--rf-line) !important;
@@ -42,7 +112,7 @@ body[data-restless-theme="dark"] div.fixed.inset-0 > div { background:#0f2941 !i
 body[data-restless-theme="dark"] div.fixed.inset-0 > div h2 { color:#fff!important; }
 body[data-restless-theme="dark"] div.fixed.inset-0 > div p { color:#b8c8d7!important; }
 
-/* Replace the orbiting loader with a simple three-dot thinking wave. */
+/* Three-dot thinking wave in Restless blue. */
 @keyframes restless-thinking-wave {
   0%, 60%, 100% { transform: translateY(0); opacity: .42; }
   30% { transform: translateY(-5px); opacity: 1; }
@@ -67,17 +137,15 @@ body[data-restless-theme="dark"] div.fixed.inset-0 > div p { color:#b8c8d7!impor
 .restless-orbit-spinner > span:nth-child(2) { animation-delay: .14s !important; }
 .restless-orbit-spinner > span:nth-child(3) { animation-delay: .28s !important; }
 .restless-orbit-spinner > span:nth-child(n+4) { display: none !important; }
-
-/* Make the original React three-dot loader blue too, before the polish observer touches it. */
 span.animate-bounce { background-color: var(--rf-blue) !important; }
 
-/* Prevent legacy accent colors from leaking into footer actions and selected controls. */
 footer button[style*="font-weight: 700"],
 footer button[style*="font-weight: 600"] { color: #60758a !important; }
-footer .w-12.h-12:not(:disabled) { background: var(--rf-blue) !important; color:#fff!important; }
 
 @media (max-width: 640px) {
   main section.rounded-3xl > div:last-child { padding-top: 18px !important; }
+  main section.rounded-3xl .grid.grid-cols-3 { grid-template-columns: repeat(3,minmax(0,1fr)) !important; }
+  main section.rounded-3xl .grid.grid-cols-3 > div { min-height: 64px !important; }
 }
 `;
 
@@ -88,6 +156,16 @@ document.head.appendChild(cleanupStyle);
 
 function cleanLegacyExtras() {
   document.querySelectorAll('.restless-mockup-strip, [data-restless-conversion-path]').forEach((node) => node.remove());
+
+  const section = document.querySelector('main section.rounded-3xl');
+  if (section) {
+    const labels = section.querySelectorAll('.grid.grid-cols-3 span');
+    const spanish = Array.from(document.querySelectorAll('button')).some((button) => button.textContent?.trim() === 'EN');
+    const copy = spanish ? ['Respuestas', 'Fuentes', 'Próximos pasos'] : ['Answers', 'Sources', 'Next steps'];
+    labels.forEach((label, index) => {
+      if (copy[index] && label.textContent !== copy[index]) label.textContent = copy[index];
+    });
+  }
 }
 
 let cleanupScheduled = false;
@@ -99,6 +177,6 @@ const cleanupObserver = new MutationObserver(() => {
     cleanLegacyExtras();
   });
 });
-cleanupObserver.observe(document.documentElement, { childList: true, subtree: true });
+cleanupObserver.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
 window.addEventListener('load', cleanLegacyExtras);
 cleanLegacyExtras();
