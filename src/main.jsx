@@ -5,7 +5,6 @@ import "./index.css";
 import "./uiPolish.js";
 import "./mockupTheme.js";
 import "./mockupCleanup.js";
-import "./exactHomeMockup.js";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
