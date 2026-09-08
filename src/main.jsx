@@ -5,6 +5,7 @@ import "./index.css";
 import "./uiPolish.js";
 import "./mockupTheme.js";
 import "./mockupCleanup.js";
+import "./welcomeContext.js";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
