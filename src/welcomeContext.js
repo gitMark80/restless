@@ -96,39 +96,3 @@ const style = document.createElement('style');
 style.id = 'restless-welcome-context';
 style.textContent = CONTEXT_CSS;
 document.head.appendChild(style);
-
-function isSpanish() {
-  return Array.from(document.querySelectorAll('button')).some((button) => button.textContent?.trim() === 'EN');
-}
-
-function updateWelcomeContext() {
-  const section = document.querySelector('main > div > section.rounded-3xl');
-  if (!section) return;
-
-  const spanish = isSpanish();
-  const title = section.querySelector('h2');
-  const body = section.querySelector('div:first-child > p');
-  if (title) {
-    title.textContent = spanish
-      ? 'Haz las preguntas que de verdad tienes.'
-      : 'Ask the questions you’re really asking.';
-  }
-  if (body) {
-    body.textContent = spanish
-      ? 'Haz preguntas difíciles sobre Dios, el cristianismo y la fe católica. Restless ofrece respuestas claras, muestra las fuentes y propone próximos pasos prácticos.'
-      : 'Ask difficult questions about God, Christianity, and the Catholic faith. Restless gives clear answers, shows the sources, and suggests practical next steps.';
-  }
-}
-
-let queued = false;
-const observer = new MutationObserver(() => {
-  if (queued) return;
-  queued = true;
-  requestAnimationFrame(() => {
-    queued = false;
-    updateWelcomeContext();
-  });
-});
-observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
-window.addEventListener('load', updateWelcomeContext);
-updateWelcomeContext();

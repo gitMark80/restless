@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   Send,
   ChevronDown,
@@ -17,6 +17,7 @@ import {
   Minus,
   Plus,
 } from "lucide-react";
+import { NEXT_STEP_TEXT, classifyNextStep, nextStepContent } from "./nextSteps.js";
 
 const AUDIENCES = ["Middle School", "High School", "College", "Adult"];
 
@@ -91,15 +92,14 @@ function readStoredFontScale() {
 
 const STRINGS = {
   en: {
-    tagline: "Modern questions. Timeless truth.",
-    humanBadge: "Human-first Catholic AI",
-    heroTitle: "Ask boldly. Learn deeply. Stay human.",
-    heroBody:
-      "Restless uses AI to guide you toward Scripture, the Catechism, prayer, and real people — not replace them.",
+    tagline: "Ask boldly. Learn deeply. Stay human.",
+    humanBadge: "Questions • Evidence • Next steps",
+    heroTitle: "For the questions that won’t leave you alone.",
+    heroBody: "Explore God, Christianity, and the Catholic faith with honesty, evidence, and real next steps.",
     principles: [
-      { title: "Think", body: "Put the answer into your own words." },
-      { title: "Verify", body: "Open the primary Catholic sources." },
-      { title: "Talk", body: "Bring important questions to a real person." },
+      { title: "Answers", body: "Honest, well-researched and easy to understand." },
+      { title: "Sources", body: "Know where the answers come from." },
+      { title: "Next steps", body: "Real-world guidance for your journey." },
     ],
     ageLabels: {
       "Middle School": "Middle school",
@@ -120,6 +120,9 @@ const STRINGS = {
     startersLabel: "Try a question",
     placeholder: "Ask a question about faith, Scripture, morality, or the Church…",
     retryError: "That didn't come through. Tap send again to retry.",
+    timeoutError: "That's taking longer than usual. Tap Try again.",
+    rateLimitError: "Please wait a moment before asking again.",
+    busyError: "Restless is busy right now. Please try again in a moment.",
     retryLabel: "Try again",
     langToggleLabel: "Switch language",
     shareLabel: "Share",
@@ -160,15 +163,14 @@ const STRINGS = {
     supportUrl: "https://donate.stripe.com/00wbJ191k25t9cO5RK0Jq00",
   },
   es: {
-    tagline: "Preguntas modernas. Verdad eterna.",
-    humanBadge: "IA católica centrada en la persona",
-    heroTitle: "Pregunta con valentía. Aprende a fondo. Sigue siendo humano.",
-    heroBody:
-      "Restless usa IA para guiarte hacia la Escritura, el Catecismo, la oración y personas reales — no para reemplazarlas.",
+    tagline: "Pregunta con valentía. Aprende a fondo. Sigue siendo humano.",
+    humanBadge: "Preguntas • Evidencia • Próximos pasos",
+    heroTitle: "Para las preguntas que no te dejan en paz.",
+    heroBody: "Explora a Dios, el cristianismo y la fe católica con honestidad, evidencia y próximos pasos reales.",
     principles: [
-      { title: "Piensa", body: "Explica la respuesta con tus propias palabras." },
-      { title: "Verifica", body: "Abre las fuentes católicas primarias." },
-      { title: "Habla", body: "Lleva las preguntas importantes a una persona real." },
+      { title: "Respuestas", body: "Claras, bien investigadas y fáciles de entender." },
+      { title: "Fuentes", body: "Mira de dónde vienen las respuestas." },
+      { title: "Próximos pasos", body: "Orientación para llevarlo a la vida real." },
     ],
     ageLabels: {
       "Middle School": "Secundaria",
@@ -189,6 +191,9 @@ const STRINGS = {
     startersLabel: "Prueba una pregunta",
     placeholder: "Pregunta sobre la fe, la Escritura, la moral o la Iglesia…",
     retryError: "Eso no llegó. Toca enviar para intentarlo de nuevo.",
+    timeoutError: "Está tardando más de lo normal. Toca Intentar de nuevo.",
+    rateLimitError: "Espera un momento antes de volver a preguntar.",
+    busyError: "Restless está ocupado ahora mismo. Inténtalo de nuevo en un momento.",
     retryLabel: "Intentar de nuevo",
     langToggleLabel: "Cambiar idioma",
     shareLabel: "Compartir",
@@ -232,14 +237,37 @@ const STRINGS = {
 
 const SEED_MESSAGES = { en: [], es: [] };
 
+function askError(kind) {
+  const error = new Error(kind);
+  error.kind = kind;
+  return error;
+}
+
+// Maps a failure to a message in the reader's language (never raw browser text
+// like "Failed to fetch").
+function errorMessage(err, strings) {
+  switch (err?.kind) {
+    case "timeout":
+      return strings.timeoutError;
+    case "rateLimit":
+      return strings.rateLimitError;
+    case "busy":
+      return strings.busyError;
+    default:
+      return strings.retryError;
+  }
+}
+
 async function askCompanion(question, ageBand, language, history) {
   const now = new Date();
   const todayDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
     now.getDate()
   ).padStart(2, "0")}`;
 
+  // The server gives up after ~50s (including one retry), so wait a little
+  // longer than that here; otherwise slow-but-successful answers get dropped.
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 45000);
+  const timeout = setTimeout(() => controller.abort(), 60000);
   let response;
   try {
     response = await fetch("/api/ask", {
@@ -248,15 +276,19 @@ async function askCompanion(question, ageBand, language, history) {
       body: JSON.stringify({ question, ageBand, language, todayDate, history }),
       signal: controller.signal,
     });
+  } catch (err) {
+    throw askError(err?.name === "AbortError" ? "timeout" : "network");
   } finally {
     clearTimeout(timeout);
   }
 
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || "Something went wrong. Please try again.");
-  if (!data.text || typeof data.text !== "string") {
-    throw new Error("The answer was incomplete. Please try again.");
+  if (!response.ok) {
+    if (response.status === 429) throw askError("rateLimit");
+    if (response.status === 504) throw askError("timeout");
+    throw askError(response.status === 503 ? "busy" : "retry");
   }
+  if (!data.text || typeof data.text !== "string") throw askError("retry");
   return data;
 }
 
@@ -568,24 +600,85 @@ function ShareButtons({ questionText, answerText, theme, strings }) {
   );
 }
 
-function NextStepAnchor({ questionText, theme }) {
+function NextStepPanel({ questionText, theme, language, onPrompt }) {
+  const text = NEXT_STEP_TEXT[language];
+  const content = nextStepContent(classifyNextStep(questionText), language);
+  const actionStyle = {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: "40px",
+    padding: "0.55rem 0.8rem",
+    borderRadius: "999px",
+    border: `1px solid ${theme.citationBorder}`,
+    color: theme.accent,
+    background: "transparent",
+    fontSize: "13px",
+    fontWeight: 800,
+    lineHeight: 1.2,
+    textDecoration: "none",
+    cursor: "pointer",
+  };
+
   return (
-    <span
-      hidden
-      data-restless-next-step-anchor="true"
-      data-question={questionText}
-      data-background={theme.citationBg}
-      data-border={theme.citationBorder}
-      data-text={theme.text}
-      data-subtext={theme.subtext}
-      data-accent={theme.accent}
+    <section
+      data-restless-next-step="true"
+      style={{
+        marginTop: "0.9rem",
+        padding: "1rem",
+        border: `1px solid ${theme.citationBorder}`,
+        borderRadius: "1rem",
+        background: theme.citationBg,
+      }}
     >
-      {theme.bg}
-    </span>
+      <p
+        style={{
+          margin: "0 0 0.3rem",
+          color: theme.accent,
+          fontSize: "11px",
+          fontWeight: 900,
+          letterSpacing: "0.08em",
+        }}
+      >
+        {text.nextStepEyebrow}
+      </p>
+      <h3 style={{ margin: 0, color: theme.text, fontSize: "17px", fontWeight: 800 }}>{content.title}</h3>
+      <p style={{ margin: "0.45rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>
+        {content.body}
+      </p>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem", marginTop: "0.8rem" }}>
+        {content.actions.map((action) => {
+          if (action.href) {
+            const external = action.href.startsWith("http");
+            return (
+              <a
+                key={action.label}
+                href={action.href}
+                target={external ? "_blank" : undefined}
+                rel={external ? "noopener noreferrer" : undefined}
+                style={actionStyle}
+              >
+                {action.label}
+              </a>
+            );
+          }
+          return (
+            <button key={action.label} type="button" onClick={() => onPrompt(action.prompt)} style={actionStyle}>
+              {action.label}
+            </button>
+          );
+        })}
+      </div>
+      {content.note && (
+        <p style={{ margin: "0.7rem 0 0", color: theme.subtext, fontSize: "12px", lineHeight: 1.45 }}>
+          {content.note}
+        </p>
+      )}
+    </section>
   );
 }
 
-function CompanionMessage({ message, questionText, theme, strings }) {
+function CompanionMessage({ message, questionText, theme, strings, language, onPrompt }) {
   const [openSources, setOpenSources] = useState({});
 
   return (
@@ -625,7 +718,7 @@ function CompanionMessage({ message, questionText, theme, strings }) {
               theme={theme}
               strings={strings}
             />
-            <NextStepAnchor questionText={questionText} theme={theme} />
+            <NextStepPanel questionText={questionText} theme={theme} language={language} onPrompt={onPrompt} />
           </>
         )}
       </div>
@@ -935,6 +1028,11 @@ export default function Restless() {
     }
   }, [isTyping]);
 
+  // The mockup stylesheets key off body[data-restless-theme].
+  useLayoutEffect(() => {
+    document.body.dataset.restlessTheme = mode;
+  }, [mode]);
+
   useEffect(() => {
     document.documentElement.style.overflowX = "hidden";
     document.body.style.overflowX = "hidden";
@@ -986,7 +1084,7 @@ export default function Restless() {
       ]);
     } catch (err) {
       setIsTyping(false);
-      setError(err?.message || strings.retryError);
+      setError(errorMessage(err, strings));
       setInput(trimmed);
       setMessages((prev) => prev.slice(0, -1));
     }
@@ -1140,6 +1238,8 @@ export default function Restless() {
                   questionText={idx > 0 ? messages[idx - 1].text : null}
                   theme={theme}
                   strings={strings}
+                  language={language}
+                  onPrompt={chooseStarter}
                 />
               )}
             </div>
@@ -1149,15 +1249,13 @@ export default function Restless() {
             <div className="flex justify-start">
               <div
                 className="rounded-2xl px-5 py-4 flex items-center gap-1.5"
-                style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.border}` }}
+                style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.border}`, padding: "0.75rem 1rem" }}
               >
-                {[0, 1, 2].map((i) => (
-                  <span
-                    key={i}
-                    className="w-1.5 h-1.5 rounded-full animate-bounce"
-                    style={{ backgroundColor: theme.dotColor, animationDelay: `${-0.3 + i * 0.15}s` }}
-                  />
-                ))}
+                <div className="restless-orbit-spinner" role="status" aria-label="Loading answer">
+                  {[0, 1, 2].map((i) => (
+                    <span key={i} style={{ backgroundColor: theme.dotColor }} />
+                  ))}
+                </div>
               </div>
             </div>
           )}
