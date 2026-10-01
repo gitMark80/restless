@@ -161,6 +161,13 @@ const buckets = new Map();
 const MAX_HISTORY_MESSAGES = 6; // 3 question/answer exchanges
 const MAX_HISTORY_CHARS_PER_MESSAGE = 2000;
 
+// Total time one /api/ask call may spend, including the retry. The browser
+// waits 60s, so this must stay comfortably below that.
+const REQUEST_BUDGET_MS = 50 * 1000;
+const FIRST_ATTEMPT_TIMEOUT_MS = 35 * 1000;
+const MIN_RETRY_MS = 8 * 1000;
+const USCCB_TIMEOUT_MS = 5 * 1000;
+
 const DAY_WORD = "(today'?s?|tomorrow'?s?|yesterday'?s?|daily)";
 
 const DAILY_READING_PATTERN = new RegExp(
@@ -237,6 +244,7 @@ async function fetchTodaysReadingCitations(isoDate) {
   const pageUrl = `https://bible.usccb.org/bible/readings/${mmddyy}.cfm`;
 
   const res = await fetch(pageUrl, {
+    signal: AbortSignal.timeout(USCCB_TIMEOUT_MS),
     headers: {
       "User-Agent":
         "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
@@ -381,9 +389,9 @@ function logRequest(level, event, fields = {}) {
   console[method](JSON.stringify(payload));
 }
 
-async function requestModel({ apiMessages, systemContext, maxTokens }) {
+async function requestModel({ apiMessages, systemContext, maxTokens, timeoutMs }) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 40000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -558,7 +566,13 @@ Include exactly one source with "label": "${matchedPrayer.name}", and "detail" d
     }
 
     const baseSystemContext = `${currentDateContext}\n\nAudience tone for this response: ${tone}\n\n${languageInstruction}${readingContext}${prayerContext}`;
-    let data = await requestModel({ apiMessages, systemContext: baseSystemContext, maxTokens });
+    const remainingMs = () => REQUEST_BUDGET_MS - (Date.now() - startedAt);
+    let data = await requestModel({
+      apiMessages,
+      systemContext: baseSystemContext,
+      maxTokens,
+      timeoutMs: Math.min(FIRST_ATTEMPT_TIMEOUT_MS, Math.max(remainingMs(), 1000)),
+    });
 
     if (data.usage) {
       console.log(
@@ -577,7 +591,7 @@ Include exactly one source with "label": "${matchedPrayer.name}", and "detail" d
     let parsed = parseModelResponse(raw);
 
     let retried = false;
-    if (!parsed || data.stop_reason === "max_tokens") {
+    if ((!parsed || data.stop_reason === "max_tokens") && remainingMs() >= MIN_RETRY_MS) {
       retried = true;
       logRequest("info", "retrying_incomplete_response", {
         requestId,
@@ -588,6 +602,7 @@ Include exactly one source with "label": "${matchedPrayer.name}", and "detail" d
         apiMessages,
         systemContext: `${baseSystemContext}\n\nRETRY REQUIREMENT: Your previous response was incomplete or invalid. Return a shorter, complete JSON object with all braces and quotes closed.`,
         maxTokens,
+        timeoutMs: remainingMs() - 1000,
       });
       raw = (data.content || [])
         .map((block) => (block.type === "text" ? block.text : ""))

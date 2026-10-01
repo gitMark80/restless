@@ -274,61 +274,8 @@ footer button, footer a { color: var(--rf-muted) !important; }
 }
 `;
 
-function setThemeFlag() {
-  const lightModeButton = Array.from(document.querySelectorAll('button')).find((b) => b.getAttribute('aria-label') === 'Use light mode' || b.getAttribute('aria-label') === 'Usar modo claro');
-  document.body.dataset.restlessTheme = lightModeButton ? 'dark' : 'light';
-}
-
-function polishCopyAndExtras() {
-  setThemeFlag();
-  const section = document.querySelector('main section.rounded-3xl');
-  if (!section) return;
-  const h2 = section.querySelector('h2');
-  const p = h2?.nextElementSibling;
-  const isSpanish = Array.from(document.querySelectorAll('button')).some((b) => b.textContent?.trim() === 'EN');
-  if (h2) h2.textContent = isSpanish ? 'Para las preguntas que no te dejan en paz.' : 'For the questions that won’t leave you alone.';
-  if (p) p.textContent = isSpanish
-    ? 'Explora a Dios, el cristianismo y la fe católica con honestidad, evidencia y próximos pasos reales.'
-    : 'Explore God, Christianity, and the Catholic faith with honesty, evidence, and real next steps.';
-
-  const badge = section.querySelector(':scope > div:first-child > div:first-child');
-  if (badge) {
-    badge.textContent = isSpanish ? 'Preguntas • Evidencia • Próximos pasos' : 'Questions • Evidence • Next steps';
-  }
-
-  const principleLabels = isSpanish
-    ? ['Respuestas claras','Consulta las fuentes','Da el siguiente paso']
-    : ['Clear Answers','See the Sources','Take the Next Step'];
-  section.querySelectorAll('.grid.grid-cols-3 span').forEach((el, i) => {
-    if (principleLabels[i]) el.textContent = principleLabels[i];
-  });
-
-  if (!section.querySelector('.restless-mockup-strip')) {
-    const strip = document.createElement('div');
-    strip.className = 'restless-mockup-strip';
-    const cards = isSpanish
-      ? [['?','Haz la pregunta difícil','Sin suavizar la objeción.'],['↗','Comprueba las fuentes','Mira de dónde viene la respuesta.'],['→','Llévalo a la vida real','Oración, Escritura y personas reales.']]
-      : [['?','Ask the hard question','Without softening the objection.'],['↗','Check the sources','See where the answer comes from.'],['→','Take it into real life','Prayer, Scripture, and real people.']];
-    strip.innerHTML = cards.map(([icon,title,body]) => `<div><div class="rf-dot">${icon}</div><strong>${title}</strong><span>${body}</span></div>`).join('');
-    section.parentElement?.insertBefore(strip, section.nextSibling);
-  }
-}
-
+// Copy and the body[data-restless-theme] flag are set by App.jsx.
 const style = document.createElement('style');
 style.id = 'restless-approved-mockup-theme';
 style.textContent = MOCKUP_CSS;
 document.head.appendChild(style);
-
-let scheduled = false;
-const schedulePolish = () => {
-  if (scheduled) return;
-  scheduled = true;
-  requestAnimationFrame(() => {
-    scheduled = false;
-    polishCopyAndExtras();
-  });
-};
-
-new MutationObserver(schedulePolish).observe(document.documentElement, { subtree:true, childList:true, attributes:true, characterData:true });
-window.addEventListener('DOMContentLoaded', schedulePolish);
-setTimeout(schedulePolish, 0);
