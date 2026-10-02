@@ -17,6 +17,7 @@ import {
   Minus,
   Plus,
 } from "lucide-react";
+import { Analytics } from "@vercel/analytics/react";
 import { NEXT_STEP_TEXT, classifyNextStep, nextStepContent } from "./nextSteps.js";
 
 const AUDIENCES = ["Middle School", "High School", "College", "Adult"];
@@ -1388,6 +1389,7 @@ export default function Restless() {
           onClose={() => setActiveModal(null)}
         />
       )}
+      <Analytics />
     </div>
   );
 }
