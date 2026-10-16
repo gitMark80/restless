@@ -1,4 +1,6 @@
 User-agent: *
 Disallow: /api/
+Disallow: /reel/
+Disallow: /reel
 
 Sitemap: https://restless.faith/sitemap.xml
