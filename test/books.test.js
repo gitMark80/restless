@@ -30,6 +30,6 @@ test("Crisis and hurting questions never get a book, even on a matching topic", 
   assert.equal(match("My Protestant dad passed away and I feel so alone"), null);
 });
 
-test("bookUrl leaves the plain URL alone when no affiliate tag is set", () => {
-  assert.equal(bookUrl(BOOKS[0]), BOOKS[0].url);
+test("bookUrl appends the Associates tag", () => {
+  assert.equal(bookUrl(BOOKS[0]), `${BOOKS[0].url}?tag=restlessfaith-20`);
 });
