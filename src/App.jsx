@@ -119,7 +119,7 @@ const STRINGS = {
       "Why baptize babies?",
     ],
     startersLabel: "Try a question",
-    placeholder: "Ask a question about faith, Scripture, morality, or the Church…",
+    placeholder: "Ask about faith, Scripture, or the Church…",
     retryError: "That didn't come through. Tap send again to retry.",
     timeoutError: "That's taking longer than usual. Tap Try again.",
     rateLimitError: "Please wait a moment before asking again.",
@@ -190,7 +190,7 @@ const STRINGS = {
       "¿Por qué bautizar a los bebés?",
     ],
     startersLabel: "Prueba una pregunta",
-    placeholder: "Pregunta sobre la fe, la Escritura, la moral o la Iglesia…",
+    placeholder: "Pregunta sobre la fe, la Escritura o la Iglesia…",
     retryError: "Eso no llegó. Toca enviar para intentarlo de nuevo.",
     timeoutError: "Está tardando más de lo normal. Toca Intentar de nuevo.",
     rateLimitError: "Espera un momento antes de volver a preguntar.",
@@ -1149,17 +1149,21 @@ function WelcomePanel({ theme, strings, chooseStarter }) {
         <p className="mt-4 mb-2" style={{ color: theme.muted, fontSize: "12px", fontWeight: 700 }}>
           {strings.startersLabel}
         </p>
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="grid grid-cols-2 gap-2">
           {strings.starterQuestions.map((question) => (
             <button
               key={question}
+              type="button"
               onClick={() => chooseStarter(question)}
-              className="shrink-0 rounded-full px-3 py-2 text-left"
+              className="rounded-xl px-3 py-2.5 text-left"
               style={{
                 backgroundColor: theme.cardBg,
                 color: theme.text,
                 fontSize: "13px",
+                lineHeight: 1.35,
+                fontWeight: 600,
                 border: `1px solid ${theme.border}`,
+                minHeight: "44px",
               }}
             >
               {question}
