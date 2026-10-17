@@ -18,6 +18,7 @@ import {
   Plus,
 } from "lucide-react";
 import { NEXT_STEP_TEXT, classifyNextStep, nextStepContent } from "./nextSteps.js";
+import { BOOKS, RECOMMENDED, BOOKS_TEXT, BOOKS_LANGUAGE_NOTE, bookUrl, matchBook } from "./books.js";
 
 const AUDIENCES = ["Middle School", "High School", "College", "Adult"];
 
@@ -118,7 +119,8 @@ const STRINGS = {
       "Why baptize babies?",
     ],
     startersLabel: "Try a question",
-    placeholder: "Ask a question about faith, Scripture, morality, or the Church…",
+    ideasLabel: "Need an idea?",
+    placeholder: "Ask about faith, Scripture, or the Church…",
     retryError: "That didn't come through. Tap send again to retry.",
     timeoutError: "That's taking longer than usual. Tap Try again.",
     rateLimitError: "Please wait a moment before asking again.",
@@ -148,6 +150,7 @@ const STRINGS = {
     aboutLabel: "About",
     contactLabel: "Contact",
     closeLabel: "Close",
+    backToQuestions: "← Back to questions",
     aboutTitle: "About Restless",
     aboutBody:
       "Restless takes its name from St. Augustine: “Our hearts are restless until they rest in You.”\n\nRestless is designed to help people — especially students and younger users — ask difficult questions while staying rooted in Catholic teaching. It points you toward Sacred Scripture, the Catechism, the Fathers and Doctors of the Church, councils, and papal teaching.\n\nThe goal is not to make you dependent on AI. Restless should help you think, verify, pray, and have better conversations with parents, teachers, priests, sponsors, youth ministers, and other people who can walk with you.\n\nNo account is required. Restless is a companion for questions, not a replacement for a priest, spiritual director, teacher, counselor, or human relationship.",
@@ -189,7 +192,8 @@ const STRINGS = {
       "¿Por qué bautizar a los bebés?",
     ],
     startersLabel: "Prueba una pregunta",
-    placeholder: "Pregunta sobre la fe, la Escritura, la moral o la Iglesia…",
+    ideasLabel: "¿Necesitas una idea?",
+    placeholder: "Pregunta sobre la fe, la Escritura o la Iglesia…",
     retryError: "Eso no llegó. Toca enviar para intentarlo de nuevo.",
     timeoutError: "Está tardando más de lo normal. Toca Intentar de nuevo.",
     rateLimitError: "Espera un momento antes de volver a preguntar.",
@@ -219,6 +223,7 @@ const STRINGS = {
     aboutLabel: "Acerca de",
     contactLabel: "Contacto",
     closeLabel: "Cerrar",
+    backToQuestions: "← Volver a las preguntas",
     aboutTitle: "Acerca de Restless",
     aboutBody:
       "Restless toma su nombre de San Agustín: “Nuestro corazón está inquieto hasta que descanse en Ti”.\n\nRestless está diseñado para ayudar a las personas — especialmente estudiantes y jóvenes — a hacer preguntas difíciles manteniéndose arraigadas en la enseñanza católica. Te dirige a la Sagrada Escritura, el Catecismo, los Padres y Doctores de la Iglesia, los concilios y la enseñanza papal.\n\nLa meta no es hacerte dependiente de la IA. Restless debe ayudarte a pensar, verificar, orar y tener mejores conversaciones con padres, maestros, sacerdotes, padrinos, ministros juveniles y otras personas que puedan acompañarte.\n\nNo se requiere cuenta. Restless acompaña tus preguntas; no reemplaza a un sacerdote, director espiritual, maestro, consejero o relación humana.",
@@ -678,8 +683,230 @@ function NextStepPanel({ questionText, theme, language, onPrompt }) {
   );
 }
 
-function CompanionMessage({ message, questionText, theme, strings, language, onPrompt }) {
+function BookCard({ book, theme, language, onOpenBooks }) {
+  const text = BOOKS_TEXT[language];
+  const rec = !!book.recommended;
+  const eyebrow = rec ? text.recommendedEyebrow : text.cardEyebrow;
+  const intro = rec ? text.recommendedIntro : text.cardIntro;
+  const note = rec ? text.recommendedNote : text.cardNote;
+  return (
+    <section
+      data-restless-book="true"
+      style={{
+        marginTop: "0.9rem",
+        padding: "1rem",
+        border: `1px solid ${theme.citationBorder}`,
+        borderRadius: "1rem",
+        background: theme.citationBg,
+      }}
+    >
+      <p style={{ margin: "0 0 0.3rem", color: theme.accent, fontSize: "11px", fontWeight: 900, letterSpacing: "0.08em" }}>
+        {eyebrow}
+      </p>
+      <p style={{ margin: 0, color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>{intro}</p>
+      <h3 style={{ margin: "0.5rem 0 0", color: theme.text, fontSize: "17px", fontWeight: 800 }}>{book.title}</h3>
+      {book.subtitle && (
+        <p style={{ margin: "0.1rem 0 0", color: theme.subtext, fontSize: "13px", fontWeight: 700 }}>{book.subtitle}</p>
+      )}
+      {book.author && (
+        <p style={{ margin: "0.1rem 0 0", color: theme.muted, fontSize: "12px" }}>{book.author}</p>
+      )}
+      <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>
+        {book.tagline[language]}
+      </p>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem", marginTop: "0.8rem" }}>
+        <a
+          href={bookUrl(book)}
+          target="_blank"
+          rel="noopener noreferrer sponsored"
+          className="inline-flex items-center justify-center rounded-xl px-4 py-2.5"
+          style={{ backgroundColor: theme.accent, color: theme.accentText, fontSize: "14px", fontWeight: 800 }}
+        >
+          {text.buy}
+        </a>
+        <button
+          type="button"
+          onClick={onOpenBooks}
+          className="inline-flex items-center justify-center rounded-xl px-4 py-2.5"
+          style={{ border: `1px solid ${theme.citationBorder}`, color: theme.accent, fontSize: "14px", fontWeight: 800 }}
+        >
+          {text.cardMore}
+        </button>
+      </div>
+      <p style={{ margin: "0.7rem 0 0", color: theme.subtext, fontSize: "12px", lineHeight: 1.45 }}>
+        {[note, rec ? "" : BOOKS_LANGUAGE_NOTE[language]].filter(Boolean).join(" ")}
+      </p>
+    </section>
+  );
+}
+
+function useEscapeToClose(onClose) {
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+}
+
+function ModalHeader({ title, theme, strings, onClose }) {
+  useEscapeToClose(onClose);
+  return (
+    <div
+      className="flex items-center justify-between gap-4"
+      style={{
+        position: "sticky",
+        top: "-1.5rem",
+        margin: "-1.5rem -1.5rem 1rem",
+        padding: "1.25rem 1.5rem 0.75rem",
+        backgroundColor: theme.cardBg,
+        borderBottom: `1px solid ${theme.border}`,
+        zIndex: 1,
+      }}
+    >
+      <h2 style={{ color: theme.text, fontSize: "22px", fontWeight: 700 }}>{title}</h2>
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label={strings.closeLabel}
+        className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+        style={{ border: `1px solid ${theme.border}`, color: theme.subtext }}
+      >
+        <X className="w-5 h-5" />
+      </button>
+    </div>
+  );
+}
+
+function ModalBackButton({ theme, strings, onClose }) {
+  return (
+    <button
+      type="button"
+      onClick={onClose}
+      className="w-full mt-6 rounded-xl px-4 py-3"
+      style={{
+        backgroundColor: theme.accent,
+        color: theme.accentText,
+        fontSize: "15px",
+        fontWeight: 800,
+      }}
+    >
+      {strings.backToQuestions}
+    </button>
+  );
+}
+
+function BooksModal({ theme, strings, language, onClose }) {
+  const text = BOOKS_TEXT[language];
+  const books = [...BOOKS].sort((a, b) => a.series - b.series);
+  return (
+    <div
+      className="fixed inset-0 flex items-end sm:items-center justify-center px-0 sm:px-4"
+      style={{ backgroundColor: "rgba(3, 7, 18, 0.68)", zIndex: 50 }}
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full sm:max-w-lg overflow-y-auto"
+        style={{
+          backgroundColor: theme.cardBg,
+          maxHeight: "82vh",
+          padding: "1.5rem",
+          borderRadius: "1.4rem 1.4rem 0 0",
+          border: `1px solid ${theme.border}`,
+        }}
+      >
+        <ModalHeader title={text.title} theme={theme} strings={strings} onClose={onClose} />
+        <p className="leading-relaxed" style={{ color: theme.subtext, fontSize: "16px" }}>
+          {text.intro}
+        </p>
+        <p style={{ margin: "0.5rem 0 0", color: theme.muted, fontSize: "12px" }}>{text.byline}</p>
+
+        <div className="space-y-3 mt-5">
+          {books.map((book) => (
+            <div
+              key={book.id}
+              style={{
+                padding: "1rem",
+                border: `1px solid ${theme.citationBorder}`,
+                borderRadius: "1rem",
+                background: theme.citationBg,
+              }}
+            >
+              <p style={{ margin: 0, color: theme.accent, fontSize: "11px", fontWeight: 900, letterSpacing: "0.08em" }}>
+                {text.bookLabel.toUpperCase()} {book.series}
+              </p>
+              <h3 style={{ margin: "0.3rem 0 0", color: theme.text, fontSize: "17px", fontWeight: 800 }}>{book.title}</h3>
+              {book.subtitle && (
+                <p style={{ margin: "0.1rem 0 0", color: theme.subtext, fontSize: "13px", fontWeight: 700 }}>{book.subtitle}</p>
+              )}
+              <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>
+                {book.tagline[language]}
+              </p>
+              <a
+                href={bookUrl(book)}
+                target="_blank"
+                rel="noopener noreferrer sponsored"
+                className="inline-flex items-center gap-1 mt-3 rounded-xl px-4 py-2"
+                style={{ backgroundColor: theme.accent, color: theme.accentText, fontSize: "14px", fontWeight: 700 }}
+              >
+                {text.buy}
+              </a>
+            </div>
+          ))}
+        </div>
+
+        {RECOMMENDED.length > 0 && (
+          <>
+            <h3 style={{ margin: "1.6rem 0 0", color: theme.text, fontSize: "18px", fontWeight: 800 }}>{text.recommendedTitle}</h3>
+            <p style={{ margin: "0.3rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.5 }}>{text.recommendedBody}</p>
+            <div className="space-y-3 mt-3">
+              {RECOMMENDED.map((book) => (
+                <div
+                  key={book.id}
+                  style={{
+                    padding: "1rem",
+                    border: `1px solid ${theme.citationBorder}`,
+                    borderRadius: "1rem",
+                    background: theme.citationBg,
+                  }}
+                >
+                  <h3 style={{ margin: 0, color: theme.text, fontSize: "17px", fontWeight: 800 }}>{book.title}</h3>
+                  {book.subtitle && (
+                    <p style={{ margin: "0.1rem 0 0", color: theme.subtext, fontSize: "13px", fontWeight: 700 }}>{book.subtitle}</p>
+                  )}
+                  {book.author && <p style={{ margin: "0.1rem 0 0", color: theme.muted, fontSize: "12px" }}>{book.author}</p>}
+                  <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>
+                    {book.tagline[language]}
+                  </p>
+                  <a
+                    href={bookUrl(book)}
+                    target="_blank"
+                    rel="noopener noreferrer sponsored"
+                    className="inline-flex items-center gap-1 mt-3 rounded-xl px-4 py-2"
+                    style={{ backgroundColor: theme.accent, color: theme.accentText, fontSize: "14px", fontWeight: 700 }}
+                  >
+                    {text.buy}
+                  </a>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        <p style={{ margin: "1rem 0 0", color: theme.subtext, fontSize: "12px", lineHeight: 1.45 }}>
+          {[text.disclosure, BOOKS_LANGUAGE_NOTE[language]].filter(Boolean).join(" ")}
+        </p>
+        <ModalBackButton theme={theme} strings={strings} onClose={onClose} />
+      </div>
+    </div>
+  );
+}
+
+function CompanionMessage({ message, questionText, theme, strings, language, onPrompt, onOpenBooks }) {
   const [openSources, setOpenSources] = useState({});
+  const matchedBook = questionText ? matchBook(questionText, classifyNextStep(questionText)) : null;
 
   return (
     <div className="flex justify-start min-w-0">
@@ -719,6 +946,9 @@ function CompanionMessage({ message, questionText, theme, strings, language, onP
               strings={strings}
             />
             <NextStepPanel questionText={questionText} theme={theme} language={language} onPrompt={onPrompt} />
+            {matchedBook && (
+              <BookCard book={matchedBook} theme={theme} language={language} onOpenBooks={onOpenBooks} />
+            )}
           </>
         )}
       </div>
@@ -764,12 +994,7 @@ function InfoModal({ title, body, cta, theme, strings, onClose }) {
           border: `1px solid ${theme.border}`,
         }}
       >
-        <div className="flex items-center justify-between gap-4 mb-4">
-          <h2 style={{ color: theme.text, fontSize: "22px", fontWeight: 700 }}>{title}</h2>
-          <button onClick={onClose} aria-label={strings.closeLabel}>
-            <X className="w-5 h-5" style={{ color: theme.subtext }} />
-          </button>
-        </div>
+        <ModalHeader title={title} theme={theme} strings={strings} onClose={onClose} />
         <p className="whitespace-pre-line leading-relaxed" style={{ color: theme.subtext, fontSize: "16px" }}>
           {body}
         </p>
@@ -784,6 +1009,7 @@ function InfoModal({ title, body, cta, theme, strings, onClose }) {
             {cta.label}
           </a>
         )}
+        <ModalBackButton theme={theme} strings={strings} onClose={onClose} />
       </div>
     </div>
   );
@@ -902,7 +1128,7 @@ function TextSizeControls({ fontScale, setFontScale, theme, strings }) {
   );
 }
 
-function WelcomePanel({ theme, strings, chooseStarter }) {
+function WelcomePanel({ theme, strings }) {
   return (
     <section
       className="rounded-3xl overflow-hidden"
@@ -973,28 +1199,62 @@ function WelcomePanel({ theme, strings, chooseStarter }) {
           </div>
         </div>
 
-        <p className="mt-4 mb-2" style={{ color: theme.muted, fontSize: "12px", fontWeight: 700 }}>
-          {strings.startersLabel}
-        </p>
-        <div className="flex gap-2 overflow-x-auto pb-1">
+      </div>
+    </section>
+  );
+}
+
+function StarterQuestions({ theme, strings, chooseStarter }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mb-2">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5"
+        style={{
+          color: theme.accent,
+          fontSize: "12px",
+          fontWeight: 700,
+          border: `1px solid ${theme.citationBorder}`,
+          backgroundColor: open ? theme.citationBg : "transparent",
+        }}
+      >
+        <Lightbulb className="w-3.5 h-3.5" />
+        {strings.ideasLabel}
+        <ChevronDown
+          className="w-3.5 h-3.5"
+          style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform 150ms" }}
+        />
+      </button>
+      {open && (
+        <div className="grid grid-cols-2 gap-2 mt-2">
           {strings.starterQuestions.map((question) => (
             <button
               key={question}
-              onClick={() => chooseStarter(question)}
-              className="shrink-0 rounded-full px-3 py-2 text-left"
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                chooseStarter(question);
+              }}
+              className="rounded-xl px-3 py-2.5 text-left"
               style={{
                 backgroundColor: theme.cardBg,
                 color: theme.text,
                 fontSize: "13px",
+                lineHeight: 1.35,
+                fontWeight: 600,
                 border: `1px solid ${theme.border}`,
+                minHeight: "44px",
               }}
             >
               {question}
             </button>
           ))}
         </div>
-      </div>
-    </section>
+      )}
+    </div>
   );
 }
 
@@ -1090,11 +1350,19 @@ export default function Restless() {
     }
   };
 
+  // Enter sends only on devices with a real keyboard. On phones and tablets
+  // the return key inserts a newline — people tap it mid-thought, and
+  // autocorrect/dictation can fire it too — so there the send button is the
+  // only way to submit. Keystrokes that are part of IME composition are
+  // ignored (keyCode 229 is the legacy signal for that).
   const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
+    if (e.key !== "Enter" || e.shiftKey) return;
+    if (e.isComposing || e.keyCode === 229) return;
+    const touchDevice =
+      typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
+    if (touchDevice) return;
+    e.preventDefault();
+    handleSend();
   };
 
   const chooseStarter = (question) => {
@@ -1225,7 +1493,7 @@ export default function Restless() {
       <main ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden px-3 sm:px-5 py-5">
         <div className="max-w-3xl mx-auto w-full space-y-4 min-w-0">
           {messages.length === 0 && (
-            <WelcomePanel theme={theme} strings={strings} chooseStarter={chooseStarter} />
+            <WelcomePanel theme={theme} strings={strings} />
           )}
 
           {messages.map((msg, idx) => (
@@ -1240,6 +1508,7 @@ export default function Restless() {
                   strings={strings}
                   language={language}
                   onPrompt={chooseStarter}
+                  onOpenBooks={() => setActiveModal("books")}
                 />
               )}
             </div>
@@ -1280,6 +1549,8 @@ export default function Restless() {
               </button>
             </div>
           )}
+
+          <StarterQuestions theme={theme} strings={strings} chooseStarter={chooseStarter} />
 
           <div className="flex items-end gap-2.5 min-w-0">
             <textarea
@@ -1322,6 +1593,10 @@ export default function Restless() {
             <span style={{ color: theme.muted, fontSize: "12px" }}>·</span>
             <button onClick={() => setActiveModal("contact")} style={{ color: theme.subtext, fontSize: "12px" }}>
               {strings.contactLabel}
+            </button>
+            <span style={{ color: theme.muted, fontSize: "12px" }}>·</span>
+            <button onClick={() => setActiveModal("books")} style={{ color: theme.subtext, fontSize: "12px" }}>
+              {BOOKS_TEXT[language].label}
             </button>
             <span style={{ color: theme.muted, fontSize: "12px" }}>·</span>
             <button
@@ -1372,6 +1647,10 @@ export default function Restless() {
           strings={strings}
           onClose={() => setActiveModal(null)}
         />
+      )}
+
+      {activeModal === "books" && (
+        <BooksModal theme={theme} strings={strings} language={language} onClose={() => setActiveModal(null)} />
       )}
 
       {activeModal === "support" && (
