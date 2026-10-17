@@ -18,7 +18,7 @@ import {
   Plus,
 } from "lucide-react";
 import { NEXT_STEP_TEXT, classifyNextStep, nextStepContent } from "./nextSteps.js";
-import { BOOKS, BOOKS_TEXT, BOOKS_LANGUAGE_NOTE, bookUrl, matchBook } from "./books.js";
+import { BOOKS, RECOMMENDED, BOOKS_TEXT, BOOKS_LANGUAGE_NOTE, bookUrl, matchBook } from "./books.js";
 
 const AUDIENCES = ["Middle School", "High School", "College", "Adult"];
 
@@ -681,6 +681,10 @@ function NextStepPanel({ questionText, theme, language, onPrompt }) {
 
 function BookCard({ book, theme, language, onOpenBooks }) {
   const text = BOOKS_TEXT[language];
+  const rec = !!book.recommended;
+  const eyebrow = rec ? text.recommendedEyebrow : text.cardEyebrow;
+  const intro = rec ? text.recommendedIntro : text.cardIntro;
+  const note = rec ? text.recommendedNote : text.cardNote;
   return (
     <section
       data-restless-book="true"
@@ -693,12 +697,15 @@ function BookCard({ book, theme, language, onOpenBooks }) {
       }}
     >
       <p style={{ margin: "0 0 0.3rem", color: theme.accent, fontSize: "11px", fontWeight: 900, letterSpacing: "0.08em" }}>
-        {text.cardEyebrow}
+        {eyebrow}
       </p>
-      <p style={{ margin: 0, color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>{text.cardIntro}</p>
+      <p style={{ margin: 0, color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>{intro}</p>
       <h3 style={{ margin: "0.5rem 0 0", color: theme.text, fontSize: "17px", fontWeight: 800 }}>{book.title}</h3>
       {book.subtitle && (
         <p style={{ margin: "0.1rem 0 0", color: theme.subtext, fontSize: "13px", fontWeight: 700 }}>{book.subtitle}</p>
+      )}
+      {book.author && (
+        <p style={{ margin: "0.1rem 0 0", color: theme.muted, fontSize: "12px" }}>{book.author}</p>
       )}
       <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>
         {book.tagline[language]}
@@ -723,7 +730,7 @@ function BookCard({ book, theme, language, onOpenBooks }) {
         </button>
       </div>
       <p style={{ margin: "0.7rem 0 0", color: theme.subtext, fontSize: "12px", lineHeight: 1.45 }}>
-        {[text.cardNote, BOOKS_LANGUAGE_NOTE[language]].filter(Boolean).join(" ")}
+        {[note, rec ? "" : BOOKS_LANGUAGE_NOTE[language]].filter(Boolean).join(" ")}
       </p>
     </section>
   );
@@ -793,6 +800,44 @@ function BooksModal({ theme, strings, language, onClose }) {
             </div>
           ))}
         </div>
+
+        {RECOMMENDED.length > 0 && (
+          <>
+            <h3 style={{ margin: "1.6rem 0 0", color: theme.text, fontSize: "18px", fontWeight: 800 }}>{text.recommendedTitle}</h3>
+            <p style={{ margin: "0.3rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.5 }}>{text.recommendedBody}</p>
+            <div className="space-y-3 mt-3">
+              {RECOMMENDED.map((book) => (
+                <div
+                  key={book.id}
+                  style={{
+                    padding: "1rem",
+                    border: `1px solid ${theme.citationBorder}`,
+                    borderRadius: "1rem",
+                    background: theme.citationBg,
+                  }}
+                >
+                  <h3 style={{ margin: 0, color: theme.text, fontSize: "17px", fontWeight: 800 }}>{book.title}</h3>
+                  {book.subtitle && (
+                    <p style={{ margin: "0.1rem 0 0", color: theme.subtext, fontSize: "13px", fontWeight: 700 }}>{book.subtitle}</p>
+                  )}
+                  {book.author && <p style={{ margin: "0.1rem 0 0", color: theme.muted, fontSize: "12px" }}>{book.author}</p>}
+                  <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>
+                    {book.tagline[language]}
+                  </p>
+                  <a
+                    href={bookUrl(book)}
+                    target="_blank"
+                    rel="noopener noreferrer sponsored"
+                    className="inline-flex items-center gap-1 mt-3 rounded-xl px-4 py-2"
+                    style={{ backgroundColor: theme.accent, color: theme.accentText, fontSize: "14px", fontWeight: 700 }}
+                  >
+                    {text.buy}
+                  </a>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
 
         <p style={{ margin: "1rem 0 0", color: theme.subtext, fontSize: "12px", lineHeight: 1.45 }}>
           {[text.disclosure, BOOKS_LANGUAGE_NOTE[language]].filter(Boolean).join(" ")}

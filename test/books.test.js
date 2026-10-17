@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { matchBook, bookUrl, BOOKS } from "../src/books.js";
+import { matchBook, bookUrl, BOOKS, RECOMMENDED } from "../src/books.js";
 import { classifyNextStep } from "../src/nextSteps.js";
 
 const match = (q) => matchBook(q, classifyNextStep(q))?.series ?? null;
@@ -72,8 +72,23 @@ test("Book 10 — self-examination / recurring sin (not Book 2)", () => {
   assert.equal(match("Me siento culpable todo el tiempo, ¿cómo cambio?"), 10);
 });
 
+test("Recommended — which Bible to buy → Ignatius Study Bible, flagged as not ours", () => {
+  const q = "Which Catholic Bible should I buy?";
+  const hit = matchBook(q, classifyNextStep(q));
+  assert.equal(hit?.id, "ignatius-study-bible");
+  assert.equal(hit?.recommended, true);
+  assert.equal(matchBook("I've never read the Bible, where do I start?", "general")?.id, "ignatius-study-bible");
+  assert.equal(matchBook("¿Qué biblia católica me recomiendan?", "general")?.id, "ignatius-study-bible");
+  assert.match(RECOMMENDED[0].url, /^https:\/\/www\.amazon\.com\/dp\/[A-Z0-9]{10}$/);
+});
+
+test("Pocket guides win over recommended books when both match", () => {
+  assert.equal(match("Is sola scriptura — the Bible alone — really what the Bible teaches?"), 1);
+});
+
 test("Ordinary questions get no book", () => {
   assert.equal(match("What is the Bible?"), null);
+  assert.equal(match("What does the Bible say about forgiveness?"), null);
   assert.equal(match("How do I pray the Rosary?"), null);
   assert.equal(match("What does the Church teach about the Eucharist?"), null);
   assert.equal(match("Who was St. Augustine?"), null);

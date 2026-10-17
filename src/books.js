@@ -139,6 +139,24 @@ export const BOOKS = [
   },
 ];
 
+// Books by other Catholic publishers that Restless recommends. Kept separate
+// from BOOKS so the modal and card can be honest that these are not ours.
+export const RECOMMENDED = [
+  {
+    id: "ignatius-study-bible",
+    title: "Ignatius Catholic Study Bible",
+    subtitle: "Old and New Testaments (RSV-2CE)",
+    author: "Scott Hahn & Curtis Mitch · Ignatius Press",
+    url: amazon("1586176145"),
+    tagline: {
+      en: "The complete Catholic study Bible: a solid translation, thousands of footnotes, and references to the Catechism on nearly every page. If you're going to own one Bible, this is the one we'd hand you.",
+      es: "La Biblia de estudio católica completa: una traducción sólida, miles de notas y referencias al Catecismo en casi cada página. Si vas a tener una sola Biblia, esta es la que te daríamos. (Solo en inglés.)",
+    },
+    pattern:
+      /(which|what|good|best|recommend(ed)?)\s+(catholic\s+)?(bible|translation)|bible (should|do|can|would) i (buy|get|read|use)|study bible|catholic bible|bible translation|rsv|douay|nabre|new american bible|(how|where) (do|should|can) i (start|begin) (reading|with) the bible|read the bible for the first time|never read the bible|(qu[eé]|cu[aá]l) biblia|biblia (cat[oó]lica|de estudio)|traducci[oó]n de la biblia|(c[oó]mo|por d[oó]nde) (empiezo|empezar) a leer la biblia/,
+  },
+];
+
 export const BOOKS_TEXT = {
   en: {
     label: "Books",
@@ -153,6 +171,11 @@ export const BOOKS_TEXT = {
     cardIntro: "If this question is one you keep coming back to, there's a short Restless Faith Pocket Guide on it:",
     cardNote: "From the makers of Restless. As an Amazon Associate, Restless Faith Media earns from qualifying purchases, which helps keep Restless free.",
     cardMore: "All pocket guides",
+    recommendedEyebrow: "A BOOK WE RECOMMEND",
+    recommendedIntro: "Not ours — but if this is the question you're asking, it's the book we'd point you to:",
+    recommendedNote: "As an Amazon Associate, Restless Faith Media earns from qualifying purchases, which helps keep Restless free.",
+    recommendedTitle: "Also recommended",
+    recommendedBody: "A few books by other Catholic publishers that we reach for ourselves.",
   },
   es: {
     label: "Libros",
@@ -167,6 +190,11 @@ export const BOOKS_TEXT = {
     cardIntro: "Si esta pregunta es una a la que siempre vuelves, hay una Guía de bolsillo de Restless Faith sobre ella:",
     cardNote: "De los creadores de Restless. Como Asociado de Amazon, Restless Faith Media recibe ingresos por las compras que cumplen los requisitos, lo que ayuda a mantener Restless gratuito.",
     cardMore: "Todas las guías de bolsillo",
+    recommendedEyebrow: "UN LIBRO QUE RECOMENDAMOS",
+    recommendedIntro: "No es nuestro — pero si esta es la pregunta que te haces, es el libro al que te enviaríamos:",
+    recommendedNote: "Como Asociado de Amazon, Restless Faith Media recibe ingresos por las compras que cumplen los requisitos, lo que ayuda a mantener Restless gratuito.",
+    recommendedTitle: "También recomendamos",
+    recommendedBody: "Algunos libros de otras editoriales católicas que nosotros mismos usamos.",
   },
 };
 
@@ -190,5 +218,8 @@ const SUPPRESSED_KINDS = new Set(["crisis", "hurting"]);
 export function matchBook(question, nextStepKind) {
   if (SUPPRESSED_KINDS.has(nextStepKind)) return null;
   const text = String(question || "").toLowerCase();
-  return BOOKS.find((book) => book.pattern.test(text)) || null;
+  const own = BOOKS.find((book) => book.pattern.test(text));
+  if (own) return { ...own, recommended: false };
+  const rec = RECOMMENDED.find((book) => book.pattern.test(text));
+  return rec ? { ...rec, recommended: true } : null;
 }
