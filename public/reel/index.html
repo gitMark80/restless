@@ -29,7 +29,7 @@ img{display:block}
 /* ---------- letterbox + stage ---------- */
 #bg{position:fixed;inset:0;background:radial-gradient(circle at 50% 30%,#153b5f,#04101c 70%);z-index:0}
 #stage{position:fixed;left:50%;top:50%;width:var(--W);height:var(--H);transform:translate(-50%,-50%);overflow:hidden;z-index:1;
-  background:radial-gradient(120% 70% at 50% -10%,#1e5a8a 0%,#0f2a44 45%,#08192a 100%);touch-action:none;contain:layout paint}
+  background:radial-gradient(120% 70% at 50% -10%,#1e5a8a 0%,#0f2a44 45%,#08192a 100%);touch-action:manipulation;contain:layout paint}
 #stage .glow{position:absolute;left:50%;top:calc(var(--H)*-.12);width:calc(var(--W)*1.1);aspect-ratio:1;transform:translateX(-50%);border-radius:50%;
   background:radial-gradient(circle,rgba(32,135,232,.45) 0%,rgba(32,135,232,.12) 38%,rgba(32,135,232,0) 68%);animation:breathe 7s ease-in-out infinite;pointer-events:none}
 @keyframes breathe{50%{opacity:.6;transform:translateX(-50%) scale(1.07)}}
@@ -55,7 +55,8 @@ img{display:block}
   box-shadow:0 0 0 calc(var(--W)*.012) #0c2238,0 0 0 calc(var(--W)*.016) rgba(224,185,106,.55),0 calc(var(--W)*.05) calc(var(--W)*.12) rgba(0,0,0,.55)}
 .frame iframe{position:absolute;left:0;top:0;border:0;transform-origin:0 0;background:var(--deep)}
 .frame .shield{position:absolute;inset:0;z-index:2;display:none}
-.on .frame .shield{display:block} /* while a take is running, taps go to the stage, not the site */
+.armed .frame .shield{display:block} /* only while armed: the first tap starts the take. During the take the site is live, so you can scroll the answer and open the sources */
+.frame iframe{touch-action:pan-y pinch-zoom}
 .full .frame{border-radius:0;box-shadow:none}
 
 /* brand badge (also the "end now" button) */
@@ -275,7 +276,8 @@ details li{margin-bottom:6px}
         <li>Tap <b>Ready</b>. The title card appears and everything else hides.</li>
         <li>Start your phone's screen recording from Control Center, then swipe back.</li>
         <li>Tap the title card. The question types itself in and the answer arrives.</li>
-        <li>The end card appears when time is up, or tap the <b>Restless.faith</b> badge to end as soon as the answer is done. Stop recording.</li>
+        <li>While the answer comes in, the site is live: scroll up to show the whole answer and tap a source to open it. (Set <b>End card after</b> to Manual if you want unhurried time.)</li>
+        <li>The end card appears when time is up, or tap the <b>Restless.faith</b> badge to end whenever you're done. Stop recording.</li>
         <li>Post the video as a Reel. If Control Center shows in the first second, trim it in the Reels editor.</li>
       </ol>
     </details>
@@ -401,21 +403,21 @@ function dressCards(){
 function toStage(reload){
   state='staging';clearTimeout(timer);setup.hidden=true;cta.hidden=true;
   stage.className=S.layout==='full'?'full':'framed';fit();dressCards();
-  intro.hidden=true;intro.classList.remove('leave');outro.hidden=true;menu.hidden=true;bar.hidden=false;
+  intro.hidden=true;intro.classList.remove('leave');outro.hidden=true;menu.hidden=true;bar.hidden=false;stage.classList.remove('armed');
   if(reload||!site.src)loadSite();else tidySite();
   let seen=false;try{seen=localStorage.getItem('rf-reel-tip')==='1'}catch(e){}
   if(!seen)showTip('Wait for the site to load, then tap <b>Ready</b>. The question gets typed in for you when the take starts.');
   keepAwake();
 }
 function arm(){
-  state='armed';bar.hidden=true;tip.hidden=true;menu.hidden=true;outro.hidden=true;stage.classList.remove('on');
+  state='armed';bar.hidden=true;tip.hidden=true;menu.hidden=true;outro.hidden=true;stage.classList.remove('on');stage.classList.add('armed');
   intro.hidden=false;intro.classList.remove('leave');intro.classList.toggle('ghost',!S.intro);
   if(!S.intro){showTip('Start your screen recording, then tap the site to begin.');setTimeout(()=>{if(state==='armed')tip.hidden=true},2500)}
 }
 async function play(){
   state='playing';tip.hidden=true;
   if(!intro.hidden){intro.classList.add('leave');setTimeout(()=>{intro.hidden=true},500)}
-  void stage.offsetWidth;stage.classList.add('on');
+  void stage.offsetWidth;stage.classList.remove('armed');stage.classList.add('on');
   const n=+S.len;if(n>0)timer=setTimeout(end,n*1000+(S.intro?500:0));
   if(!S.intro)intro.hidden=true;
   await sleep(S.intro?650:200);
@@ -435,7 +437,7 @@ $('#change').onclick=e=>{e.stopPropagation();toSetup()};
 $('#ready').onclick=arm;
 $('#reload').onclick=()=>{site.src='about:blank';setTimeout(loadSite,30)};
 $('#back').onclick=toSetup;
-function toSetup(){state='setup';clearTimeout(timer);bar.hidden=true;tip.hidden=true;menu.hidden=true;intro.hidden=true;outro.hidden=true;stage.classList.remove('on');
+function toSetup(){state='setup';clearTimeout(timer);bar.hidden=true;tip.hidden=true;menu.hidden=true;intro.hidden=true;outro.hidden=true;stage.classList.remove('on','armed');
   setup.hidden=false;cta.hidden=false;paint()}
 $('#load').onclick=()=>toStage(true);
 
