@@ -149,6 +149,7 @@ const STRINGS = {
     aboutLabel: "About",
     contactLabel: "Contact",
     closeLabel: "Close",
+    backToQuestions: "← Back to questions",
     aboutTitle: "About Restless",
     aboutBody:
       "Restless takes its name from St. Augustine: “Our hearts are restless until they rest in You.”\n\nRestless is designed to help people — especially students and younger users — ask difficult questions while staying rooted in Catholic teaching. It points you toward Sacred Scripture, the Catechism, the Fathers and Doctors of the Church, councils, and papal teaching.\n\nThe goal is not to make you dependent on AI. Restless should help you think, verify, pray, and have better conversations with parents, teachers, priests, sponsors, youth ministers, and other people who can walk with you.\n\nNo account is required. Restless is a companion for questions, not a replacement for a priest, spiritual director, teacher, counselor, or human relationship.",
@@ -220,6 +221,7 @@ const STRINGS = {
     aboutLabel: "Acerca de",
     contactLabel: "Contacto",
     closeLabel: "Cerrar",
+    backToQuestions: "← Volver a las preguntas",
     aboutTitle: "Acerca de Restless",
     aboutBody:
       "Restless toma su nombre de San Agustín: “Nuestro corazón está inquieto hasta que descanse en Ti”.\n\nRestless está diseñado para ayudar a las personas — especialmente estudiantes y jóvenes — a hacer preguntas difíciles manteniéndose arraigadas en la enseñanza católica. Te dirige a la Sagrada Escritura, el Catecismo, los Padres y Doctores de la Iglesia, los concilios y la enseñanza papal.\n\nLa meta no es hacerte dependiente de la IA. Restless debe ayudarte a pensar, verificar, orar y tener mejores conversaciones con padres, maestros, sacerdotes, padrinos, ministros juveniles y otras personas que puedan acompañarte.\n\nNo se requiere cuenta. Restless acompaña tus preguntas; no reemplaza a un sacerdote, director espiritual, maestro, consejero o relación humana.",
@@ -736,6 +738,63 @@ function BookCard({ book, theme, language, onOpenBooks }) {
   );
 }
 
+function useEscapeToClose(onClose) {
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+}
+
+function ModalHeader({ title, theme, strings, onClose }) {
+  useEscapeToClose(onClose);
+  return (
+    <div
+      className="flex items-center justify-between gap-4"
+      style={{
+        position: "sticky",
+        top: "-1.5rem",
+        margin: "-1.5rem -1.5rem 1rem",
+        padding: "1.25rem 1.5rem 0.75rem",
+        backgroundColor: theme.cardBg,
+        borderBottom: `1px solid ${theme.border}`,
+        zIndex: 1,
+      }}
+    >
+      <h2 style={{ color: theme.text, fontSize: "22px", fontWeight: 700 }}>{title}</h2>
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label={strings.closeLabel}
+        className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+        style={{ border: `1px solid ${theme.border}`, color: theme.subtext }}
+      >
+        <X className="w-5 h-5" />
+      </button>
+    </div>
+  );
+}
+
+function ModalBackButton({ theme, strings, onClose }) {
+  return (
+    <button
+      type="button"
+      onClick={onClose}
+      className="w-full mt-6 rounded-xl px-4 py-3"
+      style={{
+        backgroundColor: theme.accent,
+        color: theme.accentText,
+        fontSize: "15px",
+        fontWeight: 800,
+      }}
+    >
+      {strings.backToQuestions}
+    </button>
+  );
+}
+
 function BooksModal({ theme, strings, language, onClose }) {
   const text = BOOKS_TEXT[language];
   const books = [...BOOKS].sort((a, b) => a.series - b.series);
@@ -756,12 +815,7 @@ function BooksModal({ theme, strings, language, onClose }) {
           border: `1px solid ${theme.border}`,
         }}
       >
-        <div className="flex items-center justify-between gap-4 mb-3">
-          <h2 style={{ color: theme.text, fontSize: "22px", fontWeight: 700 }}>{text.title}</h2>
-          <button onClick={onClose} aria-label={strings.closeLabel}>
-            <X className="w-5 h-5" style={{ color: theme.subtext }} />
-          </button>
-        </div>
+        <ModalHeader title={text.title} theme={theme} strings={strings} onClose={onClose} />
         <p className="leading-relaxed" style={{ color: theme.subtext, fontSize: "16px" }}>
           {text.intro}
         </p>
@@ -842,6 +896,7 @@ function BooksModal({ theme, strings, language, onClose }) {
         <p style={{ margin: "1rem 0 0", color: theme.subtext, fontSize: "12px", lineHeight: 1.45 }}>
           {[text.disclosure, BOOKS_LANGUAGE_NOTE[language]].filter(Boolean).join(" ")}
         </p>
+        <ModalBackButton theme={theme} strings={strings} onClose={onClose} />
       </div>
     </div>
   );
@@ -937,12 +992,7 @@ function InfoModal({ title, body, cta, theme, strings, onClose }) {
           border: `1px solid ${theme.border}`,
         }}
       >
-        <div className="flex items-center justify-between gap-4 mb-4">
-          <h2 style={{ color: theme.text, fontSize: "22px", fontWeight: 700 }}>{title}</h2>
-          <button onClick={onClose} aria-label={strings.closeLabel}>
-            <X className="w-5 h-5" style={{ color: theme.subtext }} />
-          </button>
-        </div>
+        <ModalHeader title={title} theme={theme} strings={strings} onClose={onClose} />
         <p className="whitespace-pre-line leading-relaxed" style={{ color: theme.subtext, fontSize: "16px" }}>
           {body}
         </p>
@@ -957,6 +1007,7 @@ function InfoModal({ title, body, cta, theme, strings, onClose }) {
             {cta.label}
           </a>
         )}
+        <ModalBackButton theme={theme} strings={strings} onClose={onClose} />
       </div>
     </div>
   );
