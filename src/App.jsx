@@ -1126,7 +1126,7 @@ function TextSizeControls({ fontScale, setFontScale, theme, strings }) {
   );
 }
 
-function WelcomePanel({ theme, strings, chooseStarter }) {
+function WelcomePanel({ theme, strings }) {
   return (
     <section
       className="rounded-3xl overflow-hidden"
@@ -1197,32 +1197,39 @@ function WelcomePanel({ theme, strings, chooseStarter }) {
           </div>
         </div>
 
-        <p className="mt-4 mb-2" style={{ color: theme.muted, fontSize: "12px", fontWeight: 700 }}>
-          {strings.startersLabel}
-        </p>
-        <div className="grid grid-cols-2 gap-2">
-          {strings.starterQuestions.map((question) => (
-            <button
-              key={question}
-              type="button"
-              onClick={() => chooseStarter(question)}
-              className="rounded-xl px-3 py-2.5 text-left"
-              style={{
-                backgroundColor: theme.cardBg,
-                color: theme.text,
-                fontSize: "13px",
-                lineHeight: 1.35,
-                fontWeight: 600,
-                border: `1px solid ${theme.border}`,
-                minHeight: "44px",
-              }}
-            >
-              {question}
-            </button>
-          ))}
-        </div>
       </div>
     </section>
+  );
+}
+
+function StarterQuestions({ theme, strings, chooseStarter }) {
+  return (
+    <div className="mt-3">
+      <p className="mb-2" style={{ color: theme.muted, fontSize: "12px", fontWeight: 700 }}>
+        {strings.startersLabel}
+      </p>
+      <div className="grid grid-cols-2 gap-2">
+        {strings.starterQuestions.map((question) => (
+          <button
+            key={question}
+            type="button"
+            onClick={() => chooseStarter(question)}
+            className="rounded-xl px-3 py-2.5 text-left"
+            style={{
+              backgroundColor: theme.cardBg,
+              color: theme.text,
+              fontSize: "13px",
+              lineHeight: 1.35,
+              fontWeight: 600,
+              border: `1px solid ${theme.border}`,
+              minHeight: "44px",
+            }}
+          >
+            {question}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -1453,7 +1460,7 @@ export default function Restless() {
       <main ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden px-3 sm:px-5 py-5">
         <div className="max-w-3xl mx-auto w-full space-y-4 min-w-0">
           {messages.length === 0 && (
-            <WelcomePanel theme={theme} strings={strings} chooseStarter={chooseStarter} />
+            <WelcomePanel theme={theme} strings={strings} />
           )}
 
           {messages.map((msg, idx) => (
@@ -1543,6 +1550,10 @@ export default function Restless() {
               <Send className="w-4 h-4" />
             </button>
           </div>
+
+          {messages.length === 0 && (
+            <StarterQuestions theme={theme} strings={strings} chooseStarter={chooseStarter} />
+          )}
 
           <div className="flex items-center justify-start gap-2.5 mt-2.5 flex-wrap" aria-live="polite">
             <button onClick={() => setActiveModal("about")} style={{ color: theme.subtext, fontSize: "12px" }}>
