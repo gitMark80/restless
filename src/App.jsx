@@ -119,6 +119,7 @@ const STRINGS = {
       "Why baptize babies?",
     ],
     startersLabel: "Try a question",
+    ideasLabel: "Need an idea?",
     placeholder: "Ask about faith, Scripture, or the Church…",
     retryError: "That didn't come through. Tap send again to retry.",
     timeoutError: "That's taking longer than usual. Tap Try again.",
@@ -191,6 +192,7 @@ const STRINGS = {
       "¿Por qué bautizar a los bebés?",
     ],
     startersLabel: "Prueba una pregunta",
+    ideasLabel: "¿Necesitas una idea?",
     placeholder: "Pregunta sobre la fe, la Escritura o la Iglesia…",
     retryError: "Eso no llegó. Toca enviar para intentarlo de nuevo.",
     timeoutError: "Está tardando más de lo normal. Toca Intentar de nuevo.",
@@ -1203,32 +1205,55 @@ function WelcomePanel({ theme, strings }) {
 }
 
 function StarterQuestions({ theme, strings, chooseStarter }) {
+  const [open, setOpen] = useState(false);
   return (
-    <div className="mt-3">
-      <p className="mb-2" style={{ color: theme.muted, fontSize: "12px", fontWeight: 700 }}>
-        {strings.startersLabel}
-      </p>
-      <div className="grid grid-cols-2 gap-2">
-        {strings.starterQuestions.map((question) => (
-          <button
-            key={question}
-            type="button"
-            onClick={() => chooseStarter(question)}
-            className="rounded-xl px-3 py-2.5 text-left"
-            style={{
-              backgroundColor: theme.cardBg,
-              color: theme.text,
-              fontSize: "13px",
-              lineHeight: 1.35,
-              fontWeight: 600,
-              border: `1px solid ${theme.border}`,
-              minHeight: "44px",
-            }}
-          >
-            {question}
-          </button>
-        ))}
-      </div>
+    <div className="mb-2">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5"
+        style={{
+          color: theme.accent,
+          fontSize: "12px",
+          fontWeight: 700,
+          border: `1px solid ${theme.citationBorder}`,
+          backgroundColor: open ? theme.citationBg : "transparent",
+        }}
+      >
+        <Lightbulb className="w-3.5 h-3.5" />
+        {strings.ideasLabel}
+        <ChevronDown
+          className="w-3.5 h-3.5"
+          style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform 150ms" }}
+        />
+      </button>
+      {open && (
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          {strings.starterQuestions.map((question) => (
+            <button
+              key={question}
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                chooseStarter(question);
+              }}
+              className="rounded-xl px-3 py-2.5 text-left"
+              style={{
+                backgroundColor: theme.cardBg,
+                color: theme.text,
+                fontSize: "13px",
+                lineHeight: 1.35,
+                fontWeight: 600,
+                border: `1px solid ${theme.border}`,
+                minHeight: "44px",
+              }}
+            >
+              {question}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -1517,6 +1542,8 @@ export default function Restless() {
             </div>
           )}
 
+          <StarterQuestions theme={theme} strings={strings} chooseStarter={chooseStarter} />
+
           <div className="flex items-end gap-2.5 min-w-0">
             <textarea
               data-question-input
@@ -1550,10 +1577,6 @@ export default function Restless() {
               <Send className="w-4 h-4" />
             </button>
           </div>
-
-          {messages.length === 0 && (
-            <StarterQuestions theme={theme} strings={strings} chooseStarter={chooseStarter} />
-          )}
 
           <div className="flex items-center justify-start gap-2.5 mt-2.5 flex-wrap" aria-live="polite">
             <button onClick={() => setActiveModal("about")} style={{ color: theme.subtext, fontSize: "12px" }}>
