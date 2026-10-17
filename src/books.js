@@ -6,7 +6,7 @@
 // If you have an Amazon Associates tag, set AMAZON_TAG and it is appended
 // to every link automatically.
 
-export const AMAZON_TAG = ""; // e.g. "restlessfaith-20"
+export const AMAZON_TAG = "restlessfaith-20";
 
 export const BOOKS = [
   {
