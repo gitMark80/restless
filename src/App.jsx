@@ -1350,11 +1350,19 @@ export default function Restless() {
     }
   };
 
+  // Enter sends only on devices with a real keyboard. On phones and tablets
+  // the return key inserts a newline — people tap it mid-thought, and
+  // autocorrect/dictation can fire it too — so there the send button is the
+  // only way to submit. Keystrokes that are part of IME composition are
+  // ignored (keyCode 229 is the legacy signal for that).
   const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
+    if (e.key !== "Enter" || e.shiftKey) return;
+    if (e.isComposing || e.keyCode === 229) return;
+    const touchDevice =
+      typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
+    if (touchDevice) return;
+    e.preventDefault();
+    handleSend();
   };
 
   const chooseStarter = (question) => {
