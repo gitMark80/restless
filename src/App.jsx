@@ -18,6 +18,7 @@ import {
   Plus,
 } from "lucide-react";
 import { NEXT_STEP_TEXT, classifyNextStep, nextStepContent } from "./nextSteps.js";
+import { BOOKS, BOOKS_TEXT, BOOKS_LANGUAGE_NOTE, bookUrl, matchBook } from "./books.js";
 
 const AUDIENCES = ["Middle School", "High School", "College", "Adult"];
 
@@ -678,8 +679,126 @@ function NextStepPanel({ questionText, theme, language, onPrompt }) {
   );
 }
 
-function CompanionMessage({ message, questionText, theme, strings, language, onPrompt }) {
+function BookCard({ book, theme, language, onOpenBooks }) {
+  const text = BOOKS_TEXT[language];
+  return (
+    <section
+      data-restless-book="true"
+      style={{
+        marginTop: "0.9rem",
+        padding: "1rem",
+        border: `1px solid ${theme.citationBorder}`,
+        borderRadius: "1rem",
+        background: theme.citationBg,
+      }}
+    >
+      <p style={{ margin: "0 0 0.3rem", color: theme.accent, fontSize: "11px", fontWeight: 900, letterSpacing: "0.08em" }}>
+        {text.cardEyebrow}
+      </p>
+      <p style={{ margin: 0, color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>{text.cardIntro}</p>
+      <h3 style={{ margin: "0.5rem 0 0", color: theme.text, fontSize: "17px", fontWeight: 800 }}>{book.title}</h3>
+      <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>
+        {book.tagline[language]}
+      </p>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem", marginTop: "0.8rem" }}>
+        <a
+          href={bookUrl(book)}
+          target="_blank"
+          rel="noopener noreferrer sponsored"
+          className="inline-flex items-center justify-center rounded-xl px-4 py-2.5"
+          style={{ backgroundColor: theme.accent, color: theme.accentText, fontSize: "14px", fontWeight: 800 }}
+        >
+          {text.buy}
+        </a>
+        <button
+          type="button"
+          onClick={onOpenBooks}
+          className="inline-flex items-center justify-center rounded-xl px-4 py-2.5"
+          style={{ border: `1px solid ${theme.citationBorder}`, color: theme.accent, fontSize: "14px", fontWeight: 800 }}
+        >
+          {text.cardMore}
+        </button>
+      </div>
+      <p style={{ margin: "0.7rem 0 0", color: theme.subtext, fontSize: "12px", lineHeight: 1.45 }}>
+        {[text.cardNote, BOOKS_LANGUAGE_NOTE[language]].filter(Boolean).join(" ")}
+      </p>
+    </section>
+  );
+}
+
+function BooksModal({ theme, strings, language, onClose }) {
+  const text = BOOKS_TEXT[language];
+  const books = [...BOOKS].sort((a, b) => a.series - b.series);
+  return (
+    <div
+      className="fixed inset-0 flex items-end sm:items-center justify-center px-0 sm:px-4"
+      style={{ backgroundColor: "rgba(3, 7, 18, 0.68)", zIndex: 50 }}
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full sm:max-w-lg overflow-y-auto"
+        style={{
+          backgroundColor: theme.cardBg,
+          maxHeight: "82vh",
+          padding: "1.5rem",
+          borderRadius: "1.4rem 1.4rem 0 0",
+          border: `1px solid ${theme.border}`,
+        }}
+      >
+        <div className="flex items-center justify-between gap-4 mb-3">
+          <h2 style={{ color: theme.text, fontSize: "22px", fontWeight: 700 }}>{text.title}</h2>
+          <button onClick={onClose} aria-label={strings.closeLabel}>
+            <X className="w-5 h-5" style={{ color: theme.subtext }} />
+          </button>
+        </div>
+        <p className="leading-relaxed" style={{ color: theme.subtext, fontSize: "16px" }}>
+          {text.intro}
+        </p>
+        <p style={{ margin: "0.5rem 0 0", color: theme.muted, fontSize: "12px" }}>{text.byline}</p>
+
+        <div className="space-y-3 mt-5">
+          {books.map((book) => (
+            <div
+              key={book.id}
+              style={{
+                padding: "1rem",
+                border: `1px solid ${theme.citationBorder}`,
+                borderRadius: "1rem",
+                background: theme.citationBg,
+              }}
+            >
+              <p style={{ margin: 0, color: theme.accent, fontSize: "11px", fontWeight: 900, letterSpacing: "0.08em" }}>
+                {text.bookLabel.toUpperCase()} {book.series}
+              </p>
+              <h3 style={{ margin: "0.3rem 0 0", color: theme.text, fontSize: "17px", fontWeight: 800 }}>{book.title}</h3>
+              <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>
+                {book.tagline[language]}
+              </p>
+              <a
+                href={bookUrl(book)}
+                target="_blank"
+                rel="noopener noreferrer sponsored"
+                className="inline-flex items-center gap-1 mt-3 rounded-xl px-4 py-2"
+                style={{ backgroundColor: theme.accent, color: theme.accentText, fontSize: "14px", fontWeight: 700 }}
+              >
+                {text.buy}
+              </a>
+            </div>
+          ))}
+        </div>
+
+        {BOOKS_LANGUAGE_NOTE[language] && (
+          <p style={{ margin: "1rem 0 0", color: theme.subtext, fontSize: "12px" }}>{BOOKS_LANGUAGE_NOTE[language]}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CompanionMessage({ message, questionText, theme, strings, language, onPrompt, onOpenBooks }) {
   const [openSources, setOpenSources] = useState({});
+  const matchedBook = questionText ? matchBook(questionText, classifyNextStep(questionText)) : null;
 
   return (
     <div className="flex justify-start min-w-0">
@@ -719,6 +838,9 @@ function CompanionMessage({ message, questionText, theme, strings, language, onP
               strings={strings}
             />
             <NextStepPanel questionText={questionText} theme={theme} language={language} onPrompt={onPrompt} />
+            {matchedBook && (
+              <BookCard book={matchedBook} theme={theme} language={language} onOpenBooks={onOpenBooks} />
+            )}
           </>
         )}
       </div>
@@ -1240,6 +1362,7 @@ export default function Restless() {
                   strings={strings}
                   language={language}
                   onPrompt={chooseStarter}
+                  onOpenBooks={() => setActiveModal("books")}
                 />
               )}
             </div>
@@ -1324,6 +1447,10 @@ export default function Restless() {
               {strings.contactLabel}
             </button>
             <span style={{ color: theme.muted, fontSize: "12px" }}>·</span>
+            <button onClick={() => setActiveModal("books")} style={{ color: theme.subtext, fontSize: "12px" }}>
+              {BOOKS_TEXT[language].label}
+            </button>
+            <span style={{ color: theme.muted, fontSize: "12px" }}>·</span>
             <button
               onClick={() => setActiveModal("support")}
               style={{ color: theme.accent, fontSize: "12px", fontWeight: 700 }}
@@ -1372,6 +1499,10 @@ export default function Restless() {
           strings={strings}
           onClose={() => setActiveModal(null)}
         />
+      )}
+
+      {activeModal === "books" && (
+        <BooksModal theme={theme} strings={strings} language={language} onClose={() => setActiveModal(null)} />
       )}
 
       {activeModal === "support" && (
