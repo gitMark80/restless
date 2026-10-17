@@ -143,6 +143,19 @@ export const BOOKS = [
 // from BOOKS so the modal and card can be honest that these are not ours.
 export const RECOMMENDED = [
   {
+    id: "catechism-ascension",
+    title: "Catechism of the Catholic Church",
+    subtitle: "Ascension Edition — full text, color-coded study features",
+    author: "USCCB · Ascension Press",
+    url: amazon("1954881649"),
+    tagline: {
+      en: "The book Restless cites more than any other. This edition keeps the full official text and adds color-coding and reading guides, and it pairs with the Catechism in a Year podcast if you want a daily path through it.",
+      es: "El libro que Restless cita más que ningún otro. Esta edición conserva el texto oficial completo y añade códigos de color y guías de lectura, y acompaña el pódcast Catechism in a Year si quieres recorrerlo día a día. (Solo en inglés.)",
+    },
+    pattern:
+      /\b(the )?catechism\b.*(buy|get|read|own|copy|edition|which|where|recommend|start)|(buy|get|read|own|copy|edition|which|where|recommend|start).*\bcatechism\b|what is the catechism|catechism in a year|ccc \d|catecismo.*(comprar|leer|edici[oó]n|cu[aá]l|d[oó]nde|recomiend)|(comprar|leer|cu[aá]l|d[oó]nde).*catecismo|qu[eé] es el catecismo/,
+  },
+  {
     id: "ignatius-study-bible",
     title: "Ignatius Catholic Study Bible",
     subtitle: "Old and New Testaments (RSV-2CE)",

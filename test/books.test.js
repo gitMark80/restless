@@ -82,6 +82,15 @@ test("Recommended — which Bible to buy → Ignatius Study Bible, flagged as no
   assert.match(RECOMMENDED[0].url, /^https:\/\/www\.amazon\.com\/dp\/[A-Z0-9]{10}$/);
 });
 
+test("Recommended — Catechism questions → Ascension Catechism", () => {
+  assert.equal(matchBook("Which edition of the Catechism should I buy?", "general")?.id, "catechism-ascension");
+  assert.equal(matchBook("What is the Catechism, and can I read it myself?", "general")?.id, "catechism-ascension");
+  assert.equal(matchBook("¿Dónde puedo leer el catecismo?", "general")?.id, "catechism-ascension");
+  // Citing the Catechism in a doctrinal question is not a request for the book.
+  assert.equal(matchBook("Does the Catechism say gambling is a sin?", "general"), null);
+  for (const b of RECOMMENDED) assert.match(b.url, /^https:\/\/www\.amazon\.com\/dp\/[A-Z0-9]{10}$/);
+});
+
 test("Pocket guides win over recommended books when both match", () => {
   assert.equal(match("Is sola scriptura — the Bible alone — really what the Bible teaches?"), 1);
 });
