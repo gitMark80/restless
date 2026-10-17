@@ -697,6 +697,9 @@ function BookCard({ book, theme, language, onOpenBooks }) {
       </p>
       <p style={{ margin: 0, color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>{text.cardIntro}</p>
       <h3 style={{ margin: "0.5rem 0 0", color: theme.text, fontSize: "17px", fontWeight: 800 }}>{book.title}</h3>
+      {book.subtitle && (
+        <p style={{ margin: "0.1rem 0 0", color: theme.subtext, fontSize: "13px", fontWeight: 700 }}>{book.subtitle}</p>
+      )}
       <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>
         {book.tagline[language]}
       </p>
@@ -772,6 +775,9 @@ function BooksModal({ theme, strings, language, onClose }) {
                 {text.bookLabel.toUpperCase()} {book.series}
               </p>
               <h3 style={{ margin: "0.3rem 0 0", color: theme.text, fontSize: "17px", fontWeight: 800 }}>{book.title}</h3>
+              {book.subtitle && (
+                <p style={{ margin: "0.1rem 0 0", color: theme.subtext, fontSize: "13px", fontWeight: 700 }}>{book.subtitle}</p>
+              )}
               <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>
                 {book.tagline[language]}
               </p>
@@ -788,9 +794,9 @@ function BooksModal({ theme, strings, language, onClose }) {
           ))}
         </div>
 
-        {BOOKS_LANGUAGE_NOTE[language] && (
-          <p style={{ margin: "1rem 0 0", color: theme.subtext, fontSize: "12px" }}>{BOOKS_LANGUAGE_NOTE[language]}</p>
-        )}
+        <p style={{ margin: "1rem 0 0", color: theme.subtext, fontSize: "12px", lineHeight: 1.45 }}>
+          {[text.disclosure, BOOKS_LANGUAGE_NOTE[language]].filter(Boolean).join(" ")}
+        </p>
       </div>
     </div>
   );
