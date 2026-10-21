@@ -125,6 +125,21 @@ test("Journal — men / husbands / fathers → Built on Rock", () => {
   for (const b of JOURNALS) assert.match(b.url, /^https:\/\/www\.amazon\.com\/dp\/B0[A-Z0-9]{8}$/);
 });
 
+test("Journal — doubt / dryness / where do I start → Restless journal", () => {
+  for (const q of [
+    "I think I'm losing my faith and I don't know what to do",
+    "God feels really distant lately. Is that normal?",
+    "I'm curious about Catholicism — where do I start?",
+    "How can I grow in my faith?",
+    "Siento que Dios está lejos. ¿Cómo acercarme a Dios?",
+  ]) {
+    assert.equal(matchBook(q, "general")?.id, "restless-journal", q);
+  }
+  // Specific journals and guides still win.
+  assert.equal(matchBook("How can I be a better husband and grow in faith?", "general")?.id, "built-on-rock");
+  assert.equal(matchBook("I was raised Catholic but I doubt all of it now", "general")?.id, "raised-catholic");
+});
+
 test("Ordinary questions get no book", () => {
   assert.equal(match("What is the Bible?"), null);
   assert.equal(match("What does the Bible say about forgiveness?"), null);

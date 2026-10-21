@@ -166,6 +166,21 @@ export const JOURNALS = [
     pattern:
       /journal|gratitude|grateful|daily (prayer|examen|habit|routine)|prayer (habit|routine|life|journal)|how (do|can) i pray (more|every day|daily|consistently)|(start|build|keep) (a )?(prayer|daily) (habit|routine|practice)|examen|evening prayer|morning prayer|pray (more|consistently|every day)|lent|advent|retreat|notice (god|grace)|diario|gratitud|agradecid|h[aá]bito de oraci[oó]n|rutina de oraci[oó]n|orar (m[aá]s|todos los d[ií]as|cada d[ií]a)|cuaresma|adviento|retiro/,
   },
+  {
+    id: "restless-journal",
+    title: "Restless",
+    subtitle: "A 90-Day Catholic Journal for Questions, Doubt, and Deeper Faith",
+    url: amazon("B0HJLFXF4P"),
+    tagline: {
+      en: "The journal built for the same people this app is built for. Ninety days of Scripture, honest reflection, and small next steps for anyone carrying real questions, sitting with doubt, or ready to begin again.",
+      es: "El diario hecho para las mismas personas para quienes se hizo esta app. Noventa días de Escritura, reflexión honesta y pequeños pasos para quien lleva preguntas reales, convive con la duda o está listo para empezar de nuevo. (Solo en inglés.)",
+    },
+    // A catch-all, so it yields when the question is really about a specific
+    // book (the Bible or the Catechism) that the recommended list handles.
+    exclude: /\bbible\b|catechism|\bbiblia\b|catecismo/,
+    pattern:
+      /\bdoubt|doubting|losing my faith|lost my faith|crisis of faith|dry (spell|season)|spiritual(ly)? (dry|dryness|numb|stuck)|god (feels|seems|is) (so |really |very )?(far|distant|silent)|(don'?t|do not) feel god|is god (real|there|listening)|does god (exist|hear|care)|where (do|should) i (start|begin)|how (do|can) i (grow|get closer|draw closer|deepen)|closer to god|deeper faith|deepen my faith|grow in (my )?faith|(new|exploring|curious about) (catholic|christian|faith)|begin again|starting over|back to god|\bduda|dudando|perdiendo (mi|la) fe|perd[ií] (mi|la) fe|crisis de fe|sequedad|dios (se siente|est[aá]) (lejos|distante|en silencio)|no siento a dios|existe dios|dios (me )?escucha|por d[oó]nde (empiezo|empezar)|c[oó]mo (crezco|crecer|acercarme) (en la fe|a dios)|m[aá]s cerca de dios|fe m[aá]s profunda|profundizar (mi|en la) fe|empezar de nuevo|volver a dios/,
+  },
 ];
 
 // Books by other Catholic publishers that Restless recommends. Kept separate
@@ -268,7 +283,9 @@ export function matchBook(question, nextStepKind) {
   const text = String(question || "").toLowerCase();
   const own = BOOKS.find((book) => book.pattern.test(text));
   if (own) return { ...own, recommended: false };
-  const journal = JOURNALS.find((book) => book.pattern.test(text));
+  const journal = JOURNALS.find(
+    (book) => book.pattern.test(text) && !(book.exclude && book.exclude.test(text)),
+  );
   if (journal) return { ...journal, recommended: false };
   const rec = RECOMMENDED.find((book) => book.pattern.test(text));
   return rec ? { ...rec, recommended: true } : null;
