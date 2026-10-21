@@ -1566,7 +1566,7 @@ export default function Restless() {
                 aria-label={BOOKS_TEXT[language].label}
                 title={BOOKS_TEXT[language].label}
                 className="h-9 px-3 rounded-full inline-flex items-center gap-1.5"
-                style={{ backgroundColor: theme.accent, color: theme.accentText, fontSize: "13px", fontWeight: 700 }}
+                style={{ backgroundColor: theme.accent, color: "#f5d76e", fontSize: "13px", fontWeight: 700 }}
               >
                 <BookOpen className="w-4 h-4" />
                 <span className="hidden sm:inline">{BOOKS_TEXT[language].label}</span>

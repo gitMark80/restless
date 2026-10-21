@@ -80,11 +80,11 @@ header button {
   background: var(--rf-paper) !important;
   color: var(--rf-navy) !important;
 }
-body[data-restless-theme="dark"] header button { color:#fff !important; }
+body[data-restless-theme="dark"] header button:not([data-rf-books]) { color:#fff !important; }
 header button[data-rf-books] {
   background: var(--rf-blue) !important;
   border-color: var(--rf-blue) !important;
-  color: #fff !important;
+  color: #f5d76e !important;
   box-shadow: 0 6px 16px rgba(32,135,232,.28) !important;
 }
 
