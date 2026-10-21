@@ -830,6 +830,22 @@ function ModalBackButton({ theme, strings, onClose }) {
 
 function BookShelf({ title, body, books, theme, strings, language, showSeries }) {
   const text = BOOKS_TEXT[language];
+  // A swipe across the shelf must never count as a tap on a cover. Record
+  // where the finger went down; if it moved more than a few pixels before
+  // the click fires, swallow the click.
+  const pointerStart = useRef(null);
+  const onPointerDown = (e) => {
+    pointerStart.current = { x: e.clientX, y: e.clientY };
+  };
+  const onTileClick = (e) => {
+    const start = pointerStart.current;
+    if (!start) return;
+    const moved = Math.hypot(e.clientX - start.x, e.clientY - start.y);
+    if (moved > 8) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
   if (!books.length) return null;
   return (
     <section style={{ marginTop: "1.4rem" }}>
@@ -845,14 +861,18 @@ function BookShelf({ title, body, books, theme, strings, language, showSeries })
           marginLeft: "-1.5rem",
           marginRight: "-1.5rem",
           padding: "4px 1.5rem 10px",
-          scrollSnapType: "x mandatory",
+          scrollSnapType: "x proximity",
           WebkitOverflowScrolling: "touch",
+          touchAction: "pan-x pan-y",
         }}
+        onPointerDown={onPointerDown}
       >
         {books.map((book) => (
           <a
             key={book.id}
             data-rf-shelf="true"
+            onClick={onTileClick}
+            draggable={false}
             href={bookUrl(book)}
             target="_blank"
             rel="noopener noreferrer sponsored"
@@ -868,6 +888,7 @@ function BookShelf({ title, body, books, theme, strings, language, showSeries })
                   src={book.cover}
                   alt={`${book.title} cover`}
                   loading="lazy"
+                  draggable={false}
                   style={{
                     maxWidth: "140px",
                     maxHeight: "214px",
