@@ -683,6 +683,31 @@ function NextStepPanel({ questionText, theme, language, onPrompt }) {
   );
 }
 
+function BookCover({ book, theme, size = 72 }) {
+  const w = size;
+  const h = Math.round(size * 1.5);
+  if (!book.cover) {
+    return (
+      <div
+        aria-hidden="true"
+        className="shrink-0 rounded-md flex items-center justify-center"
+        style={{ width: w, height: h, backgroundColor: theme.elevated, border: `1px solid ${theme.border}` }}
+      >
+        <BookOpen className="w-5 h-5" style={{ color: theme.muted }} />
+      </div>
+    );
+  }
+  return (
+    <img
+      src={book.cover}
+      alt={`${book.title} cover`}
+      loading="lazy"
+      className="shrink-0 rounded-md object-cover"
+      style={{ width: w, height: h, boxShadow: "0 4px 14px rgba(0,0,0,0.25)" }}
+    />
+  );
+}
+
 function BookCard({ book, theme, language, onOpenBooks }) {
   const text = BOOKS_TEXT[language];
   const rec = !!book.recommended;
@@ -705,16 +730,21 @@ function BookCard({ book, theme, language, onOpenBooks }) {
         {eyebrow}
       </p>
       <p style={{ margin: 0, color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>{intro}</p>
-      <h3 style={{ margin: "0.5rem 0 0", color: theme.text, fontSize: "17px", fontWeight: 800 }}>{book.title}</h3>
-      {book.subtitle && (
-        <p style={{ margin: "0.1rem 0 0", color: theme.subtext, fontSize: "13px", fontWeight: 700 }}>{book.subtitle}</p>
-      )}
-      {book.author && (
-        <p style={{ margin: "0.1rem 0 0", color: theme.muted, fontSize: "12px" }}>{book.author}</p>
-      )}
-      <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>
-        {book.tagline[language]}
-      </p>
+      <div className="flex gap-3 items-start" style={{ marginTop: "0.6rem" }}>
+        <BookCover book={book} theme={theme} size={76} />
+        <div className="min-w-0 flex-1">
+          <h3 style={{ margin: 0, color: theme.text, fontSize: "17px", fontWeight: 800 }}>{book.title}</h3>
+          {book.subtitle && (
+            <p style={{ margin: "0.1rem 0 0", color: theme.subtext, fontSize: "13px", fontWeight: 700 }}>{book.subtitle}</p>
+          )}
+          {book.author && (
+            <p style={{ margin: "0.1rem 0 0", color: theme.muted, fontSize: "12px" }}>{book.author}</p>
+          )}
+          <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>
+            {book.tagline[language]}
+          </p>
+        </div>
+      </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem", marginTop: "0.8rem" }}>
         <a
           href={bookUrl(book)}
@@ -835,16 +865,21 @@ function BooksModal({ theme, strings, language, onClose }) {
                 background: theme.citationBg,
               }}
             >
-              <p style={{ margin: 0, color: theme.accent, fontSize: "11px", fontWeight: 900, letterSpacing: "0.08em" }}>
-                {text.bookLabel.toUpperCase()} {book.series}
-              </p>
-              <h3 style={{ margin: "0.3rem 0 0", color: theme.text, fontSize: "17px", fontWeight: 800 }}>{book.title}</h3>
-              {book.subtitle && (
-                <p style={{ margin: "0.1rem 0 0", color: theme.subtext, fontSize: "13px", fontWeight: 700 }}>{book.subtitle}</p>
-              )}
-              <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>
-                {book.tagline[language]}
-              </p>
+              <div className="flex gap-3 items-start">
+                <BookCover book={book} theme={theme} />
+                <div className="min-w-0 flex-1">
+                  <p style={{ margin: 0, color: theme.accent, fontSize: "11px", fontWeight: 900, letterSpacing: "0.08em" }}>
+                    {text.bookLabel.toUpperCase()} {book.series}
+                  </p>
+                  <h3 style={{ margin: "0.3rem 0 0", color: theme.text, fontSize: "17px", fontWeight: 800 }}>{book.title}</h3>
+                  {book.subtitle && (
+                    <p style={{ margin: "0.1rem 0 0", color: theme.subtext, fontSize: "13px", fontWeight: 700 }}>{book.subtitle}</p>
+                  )}
+                  <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>
+                    {book.tagline[language]}
+                  </p>
+                </div>
+              </div>
               <a
                 href={bookUrl(book)}
                 target="_blank"
@@ -873,13 +908,18 @@ function BooksModal({ theme, strings, language, onClose }) {
                     background: theme.citationBg,
                   }}
                 >
-                  <h3 style={{ margin: 0, color: theme.text, fontSize: "17px", fontWeight: 800 }}>{book.title}</h3>
-                  {book.subtitle && (
-                    <p style={{ margin: "0.1rem 0 0", color: theme.subtext, fontSize: "13px", fontWeight: 700 }}>{book.subtitle}</p>
-                  )}
-                  <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>
-                    {book.tagline[language]}
-                  </p>
+                  <div className="flex gap-3 items-start">
+                    <BookCover book={book} theme={theme} />
+                    <div className="min-w-0 flex-1">
+                      <h3 style={{ margin: 0, color: theme.text, fontSize: "17px", fontWeight: 800 }}>{book.title}</h3>
+                      {book.subtitle && (
+                        <p style={{ margin: "0.1rem 0 0", color: theme.subtext, fontSize: "13px", fontWeight: 700 }}>{book.subtitle}</p>
+                      )}
+                      <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>
+                        {book.tagline[language]}
+                      </p>
+                    </div>
+                  </div>
                   <a
                     href={bookUrl(book)}
                     target="_blank"
@@ -910,14 +950,19 @@ function BooksModal({ theme, strings, language, onClose }) {
                     background: theme.citationBg,
                   }}
                 >
-                  <h3 style={{ margin: 0, color: theme.text, fontSize: "17px", fontWeight: 800 }}>{book.title}</h3>
-                  {book.subtitle && (
-                    <p style={{ margin: "0.1rem 0 0", color: theme.subtext, fontSize: "13px", fontWeight: 700 }}>{book.subtitle}</p>
-                  )}
-                  {book.author && <p style={{ margin: "0.1rem 0 0", color: theme.muted, fontSize: "12px" }}>{book.author}</p>}
-                  <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>
-                    {book.tagline[language]}
-                  </p>
+                  <div className="flex gap-3 items-start">
+                    <BookCover book={book} theme={theme} />
+                    <div className="min-w-0 flex-1">
+                      <h3 style={{ margin: 0, color: theme.text, fontSize: "17px", fontWeight: 800 }}>{book.title}</h3>
+                      {book.subtitle && (
+                        <p style={{ margin: "0.1rem 0 0", color: theme.subtext, fontSize: "13px", fontWeight: 700 }}>{book.subtitle}</p>
+                      )}
+                      {book.author && <p style={{ margin: "0.1rem 0 0", color: theme.muted, fontSize: "12px" }}>{book.author}</p>}
+                      <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>
+                        {book.tagline[language]}
+                      </p>
+                    </div>
+                  </div>
                   <a
                     href={bookUrl(book)}
                     target="_blank"

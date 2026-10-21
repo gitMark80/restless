@@ -14,6 +14,7 @@ const amazon = (asin) => `https://www.amazon.com/dp/${asin}`;
 export const BOOKS = [
   {
     id: "idolatry",
+    cover: "/covers/idolatry.jpg",
     series: 9,
     title: "I Thought That Was Idolatry",
     subtitle: "What the Bible Really Says About Statues, Relics, and Catholic Devotion",
@@ -27,6 +28,7 @@ export const BOOKS = [
   },
   {
     id: "confess-priest",
+    cover: "/covers/confess-priest.jpg",
     series: 2,
     title: "Why Do Catholics Confess to a Priest?",
     subtitle: "Can't I Just Tell God?",
@@ -40,6 +42,7 @@ export const BOOKS = [
   },
   {
     id: "online-mass",
+    cover: "/covers/online-mass.jpg",
     series: 4,
     title: "Online Mass Doesn't Count",
     subtitle: "You Need the Eucharist",
@@ -53,6 +56,7 @@ export const BOOKS = [
   },
   {
     id: "hate-sin",
+    cover: "/covers/hate-sin.jpg",
     series: 8,
     title: "Hate the Sin, Love the Sinner",
     subtitle: "What Christian Love Actually Requires",
@@ -66,6 +70,7 @@ export const BOOKS = [
   },
   {
     id: "the-goal",
+    cover: "/covers/the-goal.jpg",
     series: 7,
     title: "The Goal",
     url: amazon("B0HLY987S3"),
@@ -78,6 +83,7 @@ export const BOOKS = [
   },
   {
     id: "sinner-mirror",
+    cover: null, // TODO: add /covers/sinner-mirror.jpg (front cover)
     series: 10,
     title: "The Sinner in the Mirror",
     url: amazon("B0HNBQ8N6T"),
@@ -90,6 +96,7 @@ export const BOOKS = [
   },
   {
     id: "raised-catholic",
+    cover: null, // TODO: add /covers/raised-catholic.jpg (front cover)
     series: 3,
     title: "I Was Raised Catholic",
     url: amazon("B0HJSW21JN"),
@@ -102,6 +109,7 @@ export const BOOKS = [
   },
   {
     id: "protestants",
+    cover: null, // TODO: add /covers/protestants.jpg (front cover)
     series: 1,
     title: "Why Good Protestants Become Catholic",
     url: amazon("B0HJPN317Z"),
@@ -114,6 +122,7 @@ export const BOOKS = [
   },
   {
     id: "jesus-taught",
+    cover: "/covers/jesus-taught.jpg",
     series: 6,
     title: "What Jesus Taught Us",
     url: amazon("B0HLBNFFC6"),
@@ -126,6 +135,7 @@ export const BOOKS = [
   },
   {
     id: "the-point",
+    cover: "/covers/the-point.jpg",
     series: 5,
     title: "The Point",
     subtitle: "Everything Points to Jesus Christ",
@@ -144,6 +154,7 @@ export const BOOKS = [
 export const JOURNALS = [
   {
     id: "built-on-rock",
+    cover: "/covers/built-on-rock.jpg",
     title: "Built on Rock",
     subtitle: "A 90-Day Catholic Journal for Men, Husbands, and Fathers",
     url: amazon("B0HJMP5V7R"),
@@ -156,6 +167,7 @@ export const JOURNALS = [
   },
   {
     id: "five-minute-journal",
+    cover: "/covers/five-minute-journal.jpg",
     title: "The Five-Minute Catholic Journal",
     subtitle: "90 Days of Prayer, Gratitude & Reflection",
     url: amazon("B0HJYS1NCF"),
@@ -168,6 +180,7 @@ export const JOURNALS = [
   },
   {
     id: "restless-journal",
+    cover: "/covers/restless-journal.jpg",
     title: "Restless",
     subtitle: "A 90-Day Catholic Journal for Questions, Doubt, and Deeper Faith",
     url: amazon("B0HJLFXF4P"),
@@ -188,6 +201,7 @@ export const JOURNALS = [
 export const RECOMMENDED = [
   {
     id: "catechism-ascension",
+    cover: "/covers/catechism-ascension.jpg",
     title: "Catechism of the Catholic Church",
     subtitle: "Ascension Edition — full text, color-coded study features",
     author: "USCCB · Ascension Press",
@@ -201,6 +215,7 @@ export const RECOMMENDED = [
   },
   {
     id: "ignatius-study-bible",
+    cover: "/covers/ignatius-study-bible.jpg",
     title: "Ignatius Catholic Study Bible",
     subtitle: "Old and New Testaments (RSV-2CE)",
     author: "Scott Hahn & Curtis Mitch · Ignatius Press",
