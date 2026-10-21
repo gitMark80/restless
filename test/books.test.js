@@ -109,6 +109,22 @@ test("Journal — prayer habit / gratitude / examen → Five-Minute Catholic Jou
   assert.match(JOURNALS[0].url, /^https:\/\/www\.amazon\.com\/dp\/B0[A-Z0-9]{8}$/);
 });
 
+test("Journal — men / husbands / fathers → Built on Rock", () => {
+  for (const q of [
+    "How can I be a better Catholic husband?",
+    "What does it mean to be a spiritual leader as a father?",
+    "I struggle with lust and self-discipline. Where do I start?",
+    "Is there a good men's group or Catholic men's journal?",
+    "¿Cómo ser un mejor esposo católico?",
+  ]) {
+    assert.equal(matchBook(q, "general")?.id, "built-on-rock", q);
+  }
+  // Raising kids is still the family pocket guide; generic prayer habit is still the Five-Minute journal.
+  assert.equal(matchBook("How do I raise my kids Catholic?", "general")?.id, "the-goal");
+  assert.equal(matchBook("How can I pray more consistently?", "general")?.id, "five-minute-journal");
+  for (const b of JOURNALS) assert.match(b.url, /^https:\/\/www\.amazon\.com\/dp\/B0[A-Z0-9]{8}$/);
+});
+
 test("Ordinary questions get no book", () => {
   assert.equal(match("What is the Bible?"), null);
   assert.equal(match("What does the Bible say about forgiveness?"), null);

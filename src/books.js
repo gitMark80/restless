@@ -143,6 +143,18 @@ export const BOOKS = [
 // the numbered Pocket Guide series.
 export const JOURNALS = [
   {
+    id: "built-on-rock",
+    title: "Built on Rock",
+    subtitle: "A 90-Day Catholic Journal for Men, Husbands, and Fathers",
+    url: amazon("B0HJMP5V7R"),
+    tagline: {
+      en: "Ninety days of Scripture, honest questions, and one practical step a day — on prayer, marriage, fatherhood, work, temptation, anger, brotherhood, and building a life that holds.",
+      es: "Noventa días de Escritura, preguntas honestas y un paso práctico al día — sobre la oración, el matrimonio, la paternidad, el trabajo, la tentación, la ira, la hermandad y construir una vida que se sostiene. (Solo en inglés.)",
+    },
+    pattern:
+      /\b(as a|for|catholic|christian|being a|better) (man|men|husband|father|dad)\b|men'?s (group|ministry|prayer|journal|bible)|fatherhood|masculin|spiritual (father|leader|headship)|lead my family|self[- ]?(discipline|mastery|control)|lust|pornograph|\bporn\b|anger (issues|problem)|my temper|accountab|brotherhood|\b(como|para|ser|mejor) (un )?(buen |mejor )?(hombre|esposo|padre|pap[aá])\b|paternidad|masculinidad|autodisciplina|dominio propio|lujuria|pornograf|mi (ira|temperamento|enojo)|hermandad/,
+  },
+  {
     id: "five-minute-journal",
     title: "The Five-Minute Catholic Journal",
     subtitle: "90 Days of Prayer, Gratitude & Reflection",
