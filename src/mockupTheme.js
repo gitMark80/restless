@@ -248,7 +248,9 @@ footer .w-12.h-12 {
   border-radius: 16px !important;
   box-shadow: 0 8px 18px rgba(32,135,232,.25) !important;
 }
-footer button, footer a { color: var(--rf-muted) !important; }
+footer button:not([data-rf-books]), footer a { color: var(--rf-muted) !important; }
+footer button[data-rf-books] { color: #d4a51c !important; }
+body[data-restless-theme="dark"] footer button[data-rf-books] { color: #f5d76e !important; }
 
 .restless-mockup-strip {
   display:grid;

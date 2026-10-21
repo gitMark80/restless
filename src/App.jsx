@@ -1723,8 +1723,9 @@ export default function Restless() {
             </button>
             <span style={{ color: theme.muted, fontSize: "12px" }}>·</span>
             <button
+              data-rf-books="true"
               onClick={() => setActiveModal("books")}
-              style={{ color: theme.accent, fontSize: "12px", fontWeight: 700 }}
+              style={{ color: "#f5d76e", fontSize: "12px", fontWeight: 700 }}
             >
               {BOOKS_TEXT[language].label}
             </button>
