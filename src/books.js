@@ -83,9 +83,10 @@ export const BOOKS = [
   },
   {
     id: "sinner-mirror",
-    cover: null, // TODO: add /covers/sinner-mirror.jpg (front cover)
+    cover: "/covers/sinner-mirror.jpg",
     series: 10,
     title: "The Sinner in the Mirror",
+    subtitle: "Before You Judge Others, Let Christ Change You",
     url: amazon("B0HNBQ8N6T"),
     tagline: {
       en: "For anyone ready to look honestly at their own choices, prepare for Confession, and begin again — without drowning in shame or endless self-scrutiny.",
@@ -96,9 +97,10 @@ export const BOOKS = [
   },
   {
     id: "raised-catholic",
-    cover: null, // TODO: add /covers/raised-catholic.jpg (front cover)
+    cover: "/covers/raised-catholic.jpg",
     series: 3,
     title: "I Was Raised Catholic",
+    subtitle: "The Faith So Many People Leave Without Ever Learning",
     url: amazon("B0HJSW21JN"),
     tagline: {
       en: "For cradle Catholics who drifted, never really understood it, or are quietly wondering whether to come back — seven familiar claims tested against what the Church actually teaches.",
@@ -109,9 +111,10 @@ export const BOOKS = [
   },
   {
     id: "protestants",
-    cover: null, // TODO: add /covers/protestants.jpg (front cover)
+    cover: "/covers/protestants.jpg",
     series: 1,
     title: "Why Good Protestants Become Catholic",
+    subtitle: "And Why Catholics Who Don't Know Their Faith Often Leave",
     url: amazon("B0HJPN317Z"),
     tagline: {
       en: "For anyone wrestling with sola scriptura, the papacy, Mary, or the Eucharist — and wondering why serious Protestants keep following Scripture and history into the Catholic Church.",
@@ -232,9 +235,11 @@ export const RECOMMENDED = [
 export const BOOKS_TEXT = {
   en: {
     label: "Books",
-    title: "Restless Faith Pocket Guides",
+    title: "Books from Restless",
+    guidesTitle: "Restless Faith Pocket Guides",
+    guidesBody: "Ten short, plain-language books, each on one question that keeps people up at night.",
     intro:
-      "Ten short, plain-language books from the makers of Restless. Each one takes a single question that keeps people up at night and walks through it the way a patient friend would — with Scripture, the Catechism, and the Church's reasons, not slogans.",
+      "Journals and short books from the makers of Restless. Tap any cover to see it on Amazon.",
     byline: "Written by M. B. Reston · Restless Faith Media",
     disclosure: "As an Amazon Associate, Restless Faith Media earns from qualifying purchases.",
     bookLabel: "Book",
@@ -254,9 +259,11 @@ export const BOOKS_TEXT = {
   },
   es: {
     label: "Libros",
-    title: "Guías de bolsillo de Restless Faith",
+    title: "Libros de Restless",
+    guidesTitle: "Guías de bolsillo de Restless Faith",
+    guidesBody: "Diez libros breves y en lenguaje sencillo, cada uno sobre una pregunta que no deja dormir a la gente.",
     intro:
-      "Diez libros breves y en lenguaje sencillo, de los creadores de Restless. Cada uno toma una sola pregunta que no deja dormir a la gente y la recorre como lo haría un amigo paciente — con la Escritura, el Catecismo y las razones de la Iglesia, no con consignas.",
+      "Diarios y libros breves de los creadores de Restless. Toca cualquier portada para verlo en Amazon.",
     byline: "Escrito por M. B. Reston · Restless Faith Media",
     disclosure: "Como Asociado de Amazon, Restless Faith Media recibe ingresos por las compras que cumplen los requisitos.",
     bookLabel: "Libro",

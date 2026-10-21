@@ -828,9 +828,75 @@ function ModalBackButton({ theme, strings, onClose }) {
   );
 }
 
+function BookShelf({ title, body, books, theme, strings, language, showSeries }) {
+  const text = BOOKS_TEXT[language];
+  if (!books.length) return null;
+  return (
+    <section style={{ marginTop: "1.4rem" }}>
+      <h3 style={{ margin: 0, color: theme.text, fontSize: "18px", fontWeight: 800 }}>{title}</h3>
+      {body && (
+        <p style={{ margin: "0.2rem 0 0", color: theme.subtext, fontSize: "13px", lineHeight: 1.5 }}>{body}</p>
+      )}
+      <div
+        className="flex gap-3 overflow-x-auto pb-2 -mx-6 px-6"
+        style={{ marginTop: "0.75rem", scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}
+      >
+        {books.map((book) => (
+          <a
+            key={book.id}
+            href={bookUrl(book)}
+            target="_blank"
+            rel="noopener noreferrer sponsored"
+            className="shrink-0 flex flex-col"
+            style={{ width: "148px", scrollSnapAlign: "start", textDecoration: "none" }}
+          >
+            {book.cover ? (
+              <img
+                src={book.cover}
+                alt={`${book.title} cover`}
+                loading="lazy"
+                className="rounded-lg object-cover"
+                style={{ width: "148px", height: "222px", boxShadow: "0 6px 18px rgba(0,0,0,0.28)" }}
+              />
+            ) : (
+              <div
+                aria-hidden="true"
+                className="rounded-lg flex items-center justify-center"
+                style={{ width: "148px", height: "222px", backgroundColor: theme.elevated, border: `1px solid ${theme.border}` }}
+              >
+                <BookOpen className="w-6 h-6" style={{ color: theme.muted }} />
+              </div>
+            )}
+            {showSeries && (
+              <p style={{ margin: "0.55rem 0 0", color: theme.accent, fontSize: "10px", fontWeight: 900, letterSpacing: "0.08em" }}>
+                {text.bookLabel.toUpperCase()} {book.series}
+              </p>
+            )}
+            <p
+              style={{
+                margin: showSeries ? "0.15rem 0 0" : "0.55rem 0 0",
+                color: theme.text,
+                fontSize: "13px",
+                fontWeight: 800,
+                lineHeight: 1.25,
+              }}
+            >
+              {book.title}
+            </p>
+            {book.author && (
+              <p style={{ margin: "0.15rem 0 0", color: theme.muted, fontSize: "11px", lineHeight: 1.3 }}>{book.author}</p>
+            )}
+            <p style={{ margin: "0.35rem 0 0", color: theme.accent, fontSize: "12px", fontWeight: 800 }}>{text.buy}</p>
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function BooksModal({ theme, strings, language, onClose }) {
   const text = BOOKS_TEXT[language];
-  const books = [...BOOKS].sort((a, b) => a.series - b.series);
+  const guides = [...BOOKS].sort((a, b) => a.series - b.series);
   return (
     <div
       className="fixed inset-0 flex items-end sm:items-center justify-center px-0 sm:px-4"
@@ -839,144 +905,46 @@ function BooksModal({ theme, strings, language, onClose }) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full sm:max-w-lg overflow-y-auto"
+        className="w-full sm:max-w-lg overflow-y-auto overflow-x-hidden"
         style={{
           backgroundColor: theme.cardBg,
-          maxHeight: "82vh",
+          maxHeight: "88vh",
           padding: "1.5rem",
           borderRadius: "1.4rem 1.4rem 0 0",
           border: `1px solid ${theme.border}`,
         }}
       >
         <ModalHeader title={text.title} theme={theme} strings={strings} onClose={onClose} />
-        <p className="leading-relaxed" style={{ color: theme.subtext, fontSize: "16px" }}>
+        <p className="leading-relaxed" style={{ color: theme.subtext, fontSize: "15px" }}>
           {text.intro}
         </p>
-        <p style={{ margin: "0.5rem 0 0", color: theme.muted, fontSize: "12px" }}>{text.byline}</p>
+        <p style={{ margin: "0.4rem 0 0", color: theme.muted, fontSize: "12px" }}>{text.byline}</p>
 
-        <div className="space-y-3 mt-5">
-          {books.map((book) => (
-            <div
-              key={book.id}
-              style={{
-                padding: "1rem",
-                border: `1px solid ${theme.citationBorder}`,
-                borderRadius: "1rem",
-                background: theme.citationBg,
-              }}
-            >
-              <div className="flex gap-3 items-start">
-                <BookCover book={book} theme={theme} />
-                <div className="min-w-0 flex-1">
-                  <p style={{ margin: 0, color: theme.accent, fontSize: "11px", fontWeight: 900, letterSpacing: "0.08em" }}>
-                    {text.bookLabel.toUpperCase()} {book.series}
-                  </p>
-                  <h3 style={{ margin: "0.3rem 0 0", color: theme.text, fontSize: "17px", fontWeight: 800 }}>{book.title}</h3>
-                  {book.subtitle && (
-                    <p style={{ margin: "0.1rem 0 0", color: theme.subtext, fontSize: "13px", fontWeight: 700 }}>{book.subtitle}</p>
-                  )}
-                  <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>
-                    {book.tagline[language]}
-                  </p>
-                </div>
-              </div>
-              <a
-                href={bookUrl(book)}
-                target="_blank"
-                rel="noopener noreferrer sponsored"
-                className="inline-flex items-center gap-1 mt-3 rounded-xl px-4 py-2"
-                style={{ backgroundColor: theme.accent, color: theme.accentText, fontSize: "14px", fontWeight: 700 }}
-              >
-                {text.buy}
-              </a>
-            </div>
-          ))}
-        </div>
-
-        {JOURNALS.length > 0 && (
-          <>
-            <h3 style={{ margin: "1.6rem 0 0", color: theme.text, fontSize: "18px", fontWeight: 800 }}>{text.journalsTitle}</h3>
-            <p style={{ margin: "0.3rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.5 }}>{text.journalsBody}</p>
-            <div className="space-y-3 mt-3">
-              {JOURNALS.map((book) => (
-                <div
-                  key={book.id}
-                  style={{
-                    padding: "1rem",
-                    border: `1px solid ${theme.citationBorder}`,
-                    borderRadius: "1rem",
-                    background: theme.citationBg,
-                  }}
-                >
-                  <div className="flex gap-3 items-start">
-                    <BookCover book={book} theme={theme} />
-                    <div className="min-w-0 flex-1">
-                      <h3 style={{ margin: 0, color: theme.text, fontSize: "17px", fontWeight: 800 }}>{book.title}</h3>
-                      {book.subtitle && (
-                        <p style={{ margin: "0.1rem 0 0", color: theme.subtext, fontSize: "13px", fontWeight: 700 }}>{book.subtitle}</p>
-                      )}
-                      <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>
-                        {book.tagline[language]}
-                      </p>
-                    </div>
-                  </div>
-                  <a
-                    href={bookUrl(book)}
-                    target="_blank"
-                    rel="noopener noreferrer sponsored"
-                    className="inline-flex items-center gap-1 mt-3 rounded-xl px-4 py-2"
-                    style={{ backgroundColor: theme.accent, color: theme.accentText, fontSize: "14px", fontWeight: 700 }}
-                  >
-                    {text.buy}
-                  </a>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-
-        {RECOMMENDED.length > 0 && (
-          <>
-            <h3 style={{ margin: "1.6rem 0 0", color: theme.text, fontSize: "18px", fontWeight: 800 }}>{text.recommendedTitle}</h3>
-            <p style={{ margin: "0.3rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.5 }}>{text.recommendedBody}</p>
-            <div className="space-y-3 mt-3">
-              {RECOMMENDED.map((book) => (
-                <div
-                  key={book.id}
-                  style={{
-                    padding: "1rem",
-                    border: `1px solid ${theme.citationBorder}`,
-                    borderRadius: "1rem",
-                    background: theme.citationBg,
-                  }}
-                >
-                  <div className="flex gap-3 items-start">
-                    <BookCover book={book} theme={theme} />
-                    <div className="min-w-0 flex-1">
-                      <h3 style={{ margin: 0, color: theme.text, fontSize: "17px", fontWeight: 800 }}>{book.title}</h3>
-                      {book.subtitle && (
-                        <p style={{ margin: "0.1rem 0 0", color: theme.subtext, fontSize: "13px", fontWeight: 700 }}>{book.subtitle}</p>
-                      )}
-                      {book.author && <p style={{ margin: "0.1rem 0 0", color: theme.muted, fontSize: "12px" }}>{book.author}</p>}
-                      <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>
-                        {book.tagline[language]}
-                      </p>
-                    </div>
-                  </div>
-                  <a
-                    href={bookUrl(book)}
-                    target="_blank"
-                    rel="noopener noreferrer sponsored"
-                    className="inline-flex items-center gap-1 mt-3 rounded-xl px-4 py-2"
-                    style={{ backgroundColor: theme.accent, color: theme.accentText, fontSize: "14px", fontWeight: 700 }}
-                  >
-                    {text.buy}
-                  </a>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
+        <BookShelf
+          title={text.journalsTitle}
+          body={text.journalsBody}
+          books={JOURNALS}
+          theme={theme}
+          strings={strings}
+          language={language}
+        />
+        <BookShelf
+          title={text.guidesTitle}
+          body={text.guidesBody}
+          books={guides}
+          theme={theme}
+          strings={strings}
+          language={language}
+          showSeries
+        />
+        <BookShelf
+          title={text.recommendedTitle}
+          body={text.recommendedBody}
+          books={RECOMMENDED}
+          theme={theme}
+          strings={strings}
+          language={language}
+        />
 
         <p style={{ margin: "1rem 0 0", color: theme.subtext, fontSize: "12px", lineHeight: 1.45 }}>
           {[text.disclosure, BOOKS_LANGUAGE_NOTE[language]].filter(Boolean).join(" ")}
