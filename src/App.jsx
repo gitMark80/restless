@@ -1539,6 +1539,18 @@ export default function Restless() {
 
             <div className="flex items-center gap-2 shrink-0">
               <button
+                data-rf-books="true"
+                onClick={() => setActiveModal("books")}
+                aria-label={BOOKS_TEXT[language].label}
+                title={BOOKS_TEXT[language].label}
+                className="h-9 px-3 rounded-full inline-flex items-center gap-1.5"
+                style={{ backgroundColor: theme.accent, color: theme.accentText, fontSize: "13px", fontWeight: 700 }}
+              >
+                <BookOpen className="w-4 h-4" />
+                <span className="hidden sm:inline">{BOOKS_TEXT[language].label}</span>
+              </button>
+
+              <button
                 onClick={handleLanguageToggle}
                 aria-label={strings.langToggleLabel}
                 className="h-9 px-3 rounded-full"
@@ -1688,7 +1700,10 @@ export default function Restless() {
               {strings.contactLabel}
             </button>
             <span style={{ color: theme.muted, fontSize: "12px" }}>·</span>
-            <button onClick={() => setActiveModal("books")} style={{ color: theme.subtext, fontSize: "12px" }}>
+            <button
+              onClick={() => setActiveModal("books")}
+              style={{ color: theme.accent, fontSize: "12px", fontWeight: 700 }}
+            >
               {BOOKS_TEXT[language].label}
             </button>
             <span style={{ color: theme.muted, fontSize: "12px" }}>·</span>

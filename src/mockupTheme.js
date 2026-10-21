@@ -81,6 +81,12 @@ header button {
   color: var(--rf-navy) !important;
 }
 body[data-restless-theme="dark"] header button { color:#fff !important; }
+header button[data-rf-books] {
+  background: var(--rf-blue) !important;
+  border-color: var(--rf-blue) !important;
+  color: #fff !important;
+  box-shadow: 0 6px 16px rgba(32,135,232,.28) !important;
+}
 
 header [role="group"] {
   margin-top: 10px !important;
