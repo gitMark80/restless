@@ -1222,6 +1222,7 @@ function TextSizeControls({ fontScale, setFontScale, theme, strings }) {
 }
 
 function WelcomePanel({ theme, strings }) {
+  const [openPrinciple, setOpenPrinciple] = useState(null);
   return (
     <section
       className="rounded-3xl overflow-hidden"
@@ -1258,12 +1259,19 @@ function WelcomePanel({ theme, strings }) {
         <div className="grid grid-cols-3 gap-1.5 mt-4">
           {strings.principles.map((item, idx) => {
             const Icon = idx === 0 ? Lightbulb : idx === 1 ? BookOpen : Users;
+            const isOpen = openPrinciple === idx;
             return (
-              <div
+              <button
                 key={item.title}
+                type="button"
+                aria-expanded={isOpen}
+                onClick={() => setOpenPrinciple(isOpen ? null : idx)}
                 className="rounded-xl px-2.5 py-2 flex items-center gap-1.5 min-w-0"
-                style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.border}` }}
-                title={item.body}
+                style={{
+                  backgroundColor: theme.cardBg,
+                  border: `1px solid ${isOpen ? theme.accent : theme.border}`,
+                  boxShadow: isOpen ? `0 0 0 2px ${theme.accent}33` : "none",
+                }}
               >
                 <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: theme.accent }} />
                 <span
@@ -1272,10 +1280,24 @@ function WelcomePanel({ theme, strings }) {
                 >
                   {item.title}
                 </span>
-              </div>
+              </button>
             );
           })}
         </div>
+        {openPrinciple !== null && (
+          <p
+            className="mt-2 rounded-xl px-3 py-2.5 leading-relaxed"
+            style={{
+              backgroundColor: theme.cardBg,
+              border: `1px solid ${theme.border}`,
+              color: theme.subtext,
+              fontSize: "14px",
+            }}
+          >
+            <strong style={{ color: theme.text }}>{strings.principles[openPrinciple].title}.</strong>{" "}
+            {strings.principles[openPrinciple].body}
+          </p>
+        )}
       </div>
 
       <div
