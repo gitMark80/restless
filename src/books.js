@@ -14,6 +14,7 @@ const amazon = (asin) => `https://www.amazon.com/dp/${asin}`;
 export const BOOKS = [
   {
     id: "idolatry",
+    cover: "/covers/idolatry.jpg",
     series: 9,
     title: "I Thought That Was Idolatry",
     subtitle: "What the Bible Really Says About Statues, Relics, and Catholic Devotion",
@@ -27,6 +28,7 @@ export const BOOKS = [
   },
   {
     id: "confess-priest",
+    cover: "/covers/confess-priest.jpg",
     series: 2,
     title: "Why Do Catholics Confess to a Priest?",
     subtitle: "Can't I Just Tell God?",
@@ -40,6 +42,7 @@ export const BOOKS = [
   },
   {
     id: "online-mass",
+    cover: "/covers/online-mass.jpg",
     series: 4,
     title: "Online Mass Doesn't Count",
     subtitle: "You Need the Eucharist",
@@ -53,6 +56,7 @@ export const BOOKS = [
   },
   {
     id: "hate-sin",
+    cover: "/covers/hate-sin.jpg",
     series: 8,
     title: "Hate the Sin, Love the Sinner",
     subtitle: "What Christian Love Actually Requires",
@@ -66,6 +70,7 @@ export const BOOKS = [
   },
   {
     id: "the-goal",
+    cover: "/covers/the-goal.jpg",
     series: 7,
     title: "The Goal",
     url: amazon("B0HLY987S3"),
@@ -78,20 +83,24 @@ export const BOOKS = [
   },
   {
     id: "sinner-mirror",
+    cover: "/covers/sinner-mirror.jpg",
     series: 10,
     title: "The Sinner in the Mirror",
+    subtitle: "Before You Judge Others, Let Christ Change You",
     url: amazon("B0HNBQ8N6T"),
     tagline: {
       en: "For anyone ready to look honestly at their own choices, prepare for Confession, and begin again — without drowning in shame or endless self-scrutiny.",
       es: "Para quien está listo para mirar con honestidad sus propias decisiones, prepararse para la Confesión y empezar de nuevo — sin ahogarse en vergüenza ni en un escrutinio interminable.",
     },
     pattern:
-      /examination of conscience|examine my conscience|examen|am i a (bad|good) person|keep (sinning|falling|committing)|same sins?|struggl(e|ing) with (sin|the same)|scrupul|guilt|shame|ashamed|hypocri|how do i change|stop sinning|repent|contrition|penance|examen de conciencia|soy (una )?mala persona|sigo (pecando|cayendo)|mismos pecados|escr[uú]pulo|culpa|verg[uü]enza|hip[oó]crita|c[oó]mo cambio|dejar de pecar|arrepent|contrici[oó]n|penitencia/,
+      /examination of conscience|examine my conscience|am i a (bad|good) person|keep (sinning|falling|committing)|same sins?|struggl(e|ing) with (sin|the same)|scrupul|guilt|shame|ashamed|hypocri|how do i change|stop sinning|repent|contrition|penance|examen de conciencia|soy (una )?mala persona|sigo (pecando|cayendo)|mismos pecados|escr[uú]pulo|culpa|verg[uü]enza|hip[oó]crita|c[oó]mo cambio|dejar de pecar|arrepent|contrici[oó]n|penitencia/,
   },
   {
     id: "raised-catholic",
+    cover: "/covers/raised-catholic.jpg",
     series: 3,
     title: "I Was Raised Catholic",
+    subtitle: "The Faith So Many People Leave Without Ever Learning",
     url: amazon("B0HJSW21JN"),
     tagline: {
       en: "For cradle Catholics who drifted, never really understood it, or are quietly wondering whether to come back — seven familiar claims tested against what the Church actually teaches.",
@@ -102,8 +111,10 @@ export const BOOKS = [
   },
   {
     id: "protestants",
+    cover: "/covers/protestants.jpg",
     series: 1,
     title: "Why Good Protestants Become Catholic",
+    subtitle: "And Why Catholics Who Don't Know Their Faith Often Leave",
     url: amazon("B0HJPN317Z"),
     tagline: {
       en: "For anyone wrestling with sola scriptura, the papacy, Mary, or the Eucharist — and wondering why serious Protestants keep following Scripture and history into the Catholic Church.",
@@ -114,6 +125,7 @@ export const BOOKS = [
   },
   {
     id: "jesus-taught",
+    cover: "/covers/jesus-taught.jpg",
     series: 6,
     title: "What Jesus Taught Us",
     url: amazon("B0HLBNFFC6"),
@@ -126,6 +138,7 @@ export const BOOKS = [
   },
   {
     id: "the-point",
+    cover: "/covers/the-point.jpg",
     series: 5,
     title: "The Point",
     subtitle: "Everything Points to Jesus Christ",
@@ -139,11 +152,59 @@ export const BOOKS = [
   },
 ];
 
+// Journals and practice books by Restless Faith Media — ours, but not part of
+// the numbered Pocket Guide series.
+export const JOURNALS = [
+  {
+    id: "built-on-rock",
+    cover: "/covers/built-on-rock.jpg",
+    title: "Built on Rock",
+    subtitle: "A 90-Day Catholic Journal for Men, Husbands, and Fathers",
+    url: amazon("B0HJMP5V7R"),
+    tagline: {
+      en: "Ninety days of Scripture, honest questions, and one practical step a day — on prayer, marriage, fatherhood, work, temptation, anger, brotherhood, and building a life that holds.",
+      es: "Noventa días de Escritura, preguntas honestas y un paso práctico al día — sobre la oración, el matrimonio, la paternidad, el trabajo, la tentación, la ira, la hermandad y construir una vida que se sostiene. (Solo en inglés.)",
+    },
+    pattern:
+      /\b(as a|for|catholic|christian|being a|better) (man|men|husband|father|dad)\b|men'?s (group|ministry|prayer|journal|bible)|fatherhood|masculin|spiritual (father|leader|headship)|lead my family|self[- ]?(discipline|mastery|control)|lust|pornograph|\bporn\b|anger (issues|problem)|my temper|accountab|brotherhood|\b(como|para|ser|mejor) (un )?(buen |mejor )?(hombre|esposo|padre|pap[aá])\b|paternidad|masculinidad|autodisciplina|dominio propio|lujuria|pornograf|mi (ira|temperamento|enojo)|hermandad/,
+  },
+  {
+    id: "five-minute-journal",
+    cover: "/covers/five-minute-journal.jpg",
+    title: "The Five-Minute Catholic Journal",
+    subtitle: "90 Days of Prayer, Gratitude & Reflection",
+    url: amazon("B0HJYS1NCF"),
+    tagline: {
+      en: "Five minutes in the morning, five in the evening. A Scripture focus, three things you're grateful for, one person to pray for, and a gentle nightly examen — for 90 days of learning to notice grace.",
+      es: "Cinco minutos por la mañana, cinco por la noche. Una lectura de la Escritura, tres cosas por las que dar gracias, una persona por quien orar y un examen suave cada noche — 90 días para aprender a notar la gracia. (Solo en inglés.)",
+    },
+    pattern:
+      /journal|gratitude|grateful|daily (prayer|examen|habit|routine)|prayer (habit|routine|life|journal)|how (do|can) i pray (more|every day|daily|consistently)|(start|build|keep) (a )?(prayer|daily) (habit|routine|practice)|examen|evening prayer|morning prayer|pray (more|consistently|every day)|lent|advent|retreat|notice (god|grace)|diario|gratitud|agradecid|h[aá]bito de oraci[oó]n|rutina de oraci[oó]n|orar (m[aá]s|todos los d[ií]as|cada d[ií]a)|cuaresma|adviento|retiro/,
+  },
+  {
+    id: "restless-journal",
+    cover: "/covers/restless-journal.jpg",
+    title: "Restless",
+    subtitle: "A 90-Day Catholic Journal for Questions, Doubt, and Deeper Faith",
+    url: amazon("B0HJLFXF4P"),
+    tagline: {
+      en: "The journal built for the same people this app is built for. Ninety days of Scripture, honest reflection, and small next steps for anyone carrying real questions, sitting with doubt, or ready to begin again.",
+      es: "El diario hecho para las mismas personas para quienes se hizo esta app. Noventa días de Escritura, reflexión honesta y pequeños pasos para quien lleva preguntas reales, convive con la duda o está listo para empezar de nuevo. (Solo en inglés.)",
+    },
+    // A catch-all, so it yields when the question is really about a specific
+    // book (the Bible or the Catechism) that the recommended list handles.
+    exclude: /\bbible\b|catechism|\bbiblia\b|catecismo/,
+    pattern:
+      /\bdoubt|doubting|losing my faith|lost my faith|crisis of faith|dry (spell|season)|spiritual(ly)? (dry|dryness|numb|stuck)|god (feels|seems|is) (so |really |very )?(far|distant|silent)|(don'?t|do not) feel god|is god (real|there|listening)|does god (exist|hear|care)|where (do|should) i (start|begin)|how (do|can) i (grow|get closer|draw closer|deepen)|closer to god|deeper faith|deepen my faith|grow in (my )?faith|(new|exploring|curious about) (catholic|christian|faith)|begin again|starting over|back to god|\bduda|dudando|perdiendo (mi|la) fe|perd[ií] (mi|la) fe|crisis de fe|sequedad|dios (se siente|est[aá]) (lejos|distante|en silencio)|no siento a dios|existe dios|dios (me )?escucha|por d[oó]nde (empiezo|empezar)|c[oó]mo (crezco|crecer|acercarme) (en la fe|a dios)|m[aá]s cerca de dios|fe m[aá]s profunda|profundizar (mi|en la) fe|empezar de nuevo|volver a dios/,
+  },
+];
+
 // Books by other Catholic publishers that Restless recommends. Kept separate
 // from BOOKS so the modal and card can be honest that these are not ours.
 export const RECOMMENDED = [
   {
     id: "catechism-ascension",
+    cover: "/covers/catechism-ascension.jpg",
     title: "Catechism of the Catholic Church",
     subtitle: "Ascension Edition — full text, color-coded study features",
     author: "USCCB · Ascension Press",
@@ -157,6 +218,7 @@ export const RECOMMENDED = [
   },
   {
     id: "ignatius-study-bible",
+    cover: "/covers/ignatius-study-bible.jpg",
     title: "Ignatius Catholic Study Bible",
     subtitle: "Old and New Testaments (RSV-2CE)",
     author: "Scott Hahn & Curtis Mitch · Ignatius Press",
@@ -173,9 +235,11 @@ export const RECOMMENDED = [
 export const BOOKS_TEXT = {
   en: {
     label: "Books",
-    title: "Restless Faith Pocket Guides",
+    title: "Books from Restless",
+    guidesTitle: "Restless Faith Pocket Guides",
+    guidesBody: "Ten short, plain-language books, each on one question that keeps people up at night.",
     intro:
-      "Ten short, plain-language books from the makers of Restless. Each one takes a single question that keeps people up at night and walks through it the way a patient friend would — with Scripture, the Catechism, and the Church's reasons, not slogans.",
+      "Journals and short books from the makers of Restless. Tap any cover to see it on Amazon.",
     byline: "Written by M. B. Reston · Restless Faith Media",
     disclosure: "As an Amazon Associate, Restless Faith Media earns from qualifying purchases.",
     bookLabel: "Book",
@@ -187,14 +251,19 @@ export const BOOKS_TEXT = {
     recommendedEyebrow: "A BOOK WE RECOMMEND",
     recommendedIntro: "Not ours — but if this is the question you're asking, it's the book we'd point you to:",
     recommendedNote: "As an Amazon Associate, Restless Faith Media earns from qualifying purchases, which helps keep Restless free.",
+    journalsTitle: "Journals",
+    journalsBody: "Daily practice books from Restless Faith Media.",
+    journalCardIntro: "If you're looking for a simple daily rhythm, we made one:",
     recommendedTitle: "Also recommended",
     recommendedBody: "A few books by other Catholic publishers that we reach for ourselves.",
   },
   es: {
     label: "Libros",
-    title: "Guías de bolsillo de Restless Faith",
+    title: "Libros de Restless",
+    guidesTitle: "Guías de bolsillo de Restless Faith",
+    guidesBody: "Diez libros breves y en lenguaje sencillo, cada uno sobre una pregunta que no deja dormir a la gente.",
     intro:
-      "Diez libros breves y en lenguaje sencillo, de los creadores de Restless. Cada uno toma una sola pregunta que no deja dormir a la gente y la recorre como lo haría un amigo paciente — con la Escritura, el Catecismo y las razones de la Iglesia, no con consignas.",
+      "Diarios y libros breves de los creadores de Restless. Toca cualquier portada para verlo en Amazon.",
     byline: "Escrito por M. B. Reston · Restless Faith Media",
     disclosure: "Como Asociado de Amazon, Restless Faith Media recibe ingresos por las compras que cumplen los requisitos.",
     bookLabel: "Libro",
@@ -206,6 +275,9 @@ export const BOOKS_TEXT = {
     recommendedEyebrow: "UN LIBRO QUE RECOMENDAMOS",
     recommendedIntro: "No es nuestro — pero si esta es la pregunta que te haces, es el libro al que te enviaríamos:",
     recommendedNote: "Como Asociado de Amazon, Restless Faith Media recibe ingresos por las compras que cumplen los requisitos, lo que ayuda a mantener Restless gratuito.",
+    journalsTitle: "Diarios",
+    journalsBody: "Libros de práctica diaria de Restless Faith Media.",
+    journalCardIntro: "Si buscas un ritmo diario sencillo, hicimos uno:",
     recommendedTitle: "También recomendamos",
     recommendedBody: "Algunos libros de otras editoriales católicas que nosotros mismos usamos.",
   },
@@ -233,6 +305,10 @@ export function matchBook(question, nextStepKind) {
   const text = String(question || "").toLowerCase();
   const own = BOOKS.find((book) => book.pattern.test(text));
   if (own) return { ...own, recommended: false };
+  const journal = JOURNALS.find(
+    (book) => book.pattern.test(text) && !(book.exclude && book.exclude.test(text)),
+  );
+  if (journal) return { ...journal, recommended: false };
   const rec = RECOMMENDED.find((book) => book.pattern.test(text));
   return rec ? { ...rec, recommended: true } : null;
 }

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { matchBook, bookUrl, BOOKS, RECOMMENDED } from "../src/books.js";
+import { matchBook, bookUrl, BOOKS, JOURNALS, RECOMMENDED } from "../src/books.js";
 import { classifyNextStep } from "../src/nextSteps.js";
 
 const match = (q) => matchBook(q, classifyNextStep(q))?.series ?? null;
@@ -93,6 +93,51 @@ test("Recommended — Catechism questions → Ascension Catechism", () => {
 
 test("Pocket guides win over recommended books when both match", () => {
   assert.equal(match("Is sola scriptura — the Bible alone — really what the Bible teaches?"), 1);
+});
+
+test("Journal — prayer habit / gratitude / examen → Five-Minute Catholic Journal", () => {
+  for (const q of [
+    "How can I pray more consistently every day?",
+    "Is there a Catholic gratitude journal?",
+    "How do I do a daily examen?",
+    "What should I do for Lent this year?",
+    "¿Cómo puedo orar todos los días?",
+  ]) {
+    assert.equal(matchBook(q, "general")?.id, "five-minute-journal", q);
+  }
+  assert.equal(matchBook("How can I pray more?", "general")?.recommended, false);
+  assert.match(JOURNALS[0].url, /^https:\/\/www\.amazon\.com\/dp\/B0[A-Z0-9]{8}$/);
+});
+
+test("Journal — men / husbands / fathers → Built on Rock", () => {
+  for (const q of [
+    "How can I be a better Catholic husband?",
+    "What does it mean to be a spiritual leader as a father?",
+    "I struggle with lust and self-discipline. Where do I start?",
+    "Is there a good men's group or Catholic men's journal?",
+    "¿Cómo ser un mejor esposo católico?",
+  ]) {
+    assert.equal(matchBook(q, "general")?.id, "built-on-rock", q);
+  }
+  // Raising kids is still the family pocket guide; generic prayer habit is still the Five-Minute journal.
+  assert.equal(matchBook("How do I raise my kids Catholic?", "general")?.id, "the-goal");
+  assert.equal(matchBook("How can I pray more consistently?", "general")?.id, "five-minute-journal");
+  for (const b of JOURNALS) assert.match(b.url, /^https:\/\/www\.amazon\.com\/dp\/B0[A-Z0-9]{8}$/);
+});
+
+test("Journal — doubt / dryness / where do I start → Restless journal", () => {
+  for (const q of [
+    "I think I'm losing my faith and I don't know what to do",
+    "God feels really distant lately. Is that normal?",
+    "I'm curious about Catholicism — where do I start?",
+    "How can I grow in my faith?",
+    "Siento que Dios está lejos. ¿Cómo acercarme a Dios?",
+  ]) {
+    assert.equal(matchBook(q, "general")?.id, "restless-journal", q);
+  }
+  // Specific journals and guides still win.
+  assert.equal(matchBook("How can I be a better husband and grow in faith?", "general")?.id, "built-on-rock");
+  assert.equal(matchBook("I was raised Catholic but I doubt all of it now", "general")?.id, "raised-catholic");
 });
 
 test("Ordinary questions get no book", () => {

@@ -18,7 +18,7 @@ import {
   Plus,
 } from "lucide-react";
 import { NEXT_STEP_TEXT, classifyNextStep, nextStepContent } from "./nextSteps.js";
-import { BOOKS, RECOMMENDED, BOOKS_TEXT, BOOKS_LANGUAGE_NOTE, bookUrl, matchBook } from "./books.js";
+import { BOOKS, JOURNALS, RECOMMENDED, BOOKS_TEXT, BOOKS_LANGUAGE_NOTE, bookUrl, matchBook } from "./books.js";
 
 const AUDIENCES = ["Middle School", "High School", "College", "Adult"];
 
@@ -683,11 +683,37 @@ function NextStepPanel({ questionText, theme, language, onPrompt }) {
   );
 }
 
+function BookCover({ book, theme, size = 72 }) {
+  const w = size;
+  const h = Math.round(size * 1.5);
+  if (!book.cover) {
+    return (
+      <div
+        aria-hidden="true"
+        className="shrink-0 rounded-md flex items-center justify-center"
+        style={{ width: w, height: h, backgroundColor: theme.elevated, border: `1px solid ${theme.border}` }}
+      >
+        <BookOpen className="w-5 h-5" style={{ color: theme.muted }} />
+      </div>
+    );
+  }
+  return (
+    <img
+      src={book.cover}
+      alt={`${book.title} cover`}
+      loading="lazy"
+      className="shrink-0 rounded-md object-cover"
+      style={{ width: w, height: h, boxShadow: "0 4px 14px rgba(0,0,0,0.25)" }}
+    />
+  );
+}
+
 function BookCard({ book, theme, language, onOpenBooks }) {
   const text = BOOKS_TEXT[language];
   const rec = !!book.recommended;
   const eyebrow = rec ? text.recommendedEyebrow : text.cardEyebrow;
-  const intro = rec ? text.recommendedIntro : text.cardIntro;
+  const isJournal = JOURNALS.some((j) => j.id === book.id);
+  const intro = rec ? text.recommendedIntro : isJournal ? text.journalCardIntro : text.cardIntro;
   const note = rec ? text.recommendedNote : text.cardNote;
   return (
     <section
@@ -704,16 +730,21 @@ function BookCard({ book, theme, language, onOpenBooks }) {
         {eyebrow}
       </p>
       <p style={{ margin: 0, color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>{intro}</p>
-      <h3 style={{ margin: "0.5rem 0 0", color: theme.text, fontSize: "17px", fontWeight: 800 }}>{book.title}</h3>
-      {book.subtitle && (
-        <p style={{ margin: "0.1rem 0 0", color: theme.subtext, fontSize: "13px", fontWeight: 700 }}>{book.subtitle}</p>
-      )}
-      {book.author && (
-        <p style={{ margin: "0.1rem 0 0", color: theme.muted, fontSize: "12px" }}>{book.author}</p>
-      )}
-      <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>
-        {book.tagline[language]}
-      </p>
+      <div className="flex gap-3 items-start" style={{ marginTop: "0.6rem" }}>
+        <BookCover book={book} theme={theme} size={76} />
+        <div className="min-w-0 flex-1">
+          <h3 style={{ margin: 0, color: theme.text, fontSize: "17px", fontWeight: 800 }}>{book.title}</h3>
+          {book.subtitle && (
+            <p style={{ margin: "0.1rem 0 0", color: theme.subtext, fontSize: "13px", fontWeight: 700 }}>{book.subtitle}</p>
+          )}
+          {book.author && (
+            <p style={{ margin: "0.1rem 0 0", color: theme.muted, fontSize: "12px" }}>{book.author}</p>
+          )}
+          <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>
+            {book.tagline[language]}
+          </p>
+        </div>
+      </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem", marginTop: "0.8rem" }}>
         <a
           href={bookUrl(book)}
@@ -797,9 +828,117 @@ function ModalBackButton({ theme, strings, onClose }) {
   );
 }
 
+function BookShelf({ title, body, books, theme, strings, language, showSeries }) {
+  const text = BOOKS_TEXT[language];
+  // A swipe across the shelf must never count as a tap on a cover. Record
+  // where the finger went down; if it moved more than a few pixels before
+  // the click fires, swallow the click.
+  const pointerStart = useRef(null);
+  const onPointerDown = (e) => {
+    pointerStart.current = { x: e.clientX, y: e.clientY };
+  };
+  const onTileClick = (e) => {
+    const start = pointerStart.current;
+    if (!start) return;
+    const moved = Math.hypot(e.clientX - start.x, e.clientY - start.y);
+    if (moved > 8) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
+  if (!books.length) return null;
+  return (
+    <section style={{ marginTop: "1.4rem" }}>
+      <h3 style={{ margin: 0, color: theme.text, fontSize: "18px", fontWeight: 800 }}>{title}</h3>
+      {body && (
+        <p style={{ margin: "0.2rem 0 0", color: theme.subtext, fontSize: "13px", lineHeight: 1.5 }}>{body}</p>
+      )}
+      <div
+        className="flex overflow-x-auto"
+        style={{
+          gap: "14px",
+          marginTop: "0.75rem",
+          marginLeft: "-1.5rem",
+          marginRight: "-1.5rem",
+          padding: "4px 1.5rem 10px",
+          scrollSnapType: "x proximity",
+          WebkitOverflowScrolling: "touch",
+          touchAction: "pan-x pan-y",
+        }}
+        onPointerDown={onPointerDown}
+      >
+        {books.map((book) => (
+          <a
+            key={book.id}
+            data-rf-shelf="true"
+            onClick={onTileClick}
+            draggable={false}
+            href={bookUrl(book)}
+            target="_blank"
+            rel="noopener noreferrer sponsored"
+            className="shrink-0 flex flex-col"
+            style={{ width: "140px", scrollSnapAlign: "start", textDecoration: "none", color: theme.text }}
+          >
+            <div
+              className="flex items-end justify-center"
+              style={{ height: "214px", width: "140px" }}
+            >
+              {book.cover ? (
+                <img
+                  src={book.cover}
+                  alt={`${book.title} cover`}
+                  loading="lazy"
+                  draggable={false}
+                  style={{
+                    maxWidth: "140px",
+                    maxHeight: "214px",
+                    width: "auto",
+                    height: "auto",
+                    borderRadius: "8px",
+                    boxShadow: "0 6px 18px rgba(0,0,0,0.28)",
+                    display: "block",
+                  }}
+                />
+              ) : (
+                <div
+                  aria-hidden="true"
+                  className="rounded-lg flex items-center justify-center"
+                  style={{ width: "140px", height: "214px", backgroundColor: theme.elevated, border: `1px solid ${theme.border}` }}
+                >
+                  <BookOpen className="w-6 h-6" style={{ color: theme.muted }} />
+                </div>
+              )}
+            </div>
+            {showSeries && (
+              <p style={{ margin: "0.55rem 0 0", color: theme.accent, fontSize: "10px", fontWeight: 900, letterSpacing: "0.08em" }}>
+                {text.bookLabel.toUpperCase()} {book.series}
+              </p>
+            )}
+            <p
+              style={{
+                margin: showSeries ? "0.15rem 0 0" : "0.55rem 0 0",
+                color: theme.text,
+                fontSize: "13px",
+                fontWeight: 800,
+                lineHeight: 1.25,
+              }}
+            >
+              {book.title}
+            </p>
+            {book.author && (
+              <p style={{ margin: "0.15rem 0 0", color: theme.muted, fontSize: "11px", lineHeight: 1.3 }}>{book.author}</p>
+            )}
+            <p style={{ margin: "0.35rem 0 0", color: theme.accent, fontSize: "12px", fontWeight: 800 }}>{text.buy}</p>
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function BooksModal({ theme, strings, language, onClose }) {
   const text = BOOKS_TEXT[language];
-  const books = [...BOOKS].sort((a, b) => a.series - b.series);
+  const guides = [...BOOKS].sort((a, b) => a.series - b.series);
   return (
     <div
       className="fixed inset-0 flex items-end sm:items-center justify-center px-0 sm:px-4"
@@ -808,92 +947,46 @@ function BooksModal({ theme, strings, language, onClose }) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full sm:max-w-lg overflow-y-auto"
+        className="w-full sm:max-w-lg overflow-y-auto overflow-x-hidden"
         style={{
           backgroundColor: theme.cardBg,
-          maxHeight: "82vh",
+          maxHeight: "88vh",
           padding: "1.5rem",
           borderRadius: "1.4rem 1.4rem 0 0",
           border: `1px solid ${theme.border}`,
         }}
       >
         <ModalHeader title={text.title} theme={theme} strings={strings} onClose={onClose} />
-        <p className="leading-relaxed" style={{ color: theme.subtext, fontSize: "16px" }}>
+        <p className="leading-relaxed" style={{ color: theme.subtext, fontSize: "15px" }}>
           {text.intro}
         </p>
-        <p style={{ margin: "0.5rem 0 0", color: theme.muted, fontSize: "12px" }}>{text.byline}</p>
+        <p style={{ margin: "0.4rem 0 0", color: theme.muted, fontSize: "12px" }}>{text.byline}</p>
 
-        <div className="space-y-3 mt-5">
-          {books.map((book) => (
-            <div
-              key={book.id}
-              style={{
-                padding: "1rem",
-                border: `1px solid ${theme.citationBorder}`,
-                borderRadius: "1rem",
-                background: theme.citationBg,
-              }}
-            >
-              <p style={{ margin: 0, color: theme.accent, fontSize: "11px", fontWeight: 900, letterSpacing: "0.08em" }}>
-                {text.bookLabel.toUpperCase()} {book.series}
-              </p>
-              <h3 style={{ margin: "0.3rem 0 0", color: theme.text, fontSize: "17px", fontWeight: 800 }}>{book.title}</h3>
-              {book.subtitle && (
-                <p style={{ margin: "0.1rem 0 0", color: theme.subtext, fontSize: "13px", fontWeight: 700 }}>{book.subtitle}</p>
-              )}
-              <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>
-                {book.tagline[language]}
-              </p>
-              <a
-                href={bookUrl(book)}
-                target="_blank"
-                rel="noopener noreferrer sponsored"
-                className="inline-flex items-center gap-1 mt-3 rounded-xl px-4 py-2"
-                style={{ backgroundColor: theme.accent, color: theme.accentText, fontSize: "14px", fontWeight: 700 }}
-              >
-                {text.buy}
-              </a>
-            </div>
-          ))}
-        </div>
-
-        {RECOMMENDED.length > 0 && (
-          <>
-            <h3 style={{ margin: "1.6rem 0 0", color: theme.text, fontSize: "18px", fontWeight: 800 }}>{text.recommendedTitle}</h3>
-            <p style={{ margin: "0.3rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.5 }}>{text.recommendedBody}</p>
-            <div className="space-y-3 mt-3">
-              {RECOMMENDED.map((book) => (
-                <div
-                  key={book.id}
-                  style={{
-                    padding: "1rem",
-                    border: `1px solid ${theme.citationBorder}`,
-                    borderRadius: "1rem",
-                    background: theme.citationBg,
-                  }}
-                >
-                  <h3 style={{ margin: 0, color: theme.text, fontSize: "17px", fontWeight: 800 }}>{book.title}</h3>
-                  {book.subtitle && (
-                    <p style={{ margin: "0.1rem 0 0", color: theme.subtext, fontSize: "13px", fontWeight: 700 }}>{book.subtitle}</p>
-                  )}
-                  {book.author && <p style={{ margin: "0.1rem 0 0", color: theme.muted, fontSize: "12px" }}>{book.author}</p>}
-                  <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>
-                    {book.tagline[language]}
-                  </p>
-                  <a
-                    href={bookUrl(book)}
-                    target="_blank"
-                    rel="noopener noreferrer sponsored"
-                    className="inline-flex items-center gap-1 mt-3 rounded-xl px-4 py-2"
-                    style={{ backgroundColor: theme.accent, color: theme.accentText, fontSize: "14px", fontWeight: 700 }}
-                  >
-                    {text.buy}
-                  </a>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
+        <BookShelf
+          title={text.journalsTitle}
+          body={text.journalsBody}
+          books={JOURNALS}
+          theme={theme}
+          strings={strings}
+          language={language}
+        />
+        <BookShelf
+          title={text.guidesTitle}
+          body={text.guidesBody}
+          books={guides}
+          theme={theme}
+          strings={strings}
+          language={language}
+          showSeries
+        />
+        <BookShelf
+          title={text.recommendedTitle}
+          body={text.recommendedBody}
+          books={RECOMMENDED}
+          theme={theme}
+          strings={strings}
+          language={language}
+        />
 
         <p style={{ margin: "1rem 0 0", color: theme.subtext, fontSize: "12px", lineHeight: 1.45 }}>
           {[text.disclosure, BOOKS_LANGUAGE_NOTE[language]].filter(Boolean).join(" ")}
@@ -1129,6 +1222,7 @@ function TextSizeControls({ fontScale, setFontScale, theme, strings }) {
 }
 
 function WelcomePanel({ theme, strings }) {
+  const [openPrinciple, setOpenPrinciple] = useState(null);
   return (
     <section
       className="rounded-3xl overflow-hidden"
@@ -1165,12 +1259,19 @@ function WelcomePanel({ theme, strings }) {
         <div className="grid grid-cols-3 gap-1.5 mt-4">
           {strings.principles.map((item, idx) => {
             const Icon = idx === 0 ? Lightbulb : idx === 1 ? BookOpen : Users;
+            const isOpen = openPrinciple === idx;
             return (
-              <div
+              <button
                 key={item.title}
+                type="button"
+                aria-expanded={isOpen}
+                onClick={() => setOpenPrinciple(isOpen ? null : idx)}
                 className="rounded-xl px-2.5 py-2 flex items-center gap-1.5 min-w-0"
-                style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.border}` }}
-                title={item.body}
+                style={{
+                  backgroundColor: theme.cardBg,
+                  border: `1px solid ${isOpen ? theme.accent : theme.border}`,
+                  boxShadow: isOpen ? `0 0 0 2px ${theme.accent}33` : "none",
+                }}
               >
                 <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: theme.accent }} />
                 <span
@@ -1179,10 +1280,24 @@ function WelcomePanel({ theme, strings }) {
                 >
                   {item.title}
                 </span>
-              </div>
+              </button>
             );
           })}
         </div>
+        {openPrinciple !== null && (
+          <p
+            className="mt-2 rounded-xl px-3 py-2.5 leading-relaxed"
+            style={{
+              backgroundColor: theme.cardBg,
+              border: `1px solid ${theme.border}`,
+              color: theme.subtext,
+              fontSize: "14px",
+            }}
+          >
+            <strong style={{ color: theme.text }}>{strings.principles[openPrinciple].title}.</strong>{" "}
+            {strings.principles[openPrinciple].body}
+          </p>
+        )}
       </div>
 
       <div
@@ -1446,6 +1561,18 @@ export default function Restless() {
 
             <div className="flex items-center gap-2 shrink-0">
               <button
+                data-rf-books="true"
+                onClick={() => setActiveModal("books")}
+                aria-label={BOOKS_TEXT[language].label}
+                title={BOOKS_TEXT[language].label}
+                className="h-9 px-3 rounded-full inline-flex items-center gap-1.5"
+                style={{ backgroundColor: theme.accent, color: "#f5d76e", fontSize: "13px", fontWeight: 700 }}
+              >
+                <BookOpen className="w-4 h-4" />
+                <span className="hidden sm:inline">{BOOKS_TEXT[language].label}</span>
+              </button>
+
+              <button
                 onClick={handleLanguageToggle}
                 aria-label={strings.langToggleLabel}
                 className="h-9 px-3 rounded-full"
@@ -1595,7 +1722,11 @@ export default function Restless() {
               {strings.contactLabel}
             </button>
             <span style={{ color: theme.muted, fontSize: "12px" }}>·</span>
-            <button onClick={() => setActiveModal("books")} style={{ color: theme.subtext, fontSize: "12px" }}>
+            <button
+              data-rf-books="true"
+              onClick={() => setActiveModal("books")}
+              style={{ color: "#f5d76e", fontSize: "12px", fontWeight: 700 }}
+            >
               {BOOKS_TEXT[language].label}
             </button>
             <span style={{ color: theme.muted, fontSize: "12px" }}>·</span>
