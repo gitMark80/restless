@@ -838,35 +838,56 @@ function BookShelf({ title, body, books, theme, strings, language, showSeries })
         <p style={{ margin: "0.2rem 0 0", color: theme.subtext, fontSize: "13px", lineHeight: 1.5 }}>{body}</p>
       )}
       <div
-        className="flex gap-3 overflow-x-auto pb-2 -mx-6 px-6"
-        style={{ marginTop: "0.75rem", scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}
+        className="flex overflow-x-auto"
+        style={{
+          gap: "14px",
+          marginTop: "0.75rem",
+          marginLeft: "-1.5rem",
+          marginRight: "-1.5rem",
+          padding: "4px 1.5rem 10px",
+          scrollSnapType: "x mandatory",
+          WebkitOverflowScrolling: "touch",
+        }}
       >
         {books.map((book) => (
           <a
             key={book.id}
+            data-rf-shelf="true"
             href={bookUrl(book)}
             target="_blank"
             rel="noopener noreferrer sponsored"
             className="shrink-0 flex flex-col"
-            style={{ width: "148px", scrollSnapAlign: "start", textDecoration: "none" }}
+            style={{ width: "140px", scrollSnapAlign: "start", textDecoration: "none", color: theme.text }}
           >
-            {book.cover ? (
-              <img
-                src={book.cover}
-                alt={`${book.title} cover`}
-                loading="lazy"
-                className="rounded-lg object-cover"
-                style={{ width: "148px", height: "222px", boxShadow: "0 6px 18px rgba(0,0,0,0.28)" }}
-              />
-            ) : (
-              <div
-                aria-hidden="true"
-                className="rounded-lg flex items-center justify-center"
-                style={{ width: "148px", height: "222px", backgroundColor: theme.elevated, border: `1px solid ${theme.border}` }}
-              >
-                <BookOpen className="w-6 h-6" style={{ color: theme.muted }} />
-              </div>
-            )}
+            <div
+              className="flex items-end justify-center"
+              style={{ height: "214px", width: "140px" }}
+            >
+              {book.cover ? (
+                <img
+                  src={book.cover}
+                  alt={`${book.title} cover`}
+                  loading="lazy"
+                  style={{
+                    maxWidth: "140px",
+                    maxHeight: "214px",
+                    width: "auto",
+                    height: "auto",
+                    borderRadius: "8px",
+                    boxShadow: "0 6px 18px rgba(0,0,0,0.28)",
+                    display: "block",
+                  }}
+                />
+              ) : (
+                <div
+                  aria-hidden="true"
+                  className="rounded-lg flex items-center justify-center"
+                  style={{ width: "140px", height: "214px", backgroundColor: theme.elevated, border: `1px solid ${theme.border}` }}
+                >
+                  <BookOpen className="w-6 h-6" style={{ color: theme.muted }} />
+                </div>
+              )}
+            </div>
             {showSeries && (
               <p style={{ margin: "0.55rem 0 0", color: theme.accent, fontSize: "10px", fontWeight: 900, letterSpacing: "0.08em" }}>
                 {text.bookLabel.toUpperCase()} {book.series}
