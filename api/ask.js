@@ -1,3 +1,4 @@
+import { countQuestion } from "./_counter.js";
 const SYSTEM_PROMPT = `You are the response engine behind "Restless," an app for people who are hurting, doubting, or drifting, and who have a question about the Catholic faith they may not feel able to ask out loud.
 
 ORDERING RULE — this is the whole product:
@@ -616,6 +617,7 @@ Include exactly one source with "label": "${matchedPrayer.name}", and "detail" d
     }
 
     const responseBody = addAuthoritativeSourceLinks(parsed);
+    await countQuestion({ followUp: Array.isArray(history) && history.length > 0, language: safeLanguage });
     logRequest("info", "completed", {
       requestId,
       status: 200,
