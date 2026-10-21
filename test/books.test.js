@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { matchBook, bookUrl, BOOKS, RECOMMENDED } from "../src/books.js";
+import { matchBook, bookUrl, BOOKS, JOURNALS, RECOMMENDED } from "../src/books.js";
 import { classifyNextStep } from "../src/nextSteps.js";
 
 const match = (q) => matchBook(q, classifyNextStep(q))?.series ?? null;
@@ -93,6 +93,20 @@ test("Recommended — Catechism questions → Ascension Catechism", () => {
 
 test("Pocket guides win over recommended books when both match", () => {
   assert.equal(match("Is sola scriptura — the Bible alone — really what the Bible teaches?"), 1);
+});
+
+test("Journal — prayer habit / gratitude / examen → Five-Minute Catholic Journal", () => {
+  for (const q of [
+    "How can I pray more consistently every day?",
+    "Is there a Catholic gratitude journal?",
+    "How do I do a daily examen?",
+    "What should I do for Lent this year?",
+    "¿Cómo puedo orar todos los días?",
+  ]) {
+    assert.equal(matchBook(q, "general")?.id, "five-minute-journal", q);
+  }
+  assert.equal(matchBook("How can I pray more?", "general")?.recommended, false);
+  assert.match(JOURNALS[0].url, /^https:\/\/www\.amazon\.com\/dp\/B0[A-Z0-9]{8}$/);
 });
 
 test("Ordinary questions get no book", () => {

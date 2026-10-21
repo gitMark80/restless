@@ -86,7 +86,7 @@ export const BOOKS = [
       es: "Para quien está listo para mirar con honestidad sus propias decisiones, prepararse para la Confesión y empezar de nuevo — sin ahogarse en vergüenza ni en un escrutinio interminable.",
     },
     pattern:
-      /examination of conscience|examine my conscience|examen|am i a (bad|good) person|keep (sinning|falling|committing)|same sins?|struggl(e|ing) with (sin|the same)|scrupul|guilt|shame|ashamed|hypocri|how do i change|stop sinning|repent|contrition|penance|examen de conciencia|soy (una )?mala persona|sigo (pecando|cayendo)|mismos pecados|escr[uú]pulo|culpa|verg[uü]enza|hip[oó]crita|c[oó]mo cambio|dejar de pecar|arrepent|contrici[oó]n|penitencia/,
+      /examination of conscience|examine my conscience|am i a (bad|good) person|keep (sinning|falling|committing)|same sins?|struggl(e|ing) with (sin|the same)|scrupul|guilt|shame|ashamed|hypocri|how do i change|stop sinning|repent|contrition|penance|examen de conciencia|soy (una )?mala persona|sigo (pecando|cayendo)|mismos pecados|escr[uú]pulo|culpa|verg[uü]enza|hip[oó]crita|c[oó]mo cambio|dejar de pecar|arrepent|contrici[oó]n|penitencia/,
   },
   {
     id: "raised-catholic",
@@ -139,6 +139,23 @@ export const BOOKS = [
   },
 ];
 
+// Journals and practice books by Restless Faith Media — ours, but not part of
+// the numbered Pocket Guide series.
+export const JOURNALS = [
+  {
+    id: "five-minute-journal",
+    title: "The Five-Minute Catholic Journal",
+    subtitle: "90 Days of Prayer, Gratitude & Reflection",
+    url: amazon("B0HJYS1NCF"),
+    tagline: {
+      en: "Five minutes in the morning, five in the evening. A Scripture focus, three things you're grateful for, one person to pray for, and a gentle nightly examen — for 90 days of learning to notice grace.",
+      es: "Cinco minutos por la mañana, cinco por la noche. Una lectura de la Escritura, tres cosas por las que dar gracias, una persona por quien orar y un examen suave cada noche — 90 días para aprender a notar la gracia. (Solo en inglés.)",
+    },
+    pattern:
+      /journal|gratitude|grateful|daily (prayer|examen|habit|routine)|prayer (habit|routine|life|journal)|how (do|can) i pray (more|every day|daily|consistently)|(start|build|keep) (a )?(prayer|daily) (habit|routine|practice)|examen|evening prayer|morning prayer|pray (more|consistently|every day)|lent|advent|retreat|notice (god|grace)|diario|gratitud|agradecid|h[aá]bito de oraci[oó]n|rutina de oraci[oó]n|orar (m[aá]s|todos los d[ií]as|cada d[ií]a)|cuaresma|adviento|retiro/,
+  },
+];
+
 // Books by other Catholic publishers that Restless recommends. Kept separate
 // from BOOKS so the modal and card can be honest that these are not ours.
 export const RECOMMENDED = [
@@ -187,6 +204,9 @@ export const BOOKS_TEXT = {
     recommendedEyebrow: "A BOOK WE RECOMMEND",
     recommendedIntro: "Not ours — but if this is the question you're asking, it's the book we'd point you to:",
     recommendedNote: "As an Amazon Associate, Restless Faith Media earns from qualifying purchases, which helps keep Restless free.",
+    journalsTitle: "Journals",
+    journalsBody: "Daily practice books from Restless Faith Media.",
+    journalCardIntro: "If you're looking for a simple daily rhythm, we made one:",
     recommendedTitle: "Also recommended",
     recommendedBody: "A few books by other Catholic publishers that we reach for ourselves.",
   },
@@ -206,6 +226,9 @@ export const BOOKS_TEXT = {
     recommendedEyebrow: "UN LIBRO QUE RECOMENDAMOS",
     recommendedIntro: "No es nuestro — pero si esta es la pregunta que te haces, es el libro al que te enviaríamos:",
     recommendedNote: "Como Asociado de Amazon, Restless Faith Media recibe ingresos por las compras que cumplen los requisitos, lo que ayuda a mantener Restless gratuito.",
+    journalsTitle: "Diarios",
+    journalsBody: "Libros de práctica diaria de Restless Faith Media.",
+    journalCardIntro: "Si buscas un ritmo diario sencillo, hicimos uno:",
     recommendedTitle: "También recomendamos",
     recommendedBody: "Algunos libros de otras editoriales católicas que nosotros mismos usamos.",
   },
@@ -233,6 +256,8 @@ export function matchBook(question, nextStepKind) {
   const text = String(question || "").toLowerCase();
   const own = BOOKS.find((book) => book.pattern.test(text));
   if (own) return { ...own, recommended: false };
+  const journal = JOURNALS.find((book) => book.pattern.test(text));
+  if (journal) return { ...journal, recommended: false };
   const rec = RECOMMENDED.find((book) => book.pattern.test(text));
   return rec ? { ...rec, recommended: true } : null;
 }
