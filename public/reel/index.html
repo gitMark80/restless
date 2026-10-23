@@ -269,6 +269,8 @@ details li{margin-bottom:6px}
     <label class="tog">Title card at the start<input type="checkbox" id="optIntro" checked></label>
     <label class="tog">End card with your link<input type="checkbox" id="optOutro" checked></label>
 
+    <p class="hint"><a href="/reel/topics.csv" download style="color:inherit">Download every question page's post text (CSV)</a>: question, short answer, video title, description, hashtags and link.</p>
+
     <details id="how">
       <summary>How to record a reel</summary>
       <ol>
@@ -286,6 +288,7 @@ details li{margin-bottom:6px}
 <div class="cta" id="cta"><button type="button" id="load">Load site</button></div>
 
 <script src="/reel/reel-data.js"></script>
+<script src="/reel/topic-links.js"></script>
 <script>
 (()=>{
 const D=window.REEL||{questions:[],hooks:{},copy:{}};
@@ -468,12 +471,16 @@ function buildPost(){
   cur={slug:q.slug,...pick,tags};
 }
 function postText(){
-  const q=Q(),P=pools(q),h=plain(hookText()),url='restless.faith';
-  const fill=t=>t.replace(/\{hook\}/g,h).replace(/\{q\}/g,q.q).replace(/\{url\}/g,url);
+  // If this question has its own page on the site (window.REEL_TOPICS, built from content/topic-index.js),
+  // point viewers there instead of the homepage: restless.faith/eucharist and so on.
+  const q0=Q(),TP=(window.REEL_TOPICS||{})[q0.slug];
+  const P=pools(q0),h=plain(hookText()),url=TP?'restless.faith/'+TP.short:'restless.faith';
+  const fill=t=>t.replace(/\{hook\}/g,h).replace(/\{q\}/g,q0.q).replace(/\{url\}/g,url);
   const tags=cur.tags.join(' ');
+  const full=TP?`\n\nFull answer with Scripture and Catechism sources: https://${url}`:'';
   return {title:fill(P.t[cur.t]),
     caption:`${h}\n\n${fill(P.l[cur.l])}\n${fill(P.a[cur.a])}\n\n${tags}`,
-    desc:`${q.q}\n\n${fill(P.l[cur.l])}\n\n${fill(P.b[cur.b])}\n\n${fill(P.a[cur.a])}\n\n${tags}`,
+    desc:`${q0.q}\n\n${fill(P.l[cur.l])}${full}\n\n${fill(P.b[cur.b])}\n\n${fill(P.a[cur.a])}\n\n${tags}`,
     tags,comment:fill(P.c[cur.c])};
 }
 function markUsed(){

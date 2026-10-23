@@ -172,7 +172,7 @@ main section.rounded-3xl .grid.grid-cols-3 > div, main section.rounded-3xl .grid
   border-radius: 14px !important;
   padding: 10px 12px !important;
 }
-body[data-restless-theme="dark"] main section.rounded-3xl .grid.grid-cols-3 > div, main section.rounded-3xl .grid.grid-cols-3 > button { background:rgba(15,41,65,.88)!important; }
+body[data-restless-theme="dark"] main section.rounded-3xl .grid.grid-cols-3 > div, body[data-restless-theme="dark"] main section.rounded-3xl .grid.grid-cols-3 > button { background:rgba(15,41,65,.88)!important; }
 main section.rounded-3xl .grid.grid-cols-3 svg { color: var(--rf-blue) !important; }
 main section.rounded-3xl .grid.grid-cols-3 span { color: var(--rf-ink) !important; }
 

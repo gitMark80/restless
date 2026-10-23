@@ -1,0 +1,84 @@
+{
+  "cleanUrls": true,
+  "redirects": [
+    {
+      "source": "/saints",
+      "destination": "/questions/why-do-catholics-pray-to-saints",
+      "permanent": false
+    },
+    {
+      "source": "/eucharist",
+      "destination": "/questions/why-do-catholics-believe-in-the-eucharist",
+      "permanent": false
+    },
+    {
+      "source": "/protestants",
+      "destination": "/questions/why-do-protestants-become-catholic",
+      "permanent": false
+    },
+    {
+      "source": "/peter",
+      "destination": "/questions/why-is-peter-the-first-pope",
+      "permanent": false
+    },
+    {
+      "source": "/confession",
+      "destination": "/questions/why-do-catholics-confess-to-a-priest",
+      "permanent": false
+    },
+    {
+      "source": "/rosary",
+      "destination": "/questions/why-do-catholics-pray-the-rosary",
+      "permanent": false
+    },
+    {
+      "source": "/differences",
+      "destination": "/questions/catholic-vs-protestant-beliefs",
+      "permanent": false
+    },
+    {
+      "source": "/mass",
+      "destination": "/questions/what-happens-at-catholic-mass",
+      "permanent": false
+    },
+    {
+      "source": "/salvation",
+      "destination": "/questions/what-did-jesus-teach-about-salvation",
+      "permanent": false
+    },
+    {
+      "source": "/become-catholic",
+      "destination": "/questions/how-to-become-catholic",
+      "permanent": false
+    }
+  ],
+  "headers": [
+    {
+      "source": "/covers/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800, stale-while-revalidate=86400"
+        }
+      ]
+    },
+    {
+      "source": "/brand/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800, stale-while-revalidate=86400"
+        }
+      ]
+    },
+    {
+      "source": "/(site.css|rf.js)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, stale-while-revalidate=86400"
+        }
+      ]
+    }
+  ]
+}
