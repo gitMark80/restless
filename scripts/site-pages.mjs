@@ -206,6 +206,7 @@ function siteFooter() {
       <a href="/">Ask a question</a>
       <a href="/questions">All questions</a>
       <a href="/books">Books &amp; journals</a>
+      <a href="https://www.youtube.com/@restlessfaithmedia" target="_blank" rel="noopener">YouTube</a>
       <a href="mailto:hello@restless.faith">Contact</a>
       <a href="/privacy">Privacy</a>
     </nav>
