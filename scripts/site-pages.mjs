@@ -216,9 +216,9 @@ function siteFooter() {
 </footer>`;
 }
 
-function page({ headHtml, main, bodyClass = "" }) {
+function page({ headHtml, main, bodyClass = "", pageKey = "", noCount = false }) {
   return `${headHtml}
-<body class="${bodyClass}">
+<body class="${bodyClass}"${pageKey ? ` data-rf-page="${esc(pageKey)}"` : ""}${noCount ? " data-rf-nocount" : ""}>
 <a class="skip" href="#main">Skip to content</a>
 ${siteHeader()}
 <main id="main" class="wrap">
@@ -398,6 +398,7 @@ export function renderTopic(topic) {
     headHtml: head({ title: `${topic.seoTitle}`, description: topic.description, path, type: "article", jsonLd }),
     main,
     bodyClass: "page-topic",
+    pageKey: topic.short,
   });
 }
 
@@ -446,6 +447,7 @@ ${newsletterBox("questions")}`;
     }),
     main,
     bodyClass: "page-hub",
+    pageKey: "questions",
   });
 }
 
@@ -505,6 +507,7 @@ ${newsletterBox("books")}`;
     }),
     main,
     bodyClass: "page-books",
+    pageKey: "books",
   });
 }
 
@@ -521,7 +524,7 @@ export function renderPrivacy() {
     <h2>Your questions</h2>
     <p>When you ask a question, it is sent to our AI provider, Anthropic, to write the answer. Restless.faith does not save your questions in a database. Your current conversation is kept in your browser tab so it survives a refresh, and it disappears when you close the tab.</p>
     <h2>Analytics</h2>
-    <p>We use Vercel Web Analytics, which does not use cookies, to count visits and a few actions such as questions asked, links opened and books viewed. We never send the text of your questions to analytics. Your browser stores two small values, where your first visit came from (for example "youtube") and how many visits you've made, so we can see in aggregate whether people come back. They aren't linked to your name or email.</p>
+    <p>We use Vercel Web Analytics, which does not use cookies, to count visits and a few actions such as questions asked, links opened and books viewed. We never send the text of your questions to analytics. Your browser stores two small values, where your first visit came from (for example "youtube") and how many visits you've made, so we can see in aggregate whether people come back. They aren't linked to your name or email. We also keep simple running totals of our own, such as "12 visits from YouTube today" or "3 Amazon clicks on this book", which contain nothing about who you are.</p>
     <h2>Newsletter</h2>
     <p>If you sign up, your email address is stored by our email provider, Kit, and used only to send Restless.faith emails. You'll get a confirmation email first, and every email has an unsubscribe link.</p>
     <h2>Amazon links</h2>
@@ -534,6 +537,170 @@ export function renderPrivacy() {
     headHtml: head({ title: "Privacy | Restless.faith", description: "How Restless.faith handles your questions, analytics, the newsletter and Amazon links.", path: "/privacy" }),
     main,
     bodyClass: "page-privacy",
+    pageKey: "privacy",
+  });
+}
+
+// Unlisted dashboard of the anonymous counters (api/stats.js). Not in the sitemap, noindex.
+export function renderStats() {
+  const meta = {
+    topics: Object.fromEntries(TOPICS.map((t) => [t.short, { label: t.label, url: topicUrl(t) }])),
+    pages: { home: "Ask (home)", questions: "Questions list", books: "Books page", privacy: "Privacy" },
+    books: Object.fromEntries(ALL_BOOKS.map((b) => [b.id, { title: b.title, own: OWN_IDS.has(b.id) }])),
+  };
+  const main = `<header class="topic-head stats-head">
+  <p class="eyebrow">Unlisted</p>
+  <h1>Restless stats</h1>
+  <p class="meta" id="updated">Loading…</p>
+</header>
+<div class="stats-tabs" role="tablist" aria-label="Time range">
+  <button type="button" data-r="1">Today</button><button type="button" data-r="7" class="on">7 days</button><button type="button" data-r="30">30 days</button><button type="button" data-r="all">All time</button>
+</div>
+<div class="stat-tiles">
+  <div class="card stat-tile"><b id="t-visits">–</b><span>visits</span></div>
+  <div class="card stat-tile"><b id="t-answers">–</b><span>questions answered</span></div>
+  <div class="card stat-tile"><b id="t-amazon">–</b><span>Amazon clicks</span></div>
+  <div class="card stat-tile"><b id="t-return">–</b><span>returning visits</span></div>
+  <div class="card stat-tile"><b id="t-multi">–</b><span>asked 2+ questions</span></div>
+  <div class="card stat-tile"><b id="t-signup">–</b><span>newsletter signups</span></div>
+</div>
+<section class="card stats-card">
+  <h2>Visits per day <small>last 30 days</small></h2>
+  <div class="bars" id="c-visits"></div>
+  <div class="axis"><span id="ax0"></span><span>today</span></div>
+  <h2 class="mt">Questions answered per day</h2>
+  <div class="bars bars-answers" id="c-answers"></div>
+  <div class="axis"><span id="ax1"></span><span>today</span></div>
+</section>
+<section class="card stats-card">
+  <h2>Where visitors come from</h2>
+  <div class="stats-table" id="sources"><p class="fine">Loading…</p></div>
+  <p class="fine">Source is where a person's <b>first</b> visit came from, so a YouTube viewer who comes back later still counts as YouTube. "Answers / visit" shows who actually uses Restless.</p>
+</section>
+<section class="card stats-card">
+  <h2>Pages</h2>
+  <div class="stats-table" id="pages"><p class="fine">Loading…</p></div>
+  <p class="fine"><b>Views</b>: page opened (once per visit). <b>Clicked to</b>: a "Keep exploring" or related link that led here. <b>Ask clicks</b>: someone tapped a question or "Ask" on this page to go ask Restless.</p>
+</section>
+<section class="card stats-card">
+  <h2>Books</h2>
+  <div class="stats-table" id="books"><p class="fine">Loading…</p></div>
+  <p class="fine">Amazon link clicks from answers, the Books shelf, the Books page and question pages. Amazon reports actual sales in your Associates account. <span id="shelf"></span></p>
+</section>
+<section class="card stats-card">
+  <h2>More</h2>
+  <p id="fails" class="fine"></p>
+  <label class="consent"><input type="checkbox" id="nocount"> Don't count my visits on this device (turn this on on your own phone and computer)</label>
+  <p class="fine">Vercel Analytics has page views, countries and devices: <a href="https://vercel.com/dashboard" target="_blank" rel="noopener">Vercel → restless → Analytics</a>. Google search clicks: <a href="https://search.google.com/search-console" target="_blank" rel="noopener">Search Console</a>.</p>
+  <p class="fine">Everything here is an anonymous tally: no names, IDs, cookies, IP addresses or question text. Days run on UTC (they roll over at 7pm Central). Reel Studio recordings and this page aren't counted.</p>
+</section>
+<script>
+const META = ${JSON.stringify(meta).replace(/</g, "\u003c")};
+const SOURCE_NAMES = { youtube: "YouTube", facebook: "Facebook", instagram: "Instagram", tiktok: "TikTok", x: "X", reddit: "Reddit", google: "Google", bing: "Bing", search: "Other search", amazon: "Amazon", email: "Email", direct: "Direct / app", other: "Other" };
+const $ = (id) => document.getElementById(id);
+const fmt = (n) => Number(n || 0).toLocaleString();
+const sum = (o) => Object.values(o || {}).reduce((a, b) => a + b, 0);
+const short = (d) => new Date(d + "T12:00:00Z").toLocaleDateString([], { month: "short", day: "numeric" });
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+let data = null, range = "7";
+
+function bars(el, vals) {
+  const max = Math.max(1, ...vals);
+  el.innerHTML = vals.map((v, i) => \`<div style="height:\${Math.max(2, (v / max) * 100)}%"\${i === vals.length - 1 ? ' class="today"' : ""} title="\${v}"></div>\`).join("");
+}
+function table(el, head, rows, empty) {
+  if (!rows.length) { el.innerHTML = \`<p class="fine">\${empty}</p>\`; return; }
+  el.innerHTML = \`<table><thead><tr>\${head.map((h, i) => \`<th\${i ? "" : ' class="l"'}>\${h}</th>\`).join("")}</tr></thead><tbody>\${rows
+    .map((r) => \`<tr>\${r.map((c, i) => (i ? \`<td\${c === 0 || c === "0" || c === "–" ? ' class="z"' : ""}>\${typeof c === "number" ? fmt(c) : c}</td>\` : \`<td class="l">\${c}</td>\`)).join("")}</tr>\`)
+    .join("")}</tbody></table>\`;
+}
+
+function render() {
+  const R = data.ranges[range] || {};
+  const g = (e) => R[e] || {};
+  $("t-visits").textContent = fmt(sum(g("visit")));
+  $("t-answers").textContent = fmt(sum(g("answer")));
+  $("t-amazon").textContent = fmt(sum(g("amazon")));
+  $("t-return").textContent = fmt(sum(g("return")));
+  $("t-multi").textContent = fmt(sum(g("multi")));
+  $("t-signup").textContent = fmt(sum(g("signup")));
+
+  const srcs = Object.keys(SOURCE_NAMES)
+    .map((s) => {
+      const v = g("visit")[s] || 0, a = g("answer")[s] || 0;
+      return { s, row: [SOURCE_NAMES[s], v, g("return")[s] || 0, g("ask")[s] || 0, a, v ? (a / v).toFixed(1) : "–", g("multi")[s] || 0, g("amazon_src")[s] || 0, g("signup")[s] || 0], v, a };
+    })
+    .filter((x) => x.row.slice(1).some((c) => c && c !== "–"))
+    .sort((x, y) => y.v - x.v || y.a - x.a);
+  table($("sources"), ["Source", "Visits", "Returning", "Asked", "Answers", "Answers / visit", "2+ questions", "Amazon", "Signups"], srcs.map((x) => x.row), "Nothing counted yet for this range.");
+
+  const pageKeys = ["home", ...Object.keys(META.topics), "questions", "books", "privacy"];
+  const pages = pageKeys
+    .map((k) => {
+      const t = META.topics[k];
+      const name = t ? \`<a href="\${t.url}">\${esc(t.label)}</a>\` : esc(META.pages[k] || k);
+      return { views: g("page")[k] || 0, row: [name, g("page")[k] || 0, t ? g("related")[k] || 0 : "–", t ? g("topic_ask")[k] || 0 : k === "questions" ? g("topic_ask").hub || 0 : "–"] };
+    })
+    .filter((x) => x.row.slice(1).some((c) => c && c !== "–"))
+    .sort((a, b) => b.views - a.views);
+  table($("pages"), ["Page", "Views", "Clicked to", "Ask clicks"], pages.map((x) => x.row), "No page views counted yet for this range.");
+
+  const books = Object.entries(META.books)
+    .map(([id, b]) => ({ n: g("amazon")[id] || 0, row: [esc(b.title) + (b.own ? "" : ' <small>(recommended)</small>'), g("amazon")[id] || 0] }))
+    .filter((x) => x.n)
+    .sort((a, b) => b.n - a.n);
+  table($("books"), ["Book", "Amazon clicks"], books.map((x) => x.row), "No Amazon clicks yet for this range.");
+  $("shelf").textContent = \`The in-app Books shelf was opened \${fmt(sum(g("books_open")))} time\${sum(g("books_open")) === 1 ? "" : "s"}.\`;
+
+  const fails = Object.entries(g("fail")).filter(([, n]) => n);
+  const names = { timeout: "took too long", rateLimit: "too many questions at once", busy: "AI service unavailable", retry: "incomplete answer", network: "visitor's connection", unknown: "other" };
+  $("fails").textContent = fails.length
+    ? "Answers that failed: " + fails.map(([k, n]) => \`\${fmt(n)} \${names[k] || k}\`).join(", ") + "."
+    : "No failed answers in this range.";
+}
+
+document.querySelectorAll(".stats-tabs button").forEach((b) =>
+  b.addEventListener("click", () => {
+    document.querySelectorAll(".stats-tabs button").forEach((x) => x.classList.toggle("on", x === b));
+    range = b.dataset.r;
+    try { localStorage.setItem("rf-stats-range", range); } catch (e) {}
+    if (data) render();
+  })
+);
+try {
+  const saved = localStorage.getItem("rf-stats-range");
+  if (saved) { range = saved; document.querySelectorAll(".stats-tabs button").forEach((x) => x.classList.toggle("on", x.dataset.r === saved)); }
+} catch (e) {}
+
+const box = $("nocount");
+try { box.checked = localStorage.getItem("rf-nocount") === "1"; } catch (e) { box.disabled = true; }
+box.addEventListener("change", () => {
+  try { box.checked ? localStorage.setItem("rf-nocount", "1") : localStorage.removeItem("rf-nocount"); } catch (e) {}
+});
+
+fetch("/api/stats", { cache: "no-store" })
+  .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+  .then((d) => {
+    data = d;
+    $("updated").textContent = "Updated " + new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) + " · pull down to refresh";
+    bars($("c-visits"), d.daily.map((x) => x.visits));
+    bars($("c-answers"), d.daily.map((x) => x.answers));
+    $("ax0").textContent = $("ax1").textContent = short(d.daily[0].date);
+    render();
+  })
+  .catch((e) => {
+    $("updated").textContent = "Couldn't load stats";
+    const msg = e === 503
+      ? "The counter isn't connected yet. In Vercel, open Storage, choose the Upstash database your arcade sites use, and connect it to the restless project. Then redeploy."
+      : "Couldn't reach the stats right now. Try again in a minute.";
+    ["sources", "pages", "books"].forEach((id) => ($(id).innerHTML = \`<p class="fine">\${msg}</p>\`));
+  });
+</script>`;
+  return page({
+    headHtml: head({ title: "Stats | Restless.faith", description: "Unlisted dashboard of anonymous Restless.faith visit, question and book-click counts.", path: "/stats", noindex: true }),
+    main,
+    bodyClass: "page-stats",
+    noCount: true,
   });
 }
 
@@ -607,6 +774,7 @@ export function renderSite() {
     "books.html": renderBooks(),
     "privacy.html": renderPrivacy(),
     "404.html": renderNotFound(),
+    "stats.html": renderStats(),
     "sitemap.xml": renderSitemap(),
     "reel/topic-links.js": renderReelTopicLinks(),
     "reel/topics.csv": renderSocialCsv(),

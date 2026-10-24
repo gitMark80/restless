@@ -103,6 +103,42 @@
     return "10+";
   }
 
+  // Anonymous counters for restless.faith/stats (api/event.js). Not counted:
+  // the /stats page itself, the site running inside Reel Studio's frame, and
+  // any device where "Don't count my visits" was switched on at /stats.
+  var noCount = false;
+  try {
+    noCount =
+      window.top !== window.self ||
+      (local && local.getItem("rf-nocount") === "1") ||
+      (document.body && document.body.hasAttribute("data-rf-nocount"));
+  } catch (e) {
+    noCount = true;
+  }
+  function count(event, key) {
+    if (noCount || !key) return;
+    var url = "/api/event?e=" + encodeURIComponent(event) + "&k=" + encodeURIComponent(String(key).slice(0, 40));
+    try {
+      if (navigator.sendBeacon && navigator.sendBeacon(url)) return;
+      fetch(url, { method: "POST", keepalive: true }).catch(function () {});
+    } catch (e) {
+      /* never break the page */
+    }
+  }
+  // Vercel event name → [counter event, which property is the key]
+  var COUNTERS = {
+    "Return Visit": [["return", "src"]],
+    "Question Asked": [["ask", "src"]],
+    "Answer Delivered": [["answer", "src"]],
+    "Answer Failed": [["fail", "reason"]],
+    "Multiple Questions": [["multi", "src", "answers", "2"]],
+    "Related Clicked": [["related", "to"]],
+    "Topic Ask Clicked": [["topic_ask", "topic"]],
+    "Books Opened": [["books_open", "src"]],
+    "Amazon Click": [["amazon", "book"], ["amazon_src", "src"]],
+    "Newsletter Subscribed": [["signup", "src"]],
+  };
+
   function clean(value) {
     return String(value == null ? "" : value).slice(0, 80);
   }
@@ -124,14 +160,32 @@
       /* analytics must never break the page */
     }
     if (window.RF_DEBUG_EVENTS) window.RF_DEBUG_EVENTS.push([name, payload]);
+    var counters = COUNTERS[name] || [];
+    for (var i = 0; i < counters.length; i++) {
+      var c = counters[i];
+      if (c[2] && payload[c[2]] !== c[3]) continue;
+      count(c[0], payload[c[1]]);
+    }
   };
   window.rfSource = function () {
     return firstSource;
   };
 
+  if (newSession) count("visit", firstSource);
   if (newSession && visits > 1) {
     window.rfTrack("Return Visit", { visit: visitBucket(visits) });
   }
+
+  // Page opened, once per visit per page: <body data-rf-page="eucharist"> on
+  // the static pages; the app at / counts as "home".
+  (function () {
+    var page = (document.body && document.body.getAttribute("data-rf-page")) || (location.pathname === "/" ? "home" : "");
+    if (!page) return;
+    var seenKey = "rf-page-" + page;
+    if (session && session.getItem(seenKey)) return;
+    if (session) session.setItem(seenKey, "1");
+    count("page", page);
+  })();
 
   // Amazon clicks anywhere (app book cards, books page, topic pages).
   document.addEventListener(
