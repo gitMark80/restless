@@ -32,6 +32,7 @@ function track(name, data) {
 }
 
 const CHAT_STORAGE_KEY = "restless-chat";
+const YOUTUBE_URL = "https://www.youtube.com/@restlessfaithmedia";
 const NEWSLETTER_DISMISSED_KEY = "rf-newsletter-dismissed";
 
 // The conversation lives in sessionStorage: it survives a reload or a trip to
@@ -188,6 +189,8 @@ const STRINGS = {
     darkMode: "Use dark mode",
     readFullText: "Read source ↗",
     aboutLabel: "About",
+    youtubeLabel: "YouTube",
+    youtubeCta: "Watch short answers on YouTube ↗",
     contactLabel: "Contact",
     closeLabel: "Close",
     backToQuestions: "← Back to questions",
@@ -271,6 +274,8 @@ const STRINGS = {
     darkMode: "Usar modo oscuro",
     readFullText: "Leer fuente ↗",
     aboutLabel: "Acerca de",
+    youtubeLabel: "YouTube",
+    youtubeCta: "Ver respuestas breves en YouTube ↗",
     contactLabel: "Contacto",
     closeLabel: "Cerrar",
     backToQuestions: "← Volver a las preguntas",
@@ -1984,6 +1989,10 @@ export default function Restless() {
               {strings.aboutLabel}
             </button>
             <span style={{ color: theme.muted, fontSize: "12px" }}>·</span>
+            <a href={YOUTUBE_URL} target="_blank" rel="noopener noreferrer" style={{ color: theme.subtext, fontSize: "12px", textDecoration: "none" }}>
+              {strings.youtubeLabel}
+            </a>
+            <span style={{ color: theme.muted, fontSize: "12px" }}>·</span>
             <button onClick={() => setActiveModal("contact")} style={{ color: theme.subtext, fontSize: "12px" }}>
               {strings.contactLabel}
             </button>
@@ -2029,6 +2038,7 @@ export default function Restless() {
         <InfoModal
           title={strings.aboutTitle}
           body={strings.aboutBody}
+          cta={{ label: strings.youtubeCta, href: YOUTUBE_URL }}
           theme={theme}
           strings={strings}
           onClose={() => setActiveModal(null)}
