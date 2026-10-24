@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test"
+    "test": "node --test",
+    "check:scripture": "node scripts/check-scripture.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.383.0",

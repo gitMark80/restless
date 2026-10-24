@@ -19,6 +19,36 @@ import {
 } from "lucide-react";
 import { NEXT_STEP_TEXT, classifyNextStep, nextStepContent } from "./nextSteps.js";
 import { BOOKS, JOURNALS, RECOMMENDED, BOOKS_TEXT, BOOKS_LANGUAGE_NOTE, bookUrl, matchBook } from "./books.js";
+import { matchTopics, readDeepLink, topicUrl } from "./topicLinks.js";
+
+// Conversion analytics (public/rf.js → Vercel Web Analytics custom events).
+// Never pass question text here.
+function track(name, data) {
+  try {
+    window.rfTrack?.(name, data);
+  } catch {
+    // analytics must never break the app
+  }
+}
+
+const CHAT_STORAGE_KEY = "restless-chat";
+const NEWSLETTER_DISMISSED_KEY = "rf-newsletter-dismissed";
+
+// The conversation lives in sessionStorage: it survives a reload or a trip to
+// a question page and back, and disappears when the tab is closed.
+function readStoredChat() {
+  try {
+    const raw = window.sessionStorage.getItem(CHAT_STORAGE_KEY);
+    const data = raw ? JSON.parse(raw) : null;
+    if (!data || !Array.isArray(data.messages)) return null;
+    const messages = data.messages
+      .filter((m) => m && (m.role === "user" || m.role === "companion") && typeof m.text === "string")
+      .slice(-30);
+    return { messages, language: data.language === "es" ? "es" : "en" };
+  } catch {
+    return null;
+  }
+}
 
 const AUDIENCES = ["Middle School", "High School", "College", "Adult"];
 
@@ -126,6 +156,16 @@ const STRINGS = {
     rateLimitError: "Please wait a moment before asking again.",
     busyError: "Restless is busy right now. Please try again in a moment.",
     retryLabel: "Try again",
+    exploreTitle: "Keep exploring",
+    exploreNote: "",
+    startOver: "New conversation",
+    questionsLabel: "Questions",
+    newsletterTitle: "Grow deeper in your Catholic faith",
+    newsletterBody: "Receive thoughtful answers, reflections, and new resources from Restless.faith.",
+    newsletterConsent: "Yes, email me from Restless.faith. I can unsubscribe at any time.",
+    newsletterButton: "Sign up",
+    newsletterFine: "We'll email you a confirmation link first. Every email has an unsubscribe link.",
+    newsletterDismiss: "No thanks",
     langToggleLabel: "Switch language",
     shareLabel: "Share",
     shareFooter: "Shared from Restless — restless.faith",
@@ -199,6 +239,16 @@ const STRINGS = {
     rateLimitError: "Espera un momento antes de volver a preguntar.",
     busyError: "Restless está ocupado ahora mismo. Inténtalo de nuevo en un momento.",
     retryLabel: "Intentar de nuevo",
+    exploreTitle: "Sigue explorando",
+    exploreNote: "Artículos en inglés.",
+    startOver: "Nueva conversación",
+    questionsLabel: "Preguntas",
+    newsletterTitle: "Crece en tu fe católica",
+    newsletterBody: "Recibe respuestas, reflexiones y nuevos recursos de Restless.faith (en inglés).",
+    newsletterConsent: "Sí, envíenme correos de Restless.faith. Puedo darme de baja en cualquier momento.",
+    newsletterButton: "Suscribirme",
+    newsletterFine: "Primero te enviaremos un enlace de confirmación. Cada correo incluye un enlace para darte de baja.",
+    newsletterDismiss: "No, gracias",
     langToggleLabel: "Cambiar idioma",
     shareLabel: "Compartir",
     shareFooter: "Compartido desde Restless — restless.faith",
@@ -750,6 +800,7 @@ function BookCard({ book, theme, language, onOpenBooks }) {
           href={bookUrl(book)}
           target="_blank"
           rel="noopener noreferrer sponsored"
+          data-rf-book={book.id}
           className="inline-flex items-center justify-center rounded-xl px-4 py-2.5"
           style={{ backgroundColor: theme.accent, color: theme.accentText, fontSize: "14px", fontWeight: 800 }}
         >
@@ -876,6 +927,7 @@ function BookShelf({ title, body, books, theme, strings, language, showSeries })
             href={bookUrl(book)}
             target="_blank"
             rel="noopener noreferrer sponsored"
+            data-rf-book={book.id}
             className="shrink-0 flex flex-col"
             style={{ width: "140px", scrollSnapAlign: "start", textDecoration: "none", color: theme.text }}
           >
@@ -997,9 +1049,106 @@ function BooksModal({ theme, strings, language, onClose }) {
   );
 }
 
+// Links from an in-app answer to the full question pages (/questions/...).
+// Not shown under crisis or grief answers.
+function RelatedTopics({ topics, theme, strings }) {
+  if (!topics.length) return null;
+  return (
+    <section
+      data-restless-related="true"
+      style={{
+        padding: "0.9rem 1rem",
+        border: `1px solid ${theme.citationBorder}`,
+        borderRadius: "1rem",
+        background: theme.citationBg,
+      }}
+    >
+      <p style={{ margin: 0, color: theme.accent, fontSize: "11px", fontWeight: 900, letterSpacing: "0.08em" }}>
+        {strings.exploreTitle.toUpperCase()}
+      </p>
+      <ul style={{ listStyle: "none", margin: "0.35rem 0 0", padding: 0 }}>
+        {topics.map((topic, idx) => (
+          <li key={topic.slug} style={{ borderTop: idx ? `1px solid ${theme.border}` : "none" }}>
+            <a
+              href={topicUrl(topic)}
+              data-rf-related={topic.short}
+              className="flex items-center justify-between gap-3"
+              style={{ minHeight: "44px", padding: "0.5rem 0", color: theme.text, fontSize: "15px", fontWeight: 700, textDecoration: "none" }}
+            >
+              <span>{topic.question}</span>
+              <span aria-hidden="true" style={{ color: theme.accent }}>→</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+      {strings.exploreNote && (
+        <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "12px" }}>{strings.exploreNote}</p>
+      )}
+    </section>
+  );
+}
+
+// Newsletter invitation, shown once the visitor has had a couple of answers,
+// only when an email service is connected (/api/subscribe), and never again
+// after "No thanks". The form itself is wired by public/rf.js.
+function NewsletterCard({ theme, strings, onDismiss }) {
+  const boxRef = useRef(null);
+  useEffect(() => {
+    if (boxRef.current) window.rfWireNewsletter?.(boxRef.current);
+  }, []);
+  return (
+    <section
+      ref={boxRef}
+      data-restless-newsletter="true"
+      style={{ padding: "1rem", border: `1px solid ${theme.citationBorder}`, borderRadius: "1rem", background: theme.citationBg }}
+    >
+      <div data-rf-newsletter-box>
+        <h3 style={{ margin: 0, color: theme.text, fontSize: "17px", fontWeight: 800 }}>{strings.newsletterTitle}</h3>
+        <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "14px", lineHeight: 1.55 }}>{strings.newsletterBody}</p>
+        <form data-rf-newsletter="app" noValidate style={{ marginTop: "0.7rem" }}>
+          <div className="flex gap-2 flex-wrap">
+            <input
+              type="email"
+              name="email"
+              autoComplete="email"
+              inputMode="email"
+              aria-label="Email"
+              placeholder="you@example.com"
+              className="flex-1 rounded-xl px-3"
+              style={{ minWidth: "200px", minHeight: "44px", fontSize: "16px", backgroundColor: theme.cardBg, color: theme.text, border: `1px solid ${theme.border}` }}
+            />
+            <button
+              type="submit"
+              className="rounded-xl px-4"
+              style={{ minHeight: "44px", backgroundColor: theme.accent, color: theme.accentText, fontSize: "15px", fontWeight: 800 }}
+            >
+              {strings.newsletterButton}
+            </button>
+          </div>
+          <label className="flex gap-2 items-start" style={{ marginTop: "0.6rem", color: theme.subtext, fontSize: "13px", lineHeight: 1.45 }}>
+            <input type="checkbox" name="consent" style={{ width: "18px", height: "18px", marginTop: "1px", flex: "none" }} />
+            <span>{strings.newsletterConsent}</span>
+          </label>
+          <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: "-9999px", width: "1px", height: "1px" }} />
+          <p style={{ margin: "0.4rem 0 0", color: theme.subtext, fontSize: "12px", lineHeight: 1.45 }}>
+            {strings.newsletterFine} <a href="/privacy" style={{ color: theme.accent }}>Privacy</a>
+          </p>
+          <p data-rf-status role="status" aria-live="polite" style={{ margin: "0.4rem 0 0", color: theme.text, fontSize: "13px", fontWeight: 700 }} />
+        </form>
+        <button type="button" onClick={onDismiss} style={{ marginTop: "0.3rem", minHeight: "36px", color: theme.subtext, fontSize: "13px" }}>
+          {strings.newsletterDismiss}
+        </button>
+      </div>
+    </section>
+  );
+}
+
 function CompanionMessage({ message, questionText, theme, strings, language, onPrompt, onOpenBooks }) {
   const [openSources, setOpenSources] = useState({});
-  const matchedBook = questionText ? matchBook(questionText, classifyNextStep(questionText)) : null;
+  const kind = questionText ? classifyNextStep(questionText) : "general";
+  const matchedBook = questionText ? matchBook(questionText, kind) : null;
+  const relatedTopics =
+    questionText && kind !== "crisis" && kind !== "hurting" ? matchTopics(questionText, message.text, 3) : [];
 
   return (
     <div className="flex justify-start min-w-0">
@@ -1038,6 +1187,7 @@ function CompanionMessage({ message, questionText, theme, strings, language, onP
               theme={theme}
               strings={strings}
             />
+            <RelatedTopics topics={relatedTopics} theme={theme} strings={strings} />
             <NextStepPanel questionText={questionText} theme={theme} language={language} onPrompt={onPrompt} />
             {matchedBook && (
               <BookCard book={matchedBook} theme={theme} language={language} onOpenBooks={onOpenBooks} />
@@ -1374,9 +1524,26 @@ function StarterQuestions({ theme, strings, chooseStarter }) {
 }
 
 export default function Restless() {
-  const [language, setLanguage] = useState("en");
-  const [messages, setMessages] = useState(SEED_MESSAGES.en);
-  const [input, setInput] = useState("");
+  // Read once on first render: a deep link (?q=, ?from=, ?lang=) and any
+  // conversation saved in this tab.
+  const [initial] = useState(() => {
+    const link = typeof window === "undefined" ? { question: "", from: "", lang: "" } : readDeepLink(window.location.search);
+    const stored = typeof window === "undefined" ? null : readStoredChat();
+    return { link, stored };
+  });
+  const [language, setLanguage] = useState(initial.link.lang || initial.stored?.language || "en");
+  const [messages, setMessages] = useState(initial.stored?.messages || SEED_MESSAGES.en);
+  const [input, setInput] = useState(initial.link.question);
+  const inputVia = useRef(initial.link.question || initial.link.from ? "link" : "typed");
+  const answersThisVisit = useRef(0);
+  const [newsletterOn, setNewsletterOn] = useState(false);
+  const [newsletterDismissed, setNewsletterDismissed] = useState(() => {
+    try {
+      return window.localStorage.getItem(NEWSLETTER_DISMISSED_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
   const [ageBand, setAgeBand] = useState("High School");
   const [isTyping, setIsTyping] = useState(false);
   const [mode, setMode] = useState(readStoredMode);
@@ -1407,6 +1574,50 @@ export default function Restless() {
   useLayoutEffect(() => {
     document.body.dataset.restlessTheme = mode;
   }, [mode]);
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
+
+  // Arriving from a link: note where from, then tidy the address bar so a
+  // refresh doesn't re-fill the box.
+  useEffect(() => {
+    const { question, from } = initial.link;
+    if (question || from) {
+      track("Arrived From Link", { from: from || "link" });
+      if (question) requestAnimationFrame(() => document.querySelector("textarea[data-question-input]")?.focus());
+    }
+    if (window.location.search) {
+      try {
+        window.history.replaceState(null, "", window.location.pathname + window.location.hash);
+      } catch {
+        // harmless if the browser refuses
+      }
+    }
+  }, [initial]);
+
+  useEffect(() => {
+    try {
+      if (messages.length) {
+        window.sessionStorage.setItem(
+          CHAT_STORAGE_KEY,
+          JSON.stringify({ language, messages: messages.slice(-30).map(({ id, role, text, sources }) => ({ id, role, text, sources })) })
+        );
+      } else {
+        window.sessionStorage.removeItem(CHAT_STORAGE_KEY);
+      }
+    } catch {
+      // storage can be unavailable (private mode); the chat still works
+    }
+  }, [messages, language]);
+
+  useEffect(() => {
+    window.rfNewsletterEnabled?.((enabled) => setNewsletterOn(!!enabled));
+  }, []);
+
+  useEffect(() => {
+    if (activeModal === "books") track("Books Opened", { where: "app" });
+  }, [activeModal]);
 
   useEffect(() => {
     document.documentElement.style.overflowX = "hidden";
@@ -1449,6 +1660,10 @@ export default function Restless() {
     setIsTyping(true);
     setError(null);
 
+    const via = inputVia.current;
+    inputVia.current = "typed";
+    track("Question Asked", { via });
+
     try {
       const responseAgeBand = ageBand === "Adult" ? "OCIA" : ageBand;
       const result = await askCompanion(trimmed, responseAgeBand, language, history);
@@ -1457,8 +1672,14 @@ export default function Restless() {
         ...prev,
         { id: Date.now() + 1, role: "companion", text: result.text, sources: result.sources || [] },
       ]);
+      answersThisVisit.current += 1;
+      track("Answer Delivered", { kind: classifyNextStep(trimmed) });
+      if (answersThisVisit.current === 2 || answersThisVisit.current === 5) {
+        track("Multiple Questions", { answers: String(answersThisVisit.current) });
+      }
     } catch (err) {
       setIsTyping(false);
+      track("Answer Failed", { reason: err?.kind || "unknown" });
       setError(errorMessage(err, strings));
       setInput(trimmed);
       setMessages((prev) => prev.slice(0, -1));
@@ -1480,10 +1701,34 @@ export default function Restless() {
     handleSend();
   };
 
-  const chooseStarter = (question) => {
+  const chooseStarter = (question, via = "suggestion") => {
+    inputVia.current = via;
     setInput(question);
     requestAnimationFrame(() => document.querySelector("textarea[data-question-input]")?.focus());
   };
+
+  const startOver = () => {
+    setMessages([]);
+    setError(null);
+    setInput("");
+    answersThisVisit.current = 0;
+    scrollRef.current?.scrollTo({ top: 0 });
+  };
+
+  const dismissNewsletter = () => {
+    setNewsletterDismissed(true);
+    try {
+      window.localStorage.setItem(NEWSLETTER_DISMISSED_KEY, "1");
+    } catch {
+      // fine for this visit
+    }
+  };
+
+  const companionCount = messages.filter((m) => m.role === "companion").length;
+  const lastQuestion = [...messages].reverse().find((m) => m.role === "user")?.text || "";
+  const lastKind = lastQuestion ? classifyNextStep(lastQuestion) : "general";
+  const showNewsletter =
+    newsletterOn && !newsletterDismissed && !isTyping && companionCount >= 2 && lastKind !== "crisis" && lastKind !== "hurting";
 
   const handleSiteShare = async () => {
     const url = "https://restless.faith";
@@ -1623,6 +1868,21 @@ export default function Restless() {
             <WelcomePanel theme={theme} strings={strings} />
           )}
 
+          {messages.length > 0 && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={startOver}
+                data-rf-start-over="true"
+                className="inline-flex items-center gap-1.5 rounded-full px-3"
+                style={{ minHeight: "36px", border: `1px solid ${theme.border}`, color: theme.subtext, fontSize: "13px", fontWeight: 700 }}
+              >
+                <RefreshCcw className="w-3.5 h-3.5" />
+                {strings.startOver}
+              </button>
+            </div>
+          )}
+
           {messages.map((msg, idx) => (
             <div key={msg.id} ref={idx === messages.length - 1 ? lastMessageRef : null}>
               {msg.role === "user" ? (
@@ -1634,7 +1894,7 @@ export default function Restless() {
                   theme={theme}
                   strings={strings}
                   language={language}
-                  onPrompt={chooseStarter}
+                  onPrompt={(q) => chooseStarter(q, "nextstep")}
                   onOpenBooks={() => setActiveModal("books")}
                 />
               )}
@@ -1655,6 +1915,8 @@ export default function Restless() {
               </div>
             </div>
           )}
+
+          {showNewsletter && <NewsletterCard theme={theme} strings={strings} onDismiss={dismissNewsletter} />}
         </div>
       </main>
 
@@ -1713,7 +1975,11 @@ export default function Restless() {
             </button>
           </div>
 
-          <div className="flex items-center justify-start gap-2.5 mt-2.5 flex-wrap" aria-live="polite">
+          <div className="flex items-center justify-start gap-2.5 mt-2.5 flex-wrap" aria-live="polite" data-rf-footer-links="true">
+            <a href="/questions" style={{ color: theme.subtext, fontSize: "12px", textDecoration: "none" }}>
+              {strings.questionsLabel}
+            </a>
+            <span style={{ color: theme.muted, fontSize: "12px" }}>·</span>
             <button onClick={() => setActiveModal("about")} style={{ color: theme.subtext, fontSize: "12px" }}>
               {strings.aboutLabel}
             </button>
