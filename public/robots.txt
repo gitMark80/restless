@@ -2,5 +2,6 @@ User-agent: *
 Disallow: /api/
 Disallow: /reel/
 Disallow: /reel
+Disallow: /stats
 
 Sitemap: https://restless.faith/sitemap.xml

@@ -66,7 +66,8 @@ test("built pages have titles, canonicals, structured data and working internal 
     assert.match(html, /<meta name="description" content="[^"]{50,}">/, `${file}: description`);
     assert.equal((html.match(/<h1[ >]/g) || []).length, 1, `${file}: exactly one h1`);
     assert.ok(!/undefined|NaN|\[object Object\]|\[\[/.test(html), `${file}: leftover placeholder`);
-    if (file !== "404.html") assert.match(html, /<link rel="canonical" href="https:\/\/restless\.faith\//);
+    if (file === "404.html" || file === "stats.html") assert.match(html, /<meta name="robots" content="noindex">/, `${file}: noindex`);
+    else assert.match(html, /<link rel="canonical" href="https:\/\/restless\.faith\//);
     for (const m of html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) JSON.parse(m[1]);
     for (const m of html.matchAll(/href="(\/[^"#?]*)/g)) {
       const href = m[1];
@@ -85,6 +86,7 @@ test("sitemap lists every public page", () => {
   for (const t of TOPICS) assert.ok(xml.includes(`https://restless.faith/questions/${t.slug}<`), t.slug);
   for (const p of ["https://restless.faith/<", "https://restless.faith/books<", "https://restless.faith/questions<"]) assert.ok(xml.includes(p), p);
   assert.ok(!xml.includes("/reel"));
+  assert.ok(!xml.includes("/stats"));
 });
 
 test("social export and Reel Studio links come from the topics", () => {
