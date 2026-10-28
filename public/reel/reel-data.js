@@ -8,6 +8,10 @@ window.REEL = {
     { id: "stillness", name: "Stillness", file: "/reel/music/stillness.mp3" },
     { id: "morning", name: "Morning", file: "/reel/music/morning.mp3" },
     { id: "vespers", name: "Vespers", file: "/reel/music/vespers.mp3" },
+    // Upbeat
+    { id: "sunrise", name: "Sunrise", file: "/reel/music/sunrise.mp3" },
+    { id: "rise", name: "Rise", file: "/reel/music/rise.mp3" },
+    { id: "skip", name: "Skip", file: "/reel/music/skip.mp3" },
   ],
   hooks: {
     _generic: [
