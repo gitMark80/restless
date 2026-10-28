@@ -1184,7 +1184,7 @@ function CompanionMessage({ message, questionText, theme, strings, language, onP
           </div>
         )}
 
-        {questionText && (
+        {questionText && !message.revealing && (
           <>
             <ShareButtons
               questionText={questionText}
@@ -1564,6 +1564,12 @@ export default function Restless() {
   const lastMessageRef = useRef(null);
 
   useEffect(() => {
+    const last = messages[messages.length - 1];
+    if (last?.revealing) {
+      // A reel answer is streaming in: keep the newest line in view.
+      scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "auto" });
+      return;
+    }
     if (lastMessageRef.current) {
       lastMessageRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
@@ -1667,6 +1673,16 @@ export default function Restless() {
 
     const via = inputVia.current;
     inputVia.current = "typed";
+
+    // Reel Studio (/reel) frames this page and may hand it an answer it already fetched for this
+    // exact question, so a screen recording has no dead air. The answer is still the real one from
+    // /api/ask; it just flows in at a readable pace instead of arriving all at once after a wait.
+    const canned = window.__rfReel?.answerFor?.(trimmed);
+    if (canned) {
+      await revealAnswer(canned);
+      return;
+    }
+
     track("Question Asked", { via });
 
     try {
@@ -1689,6 +1705,28 @@ export default function Restless() {
       setInput(trimmed);
       setMessages((prev) => prev.slice(0, -1));
     }
+  };
+
+  const revealAnswer = async (canned) => {
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    await wait(canned.thinkMs ?? 1100);
+    setIsTyping(false);
+    const id = Date.now() + 1;
+    setMessages((prev) => [...prev, { id, role: "companion", text: "", sources: [], revealing: true }]);
+    const pieces = canned.text.split(/(\s+)/);
+    let shown = "";
+    for (const piece of pieces) {
+      shown += piece;
+      if (!/\S/.test(piece)) continue;
+      const done = shown;
+      setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, text: done } : m)));
+      const pause = /[.!?]["')]?$/.test(piece) ? 260 : /[,;:]$/.test(piece) ? 110 : /\n/.test(piece) ? 160 : 0;
+      await wait((canned.wordMs ?? 48) + pause);
+    }
+    await wait(350);
+    setMessages((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, text: canned.text, sources: canned.sources || [], revealing: false } : m))
+    );
   };
 
   // Enter sends only on devices with a real keyboard. On phones and tablets

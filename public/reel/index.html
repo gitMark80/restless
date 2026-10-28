@@ -112,6 +112,10 @@ img{display:block}
 #bar[hidden]{display:none}
 #bar button{border:0;border-radius:999px;padding:10px 14px;font:700 14px/1 var(--sans);background:rgba(255,255,255,.12);color:#fff;white-space:nowrap}
 #bar .go{background:var(--blue);padding:10px 18px}
+#bar .go[disabled]{background:rgba(255,255,255,.18);color:#c9d6e3;cursor:default}
+#bar .go[disabled]::before{animation:blink 1s ease-in-out infinite}
+@keyframes blink{50%{opacity:.25}}
+.seg .pv{flex:none;width:44px;background:var(--blue-soft)!important;color:var(--blue)!important}
 #bar .go::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:#fff;margin-right:7px;vertical-align:1px}
 #tip{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 12px);z-index:50;width:min(92vw,420px);
   background:rgba(4,16,28,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#e6eef6;border-radius:16px;padding:12px 40px 12px 14px;font:500 13.5px/1.45 var(--sans);box-shadow:0 8px 24px rgba(0,0,0,.45)}
@@ -264,6 +268,8 @@ details li{margin-bottom:6px}
     <div class="row"><span>Layout</span><div class="seg" id="layout"><button type="button" data-v="framed">Framed</button><button type="button" data-v="full">Full screen</button></div></div>
     <div class="row"><span>Site look</span><div class="seg" id="look"><button type="button" data-v="dark">Dark</button><button type="button" data-v="light">Light</button></div></div>
     <div class="row"><span>Answer level</span><div class="seg" id="level"><button type="button" data-v="Middle school">Middle</button><button type="button" data-v="High school">High school</button><button type="button" data-v="College">College</button><button type="button" data-v="Adult">Adult</button></div></div>
+    <div class="row"><span>Music</span><div class="seg" id="music"></div></div>
+    <p class="hint">Soft, royalty-free loops made for Restless. It starts with the take, fades out on the end card, and lands in your screen recording. Tap ▶ to hear one.</p>
     <div class="row"><span>End card after</span><div class="seg" id="len"><button type="button" data-v="30">30s</button><button type="button" data-v="45">45s</button><button type="button" data-v="60">60s</button><button type="button" data-v="0">Manual</button></div></div>
     <label class="tog">Type the question automatically<input type="checkbox" id="optType" checked></label>
     <label class="tog">Title card at the start<input type="checkbox" id="optIntro" checked></label>
@@ -275,9 +281,9 @@ details li{margin-bottom:6px}
       <summary>How to record a reel</summary>
       <ol>
         <li>Tap <b>Load site</b>. Wait for restless.faith to appear in the frame.</li>
-        <li>Tap <b>Ready</b>. The title card appears and everything else hides.</li>
-        <li>Start your phone's screen recording from Control Center, then swipe back.</li>
-        <li>Tap the title card. The question types itself in and the answer arrives.</li>
+        <li>Tap <b>Ready</b>. It says <b>Fetching answer…</b> for a few seconds while the real answer is fetched ahead of time, then <b>Ready</b>. The title card appears and everything else hides.</li>
+        <li>Start your phone's screen recording from Control Center (long-press the record button and turn the <b>microphone off</b> so only the music is recorded), then swipe back.</li>
+        <li>Tap the title card. The music starts, the question types itself in and the answer flows in right away, no waiting.</li>
         <li>While the answer comes in, the site is live: scroll up to show the whole answer and tap a source to open it. (Set <b>End card after</b> to Manual if you want unhurried time.)</li>
         <li>The end card appears when time is up, or tap the <b>Restless.faith</b> badge to end whenever you're done. Stop recording.</li>
         <li>Post the video as a Reel. If Control Center shows in the first second, trim it in the Reels editor.</li>
@@ -295,7 +301,7 @@ const D=window.REEL||{questions:[],hooks:{},copy:{}};
 const $=s=>document.querySelector(s);
 const stage=$('#stage'),frame=$('#frame'),site=$('#site'),hookEl=$('#hook span'),intro=$('#intro'),outro=$('#outro'),bar=$('#bar'),tip=$('#tip'),menu=$('#menu'),setup=$('#setup'),cta=$('#cta');
 const VW=390,VH=740; // the site is laid out at a normal phone size, then scaled into the frame
-let S={slug:(D.questions[0]||{}).slug,custom:'',hook:0,customHook:'',layout:'framed',look:'dark',level:'High school',len:'45',type:true,intro:true,outro:true,topic:'all'};
+let S={slug:(D.questions[0]||{}).slug,custom:'',hook:0,customHook:'',layout:'framed',look:'dark',level:'High school',len:'45',type:true,intro:true,outro:true,topic:'all',music:'stillness'};
 try{Object.assign(S,JSON.parse(localStorage.getItem('rf-reel')||'{}'))}catch(e){}
 if(S.slug!=='custom'&&!D.questions.some(q=>q.slug===S.slug))S.slug=(D.questions[0]||{}).slug;
 const save=()=>{try{localStorage.setItem('rf-reel',JSON.stringify(S))}catch(e){}};
@@ -339,8 +345,18 @@ function seg(id,key){const el=$('#'+id);el.querySelectorAll('button').forEach(b=
   b.onclick=()=>{S[key]=b.dataset.v;save();seg(id,key)}})}
 function paint(){
   topicsEl.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.t===S.topic)));
-  paintQs();paintHooks();seg('layout','layout');seg('look','look');seg('level','level');seg('len','len');
+  paintQs();paintHooks();seg('layout','layout');seg('look','look');seg('level','level');seg('len','len');paintMusic();
   $('#optType').checked=S.type;$('#optIntro').checked=S.intro;$('#optOutro').checked=S.outro;
+}
+const TRACKS=[{id:'off',name:'Off'},...(D.music||[])];
+if(!TRACKS.some(t=>t.id===S.music))S.music='stillness';
+function paintMusic(){
+  const el=$('#music');el.innerHTML='';
+  TRACKS.forEach(t=>{const b=document.createElement('button');b.type='button';b.dataset.v=t.id;b.textContent=t.name;b.setAttribute('aria-pressed',String(t.id===S.music));
+    b.onclick=()=>{S.music=t.id;save();paintMusic();music.preload()};el.appendChild(b)});
+  const pv=document.createElement('button');pv.type='button';pv.className='pv';pv.textContent='▶';pv.setAttribute('aria-label','Preview music');
+  pv.onclick=()=>{if(music.previewing){music.stop(.3);pv.textContent='▶'}else if(S.music!=='off'){music.unlock();music.start(true).then(()=>{pv.textContent='■'});setTimeout(()=>{if(music.previewing){music.stop(1);pv.textContent='▶'}},8000)}};
+  el.appendChild(pv);
 }
 $('#optType').onchange=e=>{S.type=e.target.checked;save()};
 $('#optIntro').onchange=e=>{S.intro=e.target.checked;save()};
@@ -380,7 +396,7 @@ function tidySite(){ // hide the bits that don't belong in a reel and set the an
   const want=S.level.toLowerCase();
   d.querySelectorAll('header button').forEach(b=>{if(b.textContent.trim().toLowerCase()===want)b.click()});
 }
-site.addEventListener('load',()=>setTimeout(tidySite,400));
+site.addEventListener('load',()=>{handToSite();setTimeout(tidySite,400)});
 function loadSite(){try{localStorage.setItem('restless-theme',S.look)}catch(e){}site.src='/?reel=1&t='+Date.now()}
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function typeQuestion(q){ // type into the site's box like a person would, then send
@@ -392,6 +408,52 @@ async function typeQuestion(q){ // type into the site's box like a person would,
     await sleep(350)}else put(q);
   await sleep(50);const send=d.querySelector('button[aria-label="Send question"]');if(send){send.click();ta.blur();return true}return false;
 }
+
+/* ---- music: Web Audio so it can fade on any phone (iOS ignores audio.volume). A silent <audio> is started on the same
+   tap so iOS treats the page as media playback and the ring/silent switch doesn't mute it. ---- */
+const music=(()=>{
+  let ctx=null,gain=null,src=null,buf=null,bufId=null,silent=null;const M={previewing:false};
+  const track=()=>TRACKS.find(t=>t.id===S.music&&t.file);
+  M.unlock=()=>{try{if(!ctx){ctx=new (window.AudioContext||window.webkitAudioContext)();gain=ctx.createGain();gain.connect(ctx.destination)}
+    if(ctx.state==='suspended')ctx.resume();
+    if(!silent){silent=document.createElement('audio');silent.loop=true;silent.setAttribute('playsinline','');
+      silent.src='data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQQAAAAAAAA='}
+    silent.play().catch(()=>{})}catch(e){}};
+  M.preload=async()=>{const t=track();if(!t){buf=null;bufId=null;return}if(bufId===t.id&&buf)return;
+    try{const r=await fetch(t.file);const ab=await r.arrayBuffer();if(!ctx)M.unlock();if(!ctx)return;
+      buf=await new Promise((res,rej)=>ctx.decodeAudioData(ab,res,rej));bufId=t.id}catch(e){buf=null;bufId=null}};
+  M.start=async(preview)=>{const t=track();if(!t)return false;M.unlock();if(!ctx)return false;await M.preload();if(!buf)return false;
+    M.stop(0);src=ctx.createBufferSource();src.buffer=buf;src.loop=true;src.connect(gain);
+    const n=ctx.currentTime;gain.gain.cancelScheduledValues(n);gain.gain.setValueAtTime(0.0001,n);gain.gain.exponentialRampToValueAtTime(1,n+1.4);
+    src.start(n);M.previewing=!!preview;return true};
+  M.stop=(fade=1.6)=>{if(!src||!ctx)return;const s=src;src=null;M.previewing=false;const n=ctx.currentTime;
+    gain.gain.cancelScheduledValues(n);gain.gain.setValueAtTime(Math.max(gain.gain.value,0.0001),n);gain.gain.exponentialRampToValueAtTime(0.0001,n+Math.max(fade,0.02));
+    setTimeout(()=>{try{s.stop()}catch(e){}},fade*1000+60)};
+  return M;
+})();
+
+/* ---- the answer, fetched ahead of the take so the recording has no dead air. The framed site asks for it by the exact
+   question text (see __rfReel in App.jsx) and plays it back word by word; if the fetch fails, the take just uses the live answer. ---- */
+let ANSWER=null,fetching=null;
+const ageBand=()=>({'Middle school':'Middle School','High school':'High School','College':'College','Adult':'OCIA'})[S.level]||'High School';
+async function prefetch(){
+  const q=Q().q,level=S.level,key=q+'|'+level;
+  if(ANSWER&&ANSWER.key===key)return ANSWER;
+  if(fetching&&fetching.key===key)return fetching.p;
+  const ready=$('#ready');ready.disabled=true;ready.textContent='Fetching answer…';
+  const d=new Date(),todayDate=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const p=(async()=>{try{
+      const ac=new AbortController();setTimeout(()=>ac.abort(),60000);
+      const r=await fetch('/api/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,ageBand:ageBand(),language:'en',todayDate,history:[]}),signal:ac.signal});
+      const data=await r.json().catch(()=>({}));
+      if(!r.ok||!data.text)throw new Error('bad');
+      ANSWER={key,q,text:data.text,sources:data.sources||[]};handToSite();
+    }catch(e){ANSWER=null;if(state==='staging')showTip('Couldn\'t fetch the answer ahead of time, so this take will wait for the live answer. Tap <b>Reload site</b> to try again.')}
+    finally{if(fetching&&fetching.key===key){fetching=null;ready.disabled=false;ready.textContent='Ready'}}})();
+  fetching={key,p};return p;
+}
+function handToSite(){try{const w=site.contentWindow;if(!w)return;
+  w.__rfReel={answerFor:q=>ANSWER&&ANSWER.q.trim()===q.trim()?{text:ANSWER.text,sources:ANSWER.sources,thinkMs:1100,wordMs:48}:null}}catch(e){}}
 
 /* ---- states ---- */
 let state='setup',timer=null,wake=null;
@@ -408,17 +470,19 @@ function toStage(reload){
   stage.className=S.layout==='full'?'full':'framed';fit();dressCards();
   intro.hidden=true;intro.classList.remove('leave');outro.hidden=true;menu.hidden=true;bar.hidden=false;stage.classList.remove('armed');
   if(reload||!site.src)loadSite();else tidySite();
+  prefetch();music.preload();
   let seen=false;try{seen=localStorage.getItem('rf-reel-tip')==='1'}catch(e){}
-  if(!seen)showTip('Wait for the site to load, then tap <b>Ready</b>. The question gets typed in for you when the take starts.');
+  if(!seen)showTip('Wait for the site to load and the answer to fetch, then tap <b>Ready</b>. When the take starts the music begins, the question types itself in, and the answer flows in with no wait.');
   keepAwake();
 }
 function arm(){
+  music.unlock();music.stop(0);
   state='armed';bar.hidden=true;tip.hidden=true;menu.hidden=true;outro.hidden=true;stage.classList.remove('on');stage.classList.add('armed');
   intro.hidden=false;intro.classList.remove('leave');intro.classList.toggle('ghost',!S.intro);
   if(!S.intro){showTip('Start your screen recording, then tap the site to begin.');setTimeout(()=>{if(state==='armed')tip.hidden=true},2500)}
 }
 async function play(){
-  state='playing';tip.hidden=true;
+  state='playing';tip.hidden=true;handToSite();music.start();
   if(!intro.hidden){intro.classList.add('leave');setTimeout(()=>{intro.hidden=true},500)}
   void stage.offsetWidth;stage.classList.remove('armed');stage.classList.add('on');
   const n=+S.len;if(n>0)timer=setTimeout(end,n*1000+(S.intro?500:0));
@@ -428,19 +492,19 @@ async function play(){
   if(!ok&&state==='playing')showTip('Couldn\'t reach the question box. Tap <b>Reload site</b> in Settings and try again.');
 }
 function end(){
-  clearTimeout(timer);if(state!=='playing')return;state='ended';
+  clearTimeout(timer);if(state!=='playing')return;state='ended';music.stop(1.8);
   if(S.outro)outro.hidden=false;else{menu.hidden=false}
 }
 intro.addEventListener('click',()=>{if(state==='armed')play()});
 frame.querySelector('.shield').addEventListener('click',()=>{if(state==='armed')play()});
 $('#bug').onclick=e=>{e.stopPropagation();if(state==='playing')end()};
 outro.addEventListener('click',()=>{if(state==='ended')menu.hidden=false});
-$('#again').onclick=e=>{e.stopPropagation();outro.hidden=true;menu.hidden=true;stage.classList.remove('on');toStage(true)};
+$('#again').onclick=e=>{e.stopPropagation();music.stop(0);outro.hidden=true;menu.hidden=true;stage.classList.remove('on');toStage(true)};
 $('#change').onclick=e=>{e.stopPropagation();toSetup()};
 $('#ready').onclick=arm;
-$('#reload').onclick=()=>{site.src='about:blank';setTimeout(loadSite,30)};
+$('#reload').onclick=()=>{ANSWER=null;fetching=null;prefetch();site.src='about:blank';setTimeout(loadSite,30)};
 $('#back').onclick=toSetup;
-function toSetup(){state='setup';clearTimeout(timer);bar.hidden=true;tip.hidden=true;menu.hidden=true;intro.hidden=true;outro.hidden=true;stage.classList.remove('on','armed');
+function toSetup(){state='setup';clearTimeout(timer);music.stop(.3);bar.hidden=true;tip.hidden=true;menu.hidden=true;intro.hidden=true;outro.hidden=true;stage.classList.remove('on','armed');
   setup.hidden=false;cta.hidden=false;paint()}
 $('#load').onclick=()=>toStage(true);
 
