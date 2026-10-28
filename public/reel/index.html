@@ -116,6 +116,7 @@ img{display:block}
 #bar .go[disabled]::before{animation:blink 1s ease-in-out infinite}
 @keyframes blink{50%{opacity:.25}}
 .seg .pv{flex:none;width:44px;background:var(--blue-soft)!important;color:var(--blue)!important}
+#music{flex-wrap:wrap}#music button{flex:1 1 28%}
 #bar .go::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:#fff;margin-right:7px;vertical-align:1px}
 #tip{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 12px);z-index:50;width:min(92vw,420px);
   background:rgba(4,16,28,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#e6eef6;border-radius:16px;padding:12px 40px 12px 14px;font:500 13.5px/1.45 var(--sans);box-shadow:0 8px 24px rgba(0,0,0,.45)}
@@ -269,7 +270,7 @@ details li{margin-bottom:6px}
     <div class="row"><span>Site look</span><div class="seg" id="look"><button type="button" data-v="dark">Dark</button><button type="button" data-v="light">Light</button></div></div>
     <div class="row"><span>Answer level</span><div class="seg" id="level"><button type="button" data-v="Middle school">Middle</button><button type="button" data-v="High school">High school</button><button type="button" data-v="College">College</button><button type="button" data-v="Adult">Adult</button></div></div>
     <div class="row"><span>Music</span><div class="seg" id="music"></div></div>
-    <p class="hint">Soft, royalty-free loops made for Restless. It starts with the take, fades out on the end card, and lands in your screen recording. Tap ▶ to hear one.</p>
+    <p class="hint">Royalty-free loops made for Restless: Stillness, Morning and Vespers are calm; Sunrise, Rise and Skip are upbeat. It starts with the take, fades out on the end card, and lands in your screen recording. Tap ▶ to hear one.</p>
     <div class="row"><span>End card after</span><div class="seg" id="len"><button type="button" data-v="30">30s</button><button type="button" data-v="45">45s</button><button type="button" data-v="60">60s</button><button type="button" data-v="0">Manual</button></div></div>
     <label class="tog">Type the question automatically<input type="checkbox" id="optType" checked></label>
     <label class="tog">Title card at the start<input type="checkbox" id="optIntro" checked></label>
@@ -301,7 +302,7 @@ const D=window.REEL||{questions:[],hooks:{},copy:{}};
 const $=s=>document.querySelector(s);
 const stage=$('#stage'),frame=$('#frame'),site=$('#site'),hookEl=$('#hook span'),intro=$('#intro'),outro=$('#outro'),bar=$('#bar'),tip=$('#tip'),menu=$('#menu'),setup=$('#setup'),cta=$('#cta');
 const VW=390,VH=740; // the site is laid out at a normal phone size, then scaled into the frame
-let S={slug:(D.questions[0]||{}).slug,custom:'',hook:0,customHook:'',layout:'framed',look:'dark',level:'High school',len:'45',type:true,intro:true,outro:true,topic:'all',music:'stillness'};
+let S={slug:(D.questions[0]||{}).slug,custom:'',hook:0,customHook:'',layout:'framed',look:'dark',level:'High school',len:'45',type:true,intro:true,outro:true,topic:'all',music:'sunrise'};
 try{Object.assign(S,JSON.parse(localStorage.getItem('rf-reel')||'{}'))}catch(e){}
 if(S.slug!=='custom'&&!D.questions.some(q=>q.slug===S.slug))S.slug=(D.questions[0]||{}).slug;
 const save=()=>{try{localStorage.setItem('rf-reel',JSON.stringify(S))}catch(e){}};
@@ -349,7 +350,7 @@ function paint(){
   $('#optType').checked=S.type;$('#optIntro').checked=S.intro;$('#optOutro').checked=S.outro;
 }
 const TRACKS=[{id:'off',name:'Off'},...(D.music||[])];
-if(!TRACKS.some(t=>t.id===S.music))S.music='stillness';
+if(!TRACKS.some(t=>t.id===S.music))S.music='sunrise';
 function paintMusic(){
   const el=$('#music');el.innerHTML='';
   TRACKS.forEach(t=>{const b=document.createElement('button');b.type='button';b.dataset.v=t.id;b.textContent=t.name;b.setAttribute('aria-pressed',String(t.id===S.music));
