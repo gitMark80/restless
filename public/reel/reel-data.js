@@ -2,17 +2,9 @@
 // Hooks: wrap a word in *stars* to highlight it. {q} = the question, {hook} = the chosen hook, {url} = restless.faith.
 // Each question has its own hooks, caption lines and first comments; the generic ones below are added after them.
 window.REEL = {
-  // Background music for takes. Soft loops synthesized for Restless (no samples, nothing to license).
-  // To add your own: drop an .mp3 in /public/reel/music/ and list it here. Keep tracks quiet (around -21 dB) so they sit under the reel.
-  music: [
-    { id: "stillness", name: "Stillness", file: "/reel/music/stillness.mp3" },
-    { id: "morning", name: "Morning", file: "/reel/music/morning.mp3" },
-    { id: "vespers", name: "Vespers", file: "/reel/music/vespers.mp3" },
-    // Upbeat
-    { id: "sunrise", name: "Sunrise", file: "/reel/music/sunrise.mp3" },
-    { id: "rise", name: "Rise", file: "/reel/music/rise.mp3" },
-    { id: "skip", name: "Skip", file: "/reel/music/skip.mp3" },
-  ],
+  // Built-in background music for takes. Empty by default: add tracks from your phone in Reel Studio (kept on the device),
+  // or drop a license-cleared .mp3 in /public/reel/music/ and list it here as { id, name, file } to ship it to every device.
+  music: [],
   hooks: {
     _generic: [
       "I asked and got a *real* answer",
