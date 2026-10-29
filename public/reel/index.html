@@ -117,6 +117,11 @@ img{display:block}
 @keyframes blink{50%{opacity:.25}}
 .seg .pv{flex:none;width:44px;background:var(--blue-soft)!important;color:var(--blue)!important}
 #music{flex-wrap:wrap}#music button{flex:1 1 28%}
+#music .add{flex:1 1 100%;background:#fff;color:var(--blue);box-shadow:0 0 0 1.5px var(--blue) inset}
+#music .add.busy{color:var(--muted);box-shadow:0 0 0 1px var(--line) inset}
+.mrow{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:6px}
+.mrow .rm{border:0;background:none;color:#b3443a;font:600 13px var(--sans);padding:6px 2px}
+.mrow .rm[hidden]{display:none}
 #bar .go::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:#fff;margin-right:7px;vertical-align:1px}
 #tip{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 12px);z-index:50;width:min(92vw,420px);
   background:rgba(4,16,28,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#e6eef6;border-radius:16px;padding:12px 40px 12px 14px;font:500 13.5px/1.45 var(--sans);box-shadow:0 8px 24px rgba(0,0,0,.45)}
@@ -270,7 +275,9 @@ details li{margin-bottom:6px}
     <div class="row"><span>Site look</span><div class="seg" id="look"><button type="button" data-v="dark">Dark</button><button type="button" data-v="light">Light</button></div></div>
     <div class="row"><span>Answer level</span><div class="seg" id="level"><button type="button" data-v="Middle school">Middle</button><button type="button" data-v="High school">High school</button><button type="button" data-v="College">College</button><button type="button" data-v="Adult">Adult</button></div></div>
     <div class="row"><span>Music</span><div class="seg" id="music"></div></div>
-    <p class="hint">Royalty-free loops made for Restless: Stillness, Morning and Vespers are calm; Sunrise, Rise and Skip are upbeat. It starts with the take, fades out on the end card, and lands in your screen recording. Tap ▶ to hear one.</p>
+    <div class="mrow"><p class="hint" style="margin:0">Music starts with the take, fades out on the end card, and lands in your screen recording. Tap ▶ to hear the selected track.</p><button type="button" class="rm" id="musicrm" hidden>Remove</button></div>
+    <p class="hint">Add your own: download free, license-cleared tracks on your phone (Pixabay Music and Mixkit need no credit; Uppbeat's free tier needs a credit line in the caption), then tap <b>Add music from your phone</b>. Tracks are kept on this device, not uploaded.</p>
+    <input type="file" id="musicfile" accept="audio/*,.mp3,.m4a,.aac,.wav" hidden>
     <div class="row"><span>End card after</span><div class="seg" id="len"><button type="button" data-v="30">30s</button><button type="button" data-v="45">45s</button><button type="button" data-v="60">60s</button><button type="button" data-v="0">Manual</button></div></div>
     <label class="tog">Type the question automatically<input type="checkbox" id="optType" checked></label>
     <label class="tog">Title card at the start<input type="checkbox" id="optIntro" checked></label>
@@ -349,16 +356,40 @@ function paint(){
   paintQs();paintHooks();seg('layout','layout');seg('look','look');seg('level','level');seg('len','len');paintMusic();
   $('#optType').checked=S.type;$('#optIntro').checked=S.intro;$('#optOutro').checked=S.outro;
 }
-const TRACKS=[{id:'off',name:'Off'},...(D.music||[])];
-if(!TRACKS.some(t=>t.id===S.music))S.music='sunrise';
+/* Music tracks: built-ins from reel-data.js (served files) plus tracks the user added from their phone, which live in
+   IndexedDB on this device so nothing is uploaded and they survive reloads. */
+let USER_TRACKS=[]; // {id,name} ; the audio blob lives in IndexedDB under the same id
+const TRACKS=()=>[{id:'off',name:'Off'},...(D.music||[]),...USER_TRACKS.map(t=>({...t,user:true}))];
+const idb={
+  open:()=>new Promise((res,rej)=>{const r=indexedDB.open('rf-reel',1);r.onupgradeneeded=()=>r.result.createObjectStore('music',{keyPath:'id'});r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}),
+  run:async(mode,fn)=>{const db=await idb.open();return new Promise((res,rej)=>{const tx=db.transaction('music',mode);const q=fn(tx.objectStore('music'));tx.oncomplete=()=>res(q&&q.result);tx.onerror=()=>rej(tx.error)})},
+  all:()=>idb.run('readonly',st=>st.getAll()),get:id=>idb.run('readonly',st=>st.get(id)),put:rec=>idb.run('readwrite',st=>st.put(rec)),del:id=>idb.run('readwrite',st=>st.delete(id))
+};
+async function loadUserTracks(){try{const all=await idb.all()||[];USER_TRACKS=all.map(r=>({id:r.id,name:r.name})).sort((a,b)=>a.name.localeCompare(b.name))}catch(e){USER_TRACKS=[]}
+  if(!TRACKS().some(t=>t.id===S.music))S.music=(D.music&&D.music[0]||USER_TRACKS[0]||{id:'off'}).id;paintMusic()}
 function paintMusic(){
   const el=$('#music');el.innerHTML='';
-  TRACKS.forEach(t=>{const b=document.createElement('button');b.type='button';b.dataset.v=t.id;b.textContent=t.name;b.setAttribute('aria-pressed',String(t.id===S.music));
+  TRACKS().forEach(t=>{const b=document.createElement('button');b.type='button';b.dataset.v=t.id;b.textContent=t.name;b.setAttribute('aria-pressed',String(t.id===S.music));
     b.onclick=()=>{S.music=t.id;save();paintMusic();music.preload()};el.appendChild(b)});
   const pv=document.createElement('button');pv.type='button';pv.className='pv';pv.textContent='▶';pv.setAttribute('aria-label','Preview music');
-  pv.onclick=()=>{if(music.previewing){music.stop(.3);pv.textContent='▶'}else if(S.music!=='off'){music.unlock();music.start(true).then(()=>{pv.textContent='■'});setTimeout(()=>{if(music.previewing){music.stop(1);pv.textContent='▶'}},8000)}};
+  pv.onclick=()=>{if(music.previewing){music.stop(.3);pv.textContent='▶'}else if(S.music!=='off'){music.unlock();pv.textContent='…';music.start(true).then(ok=>{pv.textContent=ok?'■':'▶';if(!ok)showTip('Couldn\'t play that track. Try an .mp3 or .m4a file.')});setTimeout(()=>{if(music.previewing){music.stop(1);pv.textContent='▶'}},10000)}};
   el.appendChild(pv);
+  const add=document.createElement('button');add.type='button';add.className='add';add.textContent='＋ Add music from your phone';add.onclick=()=>$('#musicfile').click();el.appendChild(add);
+  const cur=TRACKS().find(t=>t.id===S.music);$('#musicrm').hidden=!(cur&&cur.user);
 }
+$('#musicfile').onchange=async e=>{
+  const f=e.target.files&&e.target.files[0];e.target.value='';if(!f)return;
+  const add=$('#music .add');add.classList.add('busy');add.textContent='Adding…';
+  try{
+    if(f.size>25*1024*1024)throw new Error('big');
+    const id='u-'+Date.now().toString(36);const name=f.name.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').trim().slice(0,28)||'My track';
+    await idb.put({id,name,type:f.type||'audio/mpeg',blob:f});
+    await loadUserTracks();S.music=id;save();paintMusic();music.preload();
+  }catch(err){showTip(err.message==='big'?'That file is over 25 MB. Pick a shorter track or an .mp3 version.':'Couldn\'t save that track on this device.');paintMusic()}
+};
+$('#musicrm').onclick=async()=>{const cur=TRACKS().find(t=>t.id===S.music);if(!cur||!cur.user)return;
+  if(!confirm(`Remove "${cur.name}" from this device?`))return;music.stop(0);try{await idb.del(cur.id)}catch(e){}await loadUserTracks();save();music.preload()};
+loadUserTracks();
 $('#optType').onchange=e=>{S.type=e.target.checked;save()};
 $('#optIntro').onchange=e=>{S.intro=e.target.checked;save()};
 $('#optOutro').onchange=e=>{S.outro=e.target.checked;save()};
@@ -414,14 +445,15 @@ async function typeQuestion(q){ // type into the site's box like a person would,
    tap so iOS treats the page as media playback and the ring/silent switch doesn't mute it. ---- */
 const music=(()=>{
   let ctx=null,gain=null,src=null,buf=null,bufId=null,silent=null;const M={previewing:false};
-  const track=()=>TRACKS.find(t=>t.id===S.music&&t.file);
+  const track=()=>TRACKS().find(t=>t.id===S.music&&(t.file||t.user));
   M.unlock=()=>{try{if(!ctx){ctx=new (window.AudioContext||window.webkitAudioContext)();gain=ctx.createGain();gain.connect(ctx.destination)}
     if(ctx.state==='suspended')ctx.resume();
     if(!silent){silent=document.createElement('audio');silent.loop=true;silent.setAttribute('playsinline','');
       silent.src='data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQQAAAAAAAA='}
     silent.play().catch(()=>{})}catch(e){}};
   M.preload=async()=>{const t=track();if(!t){buf=null;bufId=null;return}if(bufId===t.id&&buf)return;
-    try{const r=await fetch(t.file);const ab=await r.arrayBuffer();if(!ctx)M.unlock();if(!ctx)return;
+    try{let ab;if(t.user){const rec=await idb.get(t.id);if(!rec)throw new Error('missing');ab=await rec.blob.arrayBuffer()}else{const r=await fetch(t.file);ab=await r.arrayBuffer()}
+      if(!ctx)M.unlock();if(!ctx)return;
       buf=await new Promise((res,rej)=>ctx.decodeAudioData(ab,res,rej));bufId=t.id}catch(e){buf=null;bufId=null}};
   M.start=async(preview)=>{const t=track();if(!t)return false;M.unlock();if(!ctx)return false;await M.preload();if(!buf)return false;
     M.stop(0);src=ctx.createBufferSource();src.buffer=buf;src.loop=true;src.connect(gain);
