@@ -118,9 +118,11 @@ img{display:block}
 .seg .pv{flex:none;width:44px;background:var(--blue-soft)!important;color:var(--blue)!important}
 #music{flex-wrap:wrap}#music button{flex:1 1 28%}
 #bar .go::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:#fff;margin-right:7px;vertical-align:1px}
-#tip{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 12px);z-index:50;width:min(92vw,420px);
+#tip{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 70px);z-index:50;width:min(92vw,420px);
   background:rgba(4,16,28,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#e6eef6;border-radius:16px;padding:12px 40px 12px 14px;font:500 13.5px/1.45 var(--sans);box-shadow:0 8px 24px rgba(0,0,0,.45)}
 #tip[hidden]{display:none}
+#pbtn{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 12px);z-index:49;border:0;border-radius:999px;padding:13px 22px;font:700 15px/1 var(--sans);background:var(--cream);color:var(--navy);box-shadow:0 4px 0 rgba(224,185,106,.9),0 10px 24px rgba(0,0,0,.45);white-space:nowrap}
+#pbtn[hidden]{display:none}
 #tip b{color:var(--gold)}
 #tip .x{position:absolute;top:6px;right:6px;width:28px;height:28px;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;font:700 16px/1 var(--sans)}
 #menu{position:absolute;inset:auto 0 calc(var(--H)*.13);z-index:30;display:flex;justify-content:center;gap:8px;padding:0 8px}
@@ -242,15 +244,15 @@ details li{margin-bottom:6px}
 
 <div id="bar" hidden><button type="button" id="back">‹ Settings</button><button type="button" id="reload">Reload site</button><button type="button" class="go" id="ready">Ready</button></div>
 <div id="tip" hidden><button class="x" type="button" aria-label="Hide tip">×</button><span></span></div>
+<button type="button" id="pbtn" hidden>Post text</button>
 
 <div id="post" hidden><div class="in" role="dialog" aria-modal="true" aria-labelledby="posth">
   <h2 id="posth">Post text</h2>
-  <p class="sub">Paste these when you post. Tap any text to edit it first. Caption is for Reels, TikTok and Shorts; Description is the longer version for YouTube and Facebook. Links in Instagram captions aren't clickable, so it says "link in bio".</p>
+  <p class="sub">Copy and paste when you post. Tap any text to edit it first.</p>
   <div id="psrc" hidden><div class="seg"><button type="button" data-v="current">Current pick<small id="psrc-cur"></small></button><button type="button" data-v="last">Last reel<small id="psrc-last"></small></button></div></div>
   <div class="pbox"><header><b>Title</b><button type="button" class="copy" data-k="title">Copy</button></header><textarea id="p-title" rows="1"></textarea></div>
   <div class="pbox"><header><b>Caption<small>short</small></b><button type="button" class="copy" data-k="caption">Copy</button></header><textarea id="p-caption" rows="4"></textarea></div>
   <div class="pbox"><header><b>Description<small>long</small></b><button type="button" class="copy" data-k="desc">Copy</button></header><textarea id="p-desc" rows="8"></textarea></div>
-  <div class="pbox"><header><b>Hashtags</b><button type="button" class="copy" data-k="tags">Copy</button></header><textarea id="p-tags" rows="3"></textarea></div>
   <div class="pbox"><header><b>First comment</b><button type="button" class="copy" data-k="comment">Copy</button></header><textarea id="p-comment" rows="2"></textarea></div>
   <div class="acts"><button type="button" id="p-new">New version</button><button type="button" id="p-all">Copy all</button><button type="button" id="p-close" class="all">Done</button></div>
 </div></div>
@@ -474,7 +476,7 @@ function dressCards(){
 function toStage(reload){
   state='staging';clearTimeout(timer);setup.hidden=true;cta.hidden=true;
   stage.className=S.layout==='full'?'full':'framed';fit();dressCards();
-  intro.hidden=true;intro.classList.remove('leave');outro.hidden=true;menu.hidden=true;bar.hidden=false;stage.classList.remove('armed');
+  intro.hidden=true;intro.classList.remove('leave');outro.hidden=true;menu.hidden=true;bar.hidden=false;$('#pbtn').hidden=false;stage.classList.remove('armed');
   if(reload||!site.src)loadSite();else tidySite();
   prefetch();music.preload();
   let seen=false;try{seen=localStorage.getItem('rf-reel-tip')==='1'}catch(e){}
@@ -483,7 +485,7 @@ function toStage(reload){
 }
 function arm(){
   music.unlock();music.stop(0);
-  state='armed';bar.hidden=true;tip.hidden=true;menu.hidden=true;outro.hidden=true;stage.classList.remove('on');stage.classList.add('armed');
+  state='armed';bar.hidden=true;$('#pbtn').hidden=true;tip.hidden=true;menu.hidden=true;outro.hidden=true;stage.classList.remove('on');stage.classList.add('armed');
   intro.hidden=false;intro.classList.remove('leave');intro.classList.toggle('ghost',!S.intro);
   if(!S.intro){showTip('Start your screen recording, then tap the site to begin.');setTimeout(()=>{if(state==='armed')tip.hidden=true},2500)}
 }
@@ -511,7 +513,7 @@ $('#change').onclick=e=>{e.stopPropagation();toSetup()};
 $('#ready').onclick=arm;
 $('#reload').onclick=()=>{ANSWER=null;fetching=null;prefetch();site.src='about:blank';setTimeout(loadSite,30)};
 $('#back').onclick=toSetup;
-function toSetup(){state='setup';clearTimeout(timer);music.stop(.3);bar.hidden=true;tip.hidden=true;menu.hidden=true;intro.hidden=true;outro.hidden=true;stage.classList.remove('on','armed');
+function toSetup(){state='setup';clearTimeout(timer);music.stop(.3);bar.hidden=true;$('#pbtn').hidden=true;tip.hidden=true;menu.hidden=true;intro.hidden=true;outro.hidden=true;stage.classList.remove('on','armed');
   setup.hidden=false;cta.hidden=false;paint()}
 $('#load').onclick=()=>toStage(true);
 
@@ -572,7 +574,7 @@ function markUsed(){
   for(const k of ['t','l','a','c','b']){u[k]=u[k]||[];if(!u[k].includes(cur[k]))u[k].push(cur[k]);if(u[k].length>=P[k].length)u[k]=[cur[k]]}
   saveUsed();
 }
-const pf={title:$('#p-title'),caption:$('#p-caption'),desc:$('#p-desc'),tags:$('#p-tags'),comment:$('#p-comment')};
+const pf={title:$('#p-title'),caption:$('#p-caption'),desc:$('#p-desc'),comment:$('#p-comment')};
 function fillPost(fresh){if(fresh||!cur||cur.slug!==PQ().slug)buildPost();const t=postText();for(const k in pf)pf[k].value=t[k];
   document.querySelectorAll('#post .copy').forEach(b=>{b.textContent='Copy';b.classList.remove('done')})}
 function openPost(){paintPostSrc();fillPost(!cur||cur.slug!==PQ().slug||cur.hook!==PH());cur.hook=PH();$('#post').hidden=false}
@@ -583,7 +585,7 @@ $('#p-new').onclick=()=>{const h=cur&&cur.hook;fillPost(true);cur.hook=h};
 $('#p-close').onclick=()=>{$('#post').hidden=true};
 $('#post').addEventListener('click',e=>{if(e.target.id==='post')$('#post').hidden=true});
 $('#postbtn').onclick=e=>{e.stopPropagation();openPost()};
-$('#postonly').onclick=openPost;
+$('#postonly').onclick=openPost;$('#pbtn').onclick=openPost;
 fit();
 })();
 </script>
