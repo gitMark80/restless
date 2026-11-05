@@ -144,7 +144,6 @@ img{display:block}
 #post .acts{display:flex;gap:10px;margin-top:4px}
 #post .acts button{flex:1;border:0;border-radius:14px;padding:14px;font:700 15px/1 var(--sans);background:#e9eff5;color:var(--navy)}
 #post .acts .all{background:var(--navy);color:#fff}
-.postlink{display:block;width:100%;margin-top:10px;border:0;border-radius:12px;padding:12px;background:#fff;box-shadow:0 0 0 1px var(--line);font:700 15px var(--sans);color:var(--blue)}
 
 /* ---------- setup panel ---------- */
 #setup{position:fixed;inset:0;z-index:100;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--cream);-webkit-user-select:text;user-select:text;overscroll-behavior:contain}
@@ -196,8 +195,11 @@ details li{margin-bottom:6px}
 .homescreen[hidden]{display:none}
 .cta{position:fixed;left:0;right:0;bottom:0;z-index:101;padding:12px 16px calc(env(safe-area-inset-bottom) + 12px);background:linear-gradient(180deg,rgba(251,247,238,0),var(--cream) 35%)}
 .cta[hidden]{display:none}
-.cta button{display:block;width:100%;max-width:528px;margin:0 auto;border:0;border-radius:16px;padding:17px;background:var(--blue);color:#fff;font:700 18px/1 var(--sans);letter-spacing:.01em;box-shadow:0 5px 0 #155fa8,0 10px 24px rgba(32,135,232,.35)}
+.cta .in{display:flex;gap:10px;max-width:528px;margin:0 auto}
+.cta button{display:block;flex:1;border:0;border-radius:16px;padding:17px 10px;background:var(--blue);color:#fff;font:700 18px/1 var(--sans);letter-spacing:.01em;box-shadow:0 5px 0 #155fa8,0 10px 24px rgba(32,135,232,.35);white-space:nowrap}
 .cta button:active{transform:translateY(3px);box-shadow:0 2px 0 #155fa8}
+.cta .alt{flex:0 0 auto;background:#fff;color:var(--navy);box-shadow:0 5px 0 rgba(224,185,106,.9),0 0 0 1px var(--line)}
+.cta .alt:active{box-shadow:0 2px 0 rgba(224,185,106,.9),0 0 0 1px var(--line)}
 :focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important}}
 </style>
@@ -263,7 +265,6 @@ details li{margin-bottom:6px}
     <h2><i>2</i>Pick a hook</h2>
     <div class="hooks" id="hooks"></div>
     <p class="hint">Wrap a word in *stars* to highlight it.</p>
-    <button type="button" class="postlink" id="postprev">See the title, caption, description and hashtags ›</button>
 
     <h2><i>3</i>Style</h2>
     <div class="row"><span>Layout</span><div class="seg" id="layout"><button type="button" data-v="framed">Framed</button><button type="button" data-v="full">Full screen</button></div></div>
@@ -292,7 +293,7 @@ details li{margin-bottom:6px}
     </details>
   </div>
 </div>
-<div class="cta" id="cta"><button type="button" id="load">Load site</button></div>
+<div class="cta" id="cta"><div class="in"><button type="button" class="alt" id="postonly">Post text</button><button type="button" id="load">Load site</button></div></div>
 
 <script src="/reel/reel-data.js"></script>
 <script src="/reel/topic-links.js"></script>
@@ -564,7 +565,7 @@ $('#p-new').onclick=()=>{const h=cur&&cur.hook;fillPost(true);cur.hook=h};
 $('#p-close').onclick=()=>{$('#post').hidden=true};
 $('#post').addEventListener('click',e=>{if(e.target.id==='post')$('#post').hidden=true});
 $('#postbtn').onclick=e=>{e.stopPropagation();openPost()};
-$('#postprev').onclick=openPost;
+$('#postonly').onclick=openPost;
 fit();
 })();
 </script>
