@@ -2,6 +2,11 @@
   "cleanUrls": true,
   "redirects": [
     {
+      "source": "/es",
+      "destination": "/?lang=es",
+      "permanent": false
+    },
+    {
       "source": "/saints",
       "destination": "/questions/why-do-catholics-pray-to-saints",
       "permanent": false
