@@ -260,6 +260,8 @@ details li{margin-bottom:6px}
   <div class="pbox"><header><b>Caption<small>short</small></b><button type="button" class="copy" data-k="caption">Copy</button></header><textarea id="p-caption" rows="4"></textarea></div>
   <div class="pbox"><header><b>Description<small>long</small></b><button type="button" class="copy" data-k="desc">Copy</button></header><textarea id="p-desc" rows="8"></textarea></div>
   <div class="pbox"><header><b>First comment</b><button type="button" class="copy" data-k="comment">Copy</button></header><textarea id="p-comment" rows="2"></textarea></div>
+  <div class="pbox"><header><b>Hashtags</b><button type="button" class="copy" data-k="tags">Copy</button></header><textarea id="p-tags" rows="3"></textarea></div>
+  <div class="pbox"><header><b>Keywords<small>no #, comma-separated</small></b><button type="button" class="copy" data-k="words">Copy</button></header><textarea id="p-words" rows="3"></textarea></div>
   <div class="acts"><button type="button" id="p-new">New version</button><button type="button" id="p-all">Copy all</button><button type="button" id="p-close" class="all">Done</button></div>
 </div></div>
 
@@ -609,20 +611,20 @@ function postText(){
   return {title:fill(P.t[cur.t]),
     caption:`${h}\n\n${fill(P.l[cur.l])}\n${fill(P.a[cur.a])}\n\n${tags}`,
     desc:`${q0.q}\n\n${fill(P.l[cur.l])}${full}\n\n${fill(P.b[cur.b])}\n\n${fill(P.a[cur.a])}\n\n${tags}`,
-    tags,comment:fill(P.c[cur.c])};
+    tags,words:cur.tags.map(t=>t.replace(/^#/,'').replace(/([a-z])([A-Z])/g,'$1 $2').toLowerCase().replace(/tik tok/g,'tiktok')).join(', '),comment:fill(P.c[cur.c])};
 }
 function markUsed(){
   if(!cur)return;const u=USED[cur.slug]=USED[cur.slug]||{};const P=pools(PQ());
   for(const k of ['t','l','a','c','b']){u[k]=u[k]||[];if(!u[k].includes(cur[k]))u[k].push(cur[k]);if(u[k].length>=P[k].length)u[k]=[cur[k]]}
   saveUsed();
 }
-const pf={title:$('#p-title'),caption:$('#p-caption'),desc:$('#p-desc'),comment:$('#p-comment')};
+const pf={title:$('#p-title'),caption:$('#p-caption'),desc:$('#p-desc'),comment:$('#p-comment'),tags:$('#p-tags'),words:$('#p-words')};
 function fillPost(fresh){if(fresh||!cur||cur.slug!==PQ().slug)buildPost();const t=postText();for(const k in pf)pf[k].value=t[k];
   document.querySelectorAll('#post .copy').forEach(b=>{b.textContent='Copy';b.classList.remove('done')})}
 function openPost(){paintPostSrc();fillPost(!cur||cur.slug!==PQ().slug||cur.hook!==PH());cur.hook=PH();$('#post').hidden=false}
 async function copyText(t){try{await navigator.clipboard.writeText(t);return true}catch(e){const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand('copy')}catch(_){}ta.remove();return ok}}
 document.querySelectorAll('#post .copy').forEach(b=>b.onclick=async()=>{const ok=await copyText(pf[b.dataset.k].value);if(ok)markUsed();b.textContent=ok?'Copied!':'Select & copy';b.classList.toggle('done',ok)});
-$('#p-all').onclick=async e=>{const all=`TITLE\n${pf.title.value}\n\nCAPTION\n${pf.caption.value}\n\nDESCRIPTION\n${pf.desc.value}\n\nFIRST COMMENT\n${pf.comment.value}`;const ok=await copyText(all);if(ok)markUsed();e.target.textContent=ok?'Copied all!':'Select & copy';setTimeout(()=>e.target.textContent='Copy all',1800)};
+$('#p-all').onclick=async e=>{const all=`TITLE\n${pf.title.value}\n\nCAPTION\n${pf.caption.value}\n\nDESCRIPTION\n${pf.desc.value}\n\nFIRST COMMENT\n${pf.comment.value}\n\nHASHTAGS\n${pf.tags.value}\n\nKEYWORDS\n${pf.words.value}`;const ok=await copyText(all);if(ok)markUsed();e.target.textContent=ok?'Copied all!':'Select & copy';setTimeout(()=>e.target.textContent='Copy all',1800)};
 $('#p-new').onclick=()=>{const h=cur&&cur.hook;fillPost(true);cur.hook=h};
 $('#p-close').onclick=()=>{$('#post').hidden=true};
 $('#post').addEventListener('click',e=>{if(e.target.id==='post')$('#post').hidden=true});
