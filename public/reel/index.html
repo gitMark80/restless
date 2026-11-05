@@ -133,6 +133,9 @@ img{display:block}
 #post[hidden]{display:none}
 #post .in{width:100%;max-width:560px;max-height:92dvh;overflow-y:auto;background:var(--cream);border-radius:22px 22px 0 0;padding:18px 16px calc(env(safe-area-inset-bottom) + 18px);box-shadow:0 -10px 40px rgba(0,0,0,.35)}
 #post h2{font:700 22px/1.2 var(--serif);margin:0 0 4px;color:var(--navy)}
+#psrc{margin:0 0 12px}#psrc[hidden]{display:none}
+#psrc .seg button{white-space:normal;line-height:1.25;padding:9px 8px}
+#psrc .seg button small{display:block;font-weight:500;color:var(--muted);font-size:12px;margin-top:3px;max-height:2.5em;overflow:hidden}
 #post .sub{margin:0 0 14px;font-size:13.5px;color:var(--muted);line-height:1.45}
 .pbox{background:#fff;border-radius:14px;box-shadow:0 0 0 1px var(--line);padding:12px;margin-bottom:12px}
 .pbox header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
@@ -243,6 +246,7 @@ details li{margin-bottom:6px}
 <div id="post" hidden><div class="in" role="dialog" aria-modal="true" aria-labelledby="posth">
   <h2 id="posth">Post text</h2>
   <p class="sub">Paste these when you post. Tap any text to edit it first. Caption is for Reels, TikTok and Shorts; Description is the longer version for YouTube and Facebook. Links in Instagram captions aren't clickable, so it says "link in bio".</p>
+  <div id="psrc" hidden><div class="seg"><button type="button" data-v="current">Current pick<small id="psrc-cur"></small></button><button type="button" data-v="last">Last reel<small id="psrc-last"></small></button></div></div>
   <div class="pbox"><header><b>Title</b><button type="button" class="copy" data-k="title">Copy</button></header><textarea id="p-title" rows="1"></textarea></div>
   <div class="pbox"><header><b>Caption<small>short</small></b><button type="button" class="copy" data-k="caption">Copy</button></header><textarea id="p-caption" rows="4"></textarea></div>
   <div class="pbox"><header><b>Description<small>long</small></b><button type="button" class="copy" data-k="desc">Copy</button></header><textarea id="p-desc" rows="8"></textarea></div>
@@ -485,6 +489,7 @@ function arm(){
 }
 async function play(){
   state='playing';tip.hidden=true;handToSite();music.start();
+  LAST={q:{...Q()},hook:hookText(),level:S.level,at:Date.now()};try{localStorage.setItem('rf-reel-last',JSON.stringify(LAST))}catch(e){}
   if(!intro.hidden){intro.classList.add('leave');setTimeout(()=>{intro.hidden=true},500)}
   void stage.offsetWidth;stage.classList.remove('armed');stage.classList.add('on');
   const n=+S.len;if(n>0)timer=setTimeout(end,n*1000+(S.intro?500:0));
@@ -529,8 +534,21 @@ function pickFresh(slug,k,list,avoid){
   return free[Math.floor(Math.random()*free.length)];
 }
 let cur=null;
+/* The post text can describe either the current pick or the last reel actually recorded (saved when a take starts),
+   so a custom question that's since been changed or replaced can still get its caption. */
+let LAST=null;try{LAST=JSON.parse(localStorage.getItem('rf-reel-last')||'null')}catch(e){}
+let postSrc='current';
+const lastDiffers=()=>!!(LAST&&LAST.q&&(LAST.q.q!==Q().q||plain(LAST.hook||'')!==plain(hookText())));
+const PQ=()=>postSrc==='last'&&LAST&&LAST.q?LAST.q:Q();
+const PH=()=>postSrc==='last'&&LAST?(LAST.hook||LAST.q.q):hookText();
+function paintPostSrc(){
+  const box=$('#psrc');box.hidden=!lastDiffers();if(box.hidden){postSrc='current';return}
+  $('#psrc-cur').textContent=Q().q;$('#psrc-last').textContent=LAST.q.q;
+  box.querySelectorAll('button').forEach(b=>{b.setAttribute('aria-pressed',String(b.dataset.v===postSrc));
+    b.onclick=()=>{postSrc=b.dataset.v;paintPostSrc();fillPost(true)}});
+}
 function buildPost(){
-  const q=Q(),P=pools(q),prev=cur&&cur.slug===q.slug?cur:{};
+  const q=PQ(),P=pools(q),prev=cur&&cur.slug===q.slug?cur:{};
   const pick={t:pickFresh(q.slug,'t',P.t,prev.t),l:pickFresh(q.slug,'l',P.l,prev.l),a:pickFresh(q.slug,'a',P.a,prev.a),c:pickFresh(q.slug,'c',P.c,prev.c),b:pickFresh(q.slug,'b',P.b,prev.b)};
   const T=C._tags||{};
   const tags=[...new Set([...(T.core||['#RestlessFaith']),...shuffle(T[q.topic]||[]).slice(0,4),...shuffle(T.general||[]).slice(0,6)])];
@@ -539,8 +557,8 @@ function buildPost(){
 function postText(){
   // If this question has its own page on the site (window.REEL_TOPICS, built from content/topic-index.js),
   // point viewers there instead of the homepage: restless.faith/eucharist and so on.
-  const q0=Q(),TP=(window.REEL_TOPICS||{})[q0.slug];
-  const P=pools(q0),h=plain(hookText()),url=TP?'restless.faith/'+TP.short:'restless.faith';
+  const q0=PQ(),TP=(window.REEL_TOPICS||{})[q0.slug];
+  const P=pools(q0),h=plain(PH()),url=TP?'restless.faith/'+TP.short:'restless.faith';
   const fill=t=>t.replace(/\{hook\}/g,h).replace(/\{q\}/g,q0.q).replace(/\{url\}/g,url);
   const tags=cur.tags.join(' ');
   const full=TP?`\n\nFull answer with Scripture and Catechism sources: https://${url}`:'';
@@ -550,14 +568,14 @@ function postText(){
     tags,comment:fill(P.c[cur.c])};
 }
 function markUsed(){
-  if(!cur)return;const u=USED[cur.slug]=USED[cur.slug]||{};const P=pools(Q());
+  if(!cur)return;const u=USED[cur.slug]=USED[cur.slug]||{};const P=pools(PQ());
   for(const k of ['t','l','a','c','b']){u[k]=u[k]||[];if(!u[k].includes(cur[k]))u[k].push(cur[k]);if(u[k].length>=P[k].length)u[k]=[cur[k]]}
   saveUsed();
 }
 const pf={title:$('#p-title'),caption:$('#p-caption'),desc:$('#p-desc'),tags:$('#p-tags'),comment:$('#p-comment')};
-function fillPost(fresh){if(fresh||!cur||cur.slug!==Q().slug)buildPost();const t=postText();for(const k in pf)pf[k].value=t[k];
+function fillPost(fresh){if(fresh||!cur||cur.slug!==PQ().slug)buildPost();const t=postText();for(const k in pf)pf[k].value=t[k];
   document.querySelectorAll('#post .copy').forEach(b=>{b.textContent='Copy';b.classList.remove('done')})}
-function openPost(){fillPost(!cur||cur.slug!==Q().slug||cur.hook!==hookText());cur.hook=hookText();$('#post').hidden=false}
+function openPost(){paintPostSrc();fillPost(!cur||cur.slug!==PQ().slug||cur.hook!==PH());cur.hook=PH();$('#post').hidden=false}
 async function copyText(t){try{await navigator.clipboard.writeText(t);return true}catch(e){const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand('copy')}catch(_){}ta.remove();return ok}}
 document.querySelectorAll('#post .copy').forEach(b=>b.onclick=async()=>{const ok=await copyText(pf[b.dataset.k].value);if(ok)markUsed();b.textContent=ok?'Copied!':'Select & copy';b.classList.toggle('done',ok)});
 $('#p-all').onclick=async e=>{const all=`TITLE\n${pf.title.value}\n\nCAPTION\n${pf.caption.value}\n\nDESCRIPTION\n${pf.desc.value}\n\nFIRST COMMENT\n${pf.comment.value}`;const ok=await copyText(all);if(ok)markUsed();e.target.textContent=ok?'Copied all!':'Select & copy';setTimeout(()=>e.target.textContent='Copy all',1800)};
