@@ -283,7 +283,7 @@ details li{margin-bottom:6px}
     <div class="row"><span>Site look</span><div class="seg" id="look"><button type="button" data-v="dark">Dark</button><button type="button" data-v="light">Light</button></div></div>
     <div class="row"><span>Answer level</span><div class="seg" id="level"><button type="button" data-v="Middle school">Middle</button><button type="button" data-v="High school">High school</button><button type="button" data-v="College">College</button><button type="button" data-v="Adult">Adult</button></div></div>
     <div class="row"><span>Music</span><div class="seg" id="music"></div></div>
-    <div class="mrow"><p class="hint" style="margin:0">Music starts with the take, fades out on the end card, and lands in your screen recording. Tap ▶ to hear the selected track.</p><button type="button" class="rm" id="musicrm" hidden>Remove</button></div>
+    <div class="mrow"><p class="hint" style="margin:0">Music starts with the take, fades out on the end card, and lands in your screen recording. Tap ▶ to hear the selected track. <span id="rotnow"></span></p><button type="button" class="rm" id="musicrm" hidden>Remove</button></div>
     <p class="hint">Add your own: download free, license-cleared tracks on your phone (Pixabay Music and Mixkit need no credit; Uppbeat's free tier needs a credit line in the caption), then tap <b>Add music from your phone</b>. Tracks are kept on this device, not uploaded.</p>
     <input type="file" id="musicfile" accept="audio/*,.mp3,.m4a,.aac,.wav" hidden>
     <div class="row"><span>End card after</span><div class="seg" id="len"><button type="button" data-v="30">30s</button><button type="button" data-v="45">45s</button><button type="button" data-v="60">60s</button><button type="button" data-v="0">Manual</button></div></div>
@@ -367,7 +367,14 @@ function paint(){
 /* Music tracks: built-ins from reel-data.js (served files) plus tracks the user added from their phone, which live in
    IndexedDB on this device so nothing is uploaded and they survive reloads. */
 let USER_TRACKS=[]; // {id,name} ; the audio blob lives in IndexedDB under the same id
-const TRACKS=()=>[{id:'off',name:'Off'},...(D.music||[]),...USER_TRACKS.map(t=>({...t,user:true}))];
+const TRACKS=()=>[{id:'off',name:'Off'},{id:'rotate',name:'↻ Rotate'},...(D.music||[]),...USER_TRACKS.map(t=>({...t,user:true}))];
+const playable=()=>TRACKS().filter(t=>t.file||t.user);
+/* "Rotate" plays a different track each take, cycling through everything in the list; the one in use is remembered so the
+   preview button and the next take agree. */
+let ROT=0;try{ROT=+localStorage.getItem('rf-reel-rot')||0}catch(e){}
+const rotTrack=()=>{const p=playable();return p.length?p[ROT%p.length]:null};
+const rotNext=()=>{ROT=(ROT+1)%Math.max(playable().length,1);try{localStorage.setItem('rf-reel-rot',String(ROT))}catch(e){}};
+const activeTrack=()=>S.music==='rotate'?rotTrack():TRACKS().find(t=>t.id===S.music&&(t.file||t.user));
 const idb={
   open:()=>new Promise((res,rej)=>{const r=indexedDB.open('rf-reel',1);r.onupgradeneeded=()=>r.result.createObjectStore('music',{keyPath:'id'});r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}),
   run:async(mode,fn)=>{const db=await idb.open();return new Promise((res,rej)=>{const tx=db.transaction('music',mode);const q=fn(tx.objectStore('music'));tx.oncomplete=()=>res(q&&q.result);tx.onerror=()=>rej(tx.error)})},
@@ -384,6 +391,7 @@ function paintMusic(){
   el.appendChild(pv);
   const add=document.createElement('button');add.type='button';add.className='add';add.textContent='＋ Add music from your phone';add.onclick=()=>$('#musicfile').click();el.appendChild(add);
   const cur=TRACKS().find(t=>t.id===S.music);$('#musicrm').hidden=!(cur&&cur.user);
+  const rt=rotTrack();$('#rotnow').textContent=S.music==='rotate'?(rt?`Rotate plays a different track each take; next up: ${rt.name}.`:'Rotate needs at least one track added.'):'';
 }
 $('#musicfile').onchange=async e=>{
   const f=e.target.files&&e.target.files[0];e.target.value='';if(!f)return;
@@ -453,7 +461,7 @@ async function typeQuestion(q){ // type into the site's box like a person would,
    tap so iOS treats the page as media playback and the ring/silent switch doesn't mute it. ---- */
 const music=(()=>{
   let ctx=null,gain=null,src=null,buf=null,bufId=null,silent=null;const M={previewing:false};
-  const track=()=>TRACKS().find(t=>t.id===S.music&&(t.file||t.user));
+  const track=activeTrack;
   M.unlock=()=>{try{if(!ctx){ctx=new (window.AudioContext||window.webkitAudioContext)();gain=ctx.createGain();gain.connect(ctx.destination)}
     if(ctx.state==='suspended')ctx.resume();
     if(!silent){silent=document.createElement('audio');silent.loop=true;silent.setAttribute('playsinline','');
@@ -525,6 +533,7 @@ function arm(){
 async function play(){
   state='playing';tip.hidden=true;handToSite();music.start();
   LAST={q:{...Q()},hook:hookText(),level:S.level,at:Date.now()};try{localStorage.setItem('rf-reel-last',JSON.stringify(LAST))}catch(e){}
+  if(S.music==='rotate')setTimeout(()=>{rotNext();music.preload()},3000); // next take gets the next track; preload it while this one plays
   if(!intro.hidden){intro.classList.add('leave');setTimeout(()=>{intro.hidden=true},500)}
   void stage.offsetWidth;stage.classList.remove('armed');stage.classList.add('on');
   const n=+S.len;if(n>0)timer=setTimeout(end,n*1000+(S.intro?500:0));
