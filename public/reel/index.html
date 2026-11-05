@@ -281,6 +281,7 @@ details li{margin-bottom:6px}
     <p class="hint">Wrap a word in *stars* to highlight it.</p>
 
     <h2><i>3</i>Style</h2>
+    <div class="row"><span>Language</span><div class="seg" id="lang"><button type="button" data-v="en">English</button><button type="button" data-v="es">Español</button></div></div>
     <div class="row"><span>Layout</span><div class="seg" id="layout"><button type="button" data-v="framed">Framed</button><button type="button" data-v="full">Full screen</button></div></div>
     <div class="row"><span>Site look</span><div class="seg" id="look"><button type="button" data-v="dark">Dark</button><button type="button" data-v="light">Light</button></div></div>
     <div class="row"><span>Answer level</span><div class="seg" id="level"><button type="button" data-v="Middle school">Middle</button><button type="button" data-v="High school">High school</button><button type="button" data-v="College">College</button><button type="button" data-v="Adult">Adult</button></div></div>
@@ -312,30 +313,40 @@ details li{margin-bottom:6px}
 <div class="cta" id="cta"><div class="in"><button type="button" class="alt" id="postonly">Post text</button><button type="button" id="load">Load site</button></div></div>
 
 <script src="/reel/reel-data.js"></script>
+<script src="/reel/reel-data.es.js"></script>
 <script src="/reel/topic-links.js"></script>
 <script>
 (()=>{
-const D=window.REEL||{questions:[],hooks:{},copy:{}};
+const BASE=window.REEL||{questions:[],hooks:{},copy:{}},ES=window.REEL_ES||null;
+/* The active question bank: English from reel-data.js, Spanish from reel-data.es.js (same slugs). Music is shared. */
+const D=(lang=S.lang)=>lang==='es'&&ES?{...BASE,questions:ES.questions||[],hooks:ES.hooks||{},copy:ES.copy||{}}:BASE;
+const T=(k,lang=S.lang)=>({ // stage strings
+  en:{kicker:'Honest question',sub:"Let's ask.",turn:'Your turn',bio:'Go to the <b>link in the bio</b> to ask your own questions.',fine:'Free · No sign-up · Ask anything',bug:'Ask anything · free',custom:'Ask anything.',url:'restless.faith',full:'Full answer with Scripture and Catechism sources'},
+  es:{kicker:'Pregunta honesta',sub:'Preguntemos.',turn:'Tu turno',bio:'Entra al <b>link en la bio</b> para hacer tus propias preguntas.',fine:'Gratis · Sin registro · Pregunta lo que quieras',bug:'Pregunta lo que sea · gratis',custom:'Pregunta lo que quieras.',url:'restless.faith/es',full:'Respuesta completa con fuentes de la Escritura y el Catecismo'}
+})[lang==='es'?'es':'en'][k];
 const $=s=>document.querySelector(s);
 const stage=$('#stage'),frame=$('#frame'),site=$('#site'),hookEl=$('#hook span'),intro=$('#intro'),outro=$('#outro'),bar=$('#bar'),tip=$('#tip'),menu=$('#menu'),setup=$('#setup'),cta=$('#cta');
 const VW=390,VH=740; // the site is laid out at a normal phone size, then scaled into the frame
-let S={slug:(D.questions[0]||{}).slug,custom:'',hook:0,customHook:'',layout:'framed',look:'dark',level:'High school',len:'45',type:true,intro:true,outro:true,topic:'all',music:'sunrise'};
+let S={slug:(BASE.questions[0]||{}).slug,custom:'',hook:0,customHook:'',layout:'framed',look:'dark',level:'High school',len:'45',type:true,intro:true,outro:true,topic:'all',music:'sunrise',lang:'en'};
 try{Object.assign(S,JSON.parse(localStorage.getItem('rf-reel')||'{}'))}catch(e){}
-if(S.slug!=='custom'&&!D.questions.some(q=>q.slug===S.slug))S.slug=(D.questions[0]||{}).slug;
+if(S.slug!=='custom'&&!D().questions.some(q=>q.slug===S.slug))S.slug=(D().questions[0]||{}).slug;
 const save=()=>{try{localStorage.setItem('rf-reel',JSON.stringify(S))}catch(e){}};
 const esc=t=>t.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmt=t=>esc(t).replace(/\*([^*]+)\*/g,'<mark>$1</mark>');
-const Q=()=>S.slug==='custom'?{slug:'custom',q:S.custom.trim()||'Ask anything.',topic:'custom',hooks:[]}:(D.questions.find(q=>q.slug===S.slug)||D.questions[0]);
-const hooksFor=q=>[...(q.hooks||[]),...(D.hooks._generic||[])].map(h=>h.replace(/\{q\}/g,q.q));
+const Q=()=>S.slug==='custom'?{slug:'custom',q:S.custom.trim()||T('custom'),topic:'custom',hooks:[]}:(D().questions.find(q=>q.slug===S.slug)||D().questions[0]);
+const hooksFor=q=>[...(q.hooks||[]),...(D().hooks._generic||[])].map(h=>h.replace(/\{q\}/g,q.q));
 const hookText=()=>S.hook==='custom'?(S.customHook.trim()||Q().q):(hooksFor(Q())[S.hook]||hooksFor(Q())[0]||Q().q);
 
 /* ---- setup panel ---- */
-const topics=['all',...new Set(D.questions.map(q=>q.topic))];
 const topicsEl=$('#topics');
-topics.forEach(t=>{const b=document.createElement('button');b.type='button';b.dataset.t=t;b.textContent=t==='all'?'All':t;b.onclick=()=>{S.topic=t;save();paint()};topicsEl.appendChild(b)});
+function paintTopics(){
+  const topics=['all',...new Set(D().questions.map(q=>q.topic))];if(!topics.includes(S.topic))S.topic='all';
+  topicsEl.innerHTML='';
+  topics.forEach(t=>{const b=document.createElement('button');b.type='button';b.dataset.t=t;b.textContent=t==='all'?(S.lang==='es'?'Todas':'All'):t;b.setAttribute('aria-pressed',String(t===S.topic));b.onclick=()=>{S.topic=t;save();paint()};topicsEl.appendChild(b)});
+}
 function paintQs(){
   const box=$('#qs');box.innerHTML='';
-  D.questions.filter(q=>S.topic==='all'||q.topic===S.topic).forEach(q=>{const b=document.createElement('button');b.type='button';b.dataset.slug=q.slug;
+  D().questions.filter(q=>S.topic==='all'||q.topic===S.topic).forEach(q=>{const b=document.createElement('button');b.type='button';b.dataset.slug=q.slug;
     b.innerHTML=`<span>${esc(q.q)}</span>`;b.setAttribute('aria-pressed',String(q.slug===S.slug));
     b.onclick=()=>{S.slug=q.slug;S.hook=0;save();paint()};box.appendChild(b)});
   const l=document.createElement('label');l.className='custom';
@@ -359,17 +370,17 @@ function paintHooks(){
   t.onfocus=()=>{S.hook='custom';r.checked=true;save()};
   box.appendChild(l);
 }
-function seg(id,key){const el=$('#'+id);el.querySelectorAll('button').forEach(b=>{b.setAttribute('aria-pressed',String(b.dataset.v===String(S[key])));
-  b.onclick=()=>{S[key]=b.dataset.v;save();seg(id,key)}})}
+function seg(id,key,after){const el=$('#'+id);el.querySelectorAll('button').forEach(b=>{b.setAttribute('aria-pressed',String(b.dataset.v===String(S[key])));
+  b.onclick=()=>{S[key]=b.dataset.v;save();seg(id,key,after);if(after)after()}})}
 function paint(){
-  topicsEl.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.t===S.topic)));
+  paintTopics();seg('lang','lang',()=>{S.hook=0;ANSWER=null;save();paint()});
   paintQs();paintHooks();seg('layout','layout');seg('look','look');seg('level','level');seg('len','len');paintMusic();
   $('#optType').checked=S.type;$('#optIntro').checked=S.intro;$('#optOutro').checked=S.outro;
 }
 /* Music tracks: built-ins from reel-data.js (served files) plus tracks the user added from their phone, which live in
    IndexedDB on this device so nothing is uploaded and they survive reloads. */
 let USER_TRACKS=[]; // {id,name} ; the audio blob lives in IndexedDB under the same id
-const TRACKS=()=>[{id:'off',name:'Off'},{id:'rotate',name:'↻ Rotate'},...(D.music||[]),...USER_TRACKS.map(t=>({...t,user:true}))];
+const TRACKS=()=>[{id:'off',name:'Off'},{id:'rotate',name:'↻ Rotate'},...(BASE.music||[]),...USER_TRACKS.map(t=>({...t,user:true}))];
 const playable=()=>TRACKS().filter(t=>t.file||t.user);
 /* "Rotate" plays a different track each take, cycling through everything in the list; the one in use is remembered so the
    preview button and the next take agree. */
@@ -383,7 +394,7 @@ const idb={
   all:()=>idb.run('readonly',st=>st.getAll()),get:id=>idb.run('readonly',st=>st.get(id)),put:rec=>idb.run('readwrite',st=>st.put(rec)),del:id=>idb.run('readwrite',st=>st.delete(id))
 };
 async function loadUserTracks(){try{const all=await idb.all()||[];USER_TRACKS=all.map(r=>({id:r.id,name:r.name})).sort((a,b)=>a.name.localeCompare(b.name))}catch(e){USER_TRACKS=[]}
-  if(!TRACKS().some(t=>t.id===S.music))S.music=(D.music&&D.music[0]||USER_TRACKS[0]||{id:'off'}).id;paintMusic()}
+  if(!TRACKS().some(t=>t.id===S.music))S.music=(BASE.music&&BASE.music[0]||USER_TRACKS[0]||{id:'off'}).id;paintMusic()}
 function paintMusic(){
   const el=$('#music');el.innerHTML='';
   TRACKS().forEach(t=>{const b=document.createElement('button');b.type='button';b.dataset.v=t.id;b.textContent=t.name;b.setAttribute('aria-pressed',String(t.id===S.music));
@@ -443,11 +454,12 @@ function tidySite(){ // hide the bits that don't belong in a reel and set the an
   const d=doc();if(!d)return;
   if(!d.getElementById('rf-reel-css')){const st=d.createElement('style');st.id='rf-reel-css';
     st.textContent='[data-rf-reel-hide]{display:none!important}';d.head.appendChild(st)}
-  const want=S.level.toLowerCase();
+  const LV={'Middle school':'secundaria','High school':'preparatoria','College':'universidad','Adult':'adulto'};
+  const want=(S.lang==='es'?LV[S.level]:S.level).toLowerCase();
   d.querySelectorAll('header button').forEach(b=>{if(b.textContent.trim().toLowerCase()===want)b.click()});
 }
 site.addEventListener('load',()=>{handToSite();setTimeout(tidySite,400)});
-function loadSite(){try{localStorage.setItem('restless-theme',S.look)}catch(e){}site.src='/?reel=1&t='+Date.now()}
+function loadSite(){try{localStorage.setItem('restless-theme',S.look)}catch(e){}site.src='/?reel=1&lang='+(S.lang==='es'?'es':'en')+'&t='+Date.now()}
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function typeQuestion(q){ // type into the site's box like a person would, then send
   const d=doc();if(!d)return false;const ta=d.querySelector('textarea[data-question-input]');if(!ta)return false;
@@ -488,14 +500,14 @@ const music=(()=>{
 let ANSWER=null,fetching=null;
 const ageBand=()=>({'Middle school':'Middle School','High school':'High School','College':'College','Adult':'OCIA'})[S.level]||'High School';
 async function prefetch(){
-  const q=Q().q,level=S.level,key=q+'|'+level;
+  const q=Q().q,level=S.level,key=q+'|'+level+'|'+S.lang;
   if(ANSWER&&ANSWER.key===key)return ANSWER;
   if(fetching&&fetching.key===key)return fetching.p;
   const ready=$('#ready');ready.disabled=true;ready.textContent='Fetching answer…';
   const d=new Date(),todayDate=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const p=(async()=>{try{
       const ac=new AbortController();setTimeout(()=>ac.abort(),60000);
-      const r=await fetch('/api/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,ageBand:ageBand(),language:'en',todayDate,history:[]}),signal:ac.signal});
+      const r=await fetch('/api/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,ageBand:ageBand(),language:S.lang==='es'?'es':'en',todayDate,history:[]}),signal:ac.signal});
       const data=await r.json().catch(()=>({}));
       if(!r.ok||!data.text)throw new Error('bad');
       ANSWER={key,q,text:data.text,sources:data.sources||[]};handToSite();
@@ -513,6 +525,9 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 function showTip(html){tip.querySelector('span').innerHTML=html;tip.hidden=false}
 tip.querySelector('.x').onclick=()=>{tip.hidden=true;try{localStorage.setItem('rf-reel-tip','1')}catch(e){}};
 function dressCards(){
+  intro.querySelector('.kicker').textContent=T('kicker');intro.querySelector('.sub').textContent=T('sub');
+  outro.querySelector('.kicker').textContent=T('turn');outro.querySelector('.sub').innerHTML=T('bio');outro.querySelector('.fine').textContent=T('fine');
+  $('#bug small').textContent=T('bug');
   intro.querySelector('h2').innerHTML=fmt(Q().q);
   hookEl.innerHTML=fmt(hookText());
 }
@@ -534,7 +549,7 @@ function arm(){
 }
 async function play(){
   state='playing';tip.hidden=true;handToSite();music.start();
-  LAST={q:{...Q()},hook:hookText(),level:S.level,at:Date.now()};try{localStorage.setItem('rf-reel-last',JSON.stringify(LAST))}catch(e){}
+  LAST={q:{...Q()},hook:hookText(),level:S.level,lang:S.lang,at:Date.now()};try{localStorage.setItem('rf-reel-last',JSON.stringify(LAST))}catch(e){}
   if(S.music==='rotate')setTimeout(()=>{rotNext();music.preload()},3000); // next take gets the next track; preload it while this one plays
   if(!intro.hidden){intro.classList.add('leave');setTimeout(()=>{intro.hidden=true},500)}
   void stage.offsetWidth;stage.classList.remove('armed');stage.classList.add('on');
@@ -563,14 +578,15 @@ $('#load').onclick=()=>toStage(true);
 
 /* ---- post text: title, caption, description, hashtags and first comment, written from the question, the hook and reel-data.js.
    Each piece is picked at random from what this question hasn't used yet; a piece counts as used once you copy it. ---- */
-const C=D.copy||{};
+const postLang=()=>postSrc==='last'&&LAST&&LAST.lang?LAST.lang:S.lang;
+const C=()=>D(postLang()).copy||{};
 const plain=t=>t.replace(/\*/g,'').trim();
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 let USED={};try{USED=JSON.parse(localStorage.getItem('rf-reel-used')||'{}')}catch(e){}
 const saveUsed=()=>{try{localStorage.setItem('rf-reel-used',JSON.stringify(USED))}catch(e){}};
 function pools(q){
-  return {t:C._titles||['{hook} | Restless.faith'],l:(q.lines&&q.lines.length?q.lines:C._lines||['A real question, a clear Catholic answer.']),
-    a:C._ctas||['Ask your own at restless.faith (link in bio)'],c:[...(q.comments||[]),...(C._comments||[])],b:C._blurbs||['']};
+  const C_=C();return {t:C_._titles||['{hook} | Restless.faith'],l:(q.lines&&q.lines.length?q.lines:C_._lines||['A real question, a clear Catholic answer.']),
+    a:C_._ctas||['Ask your own at restless.faith (link in bio)'],c:[...(q.comments||[]),...(C_._comments||[])],b:C_._blurbs||['']};
 }
 function pickFresh(slug,k,list,avoid){
   const used=((USED[slug]||{})[k])||[];
@@ -596,18 +612,18 @@ function paintPostSrc(){
 function buildPost(){
   const q=PQ(),P=pools(q),prev=cur&&cur.slug===q.slug?cur:{};
   const pick={t:pickFresh(q.slug,'t',P.t,prev.t),l:pickFresh(q.slug,'l',P.l,prev.l),a:pickFresh(q.slug,'a',P.a,prev.a),c:pickFresh(q.slug,'c',P.c,prev.c),b:pickFresh(q.slug,'b',P.b,prev.b)};
-  const T=C._tags||{};
-  const tags=[...new Set([...(T.core||['#RestlessFaith']),...shuffle(T[q.topic]||[]).slice(0,4),...shuffle(T.general||[]).slice(0,6)])];
+  const TG=C()._tags||{};
+  const tags=[...new Set([...(TG.core||['#RestlessFaith']),...shuffle(TG[q.topic]||[]).slice(0,4),...shuffle(TG.general||[]).slice(0,6)])];
   cur={slug:q.slug,...pick,tags};
 }
 function postText(){
   // If this question has its own page on the site (window.REEL_TOPICS, built from content/topic-index.js),
   // point viewers there instead of the homepage: restless.faith/eucharist and so on.
-  const q0=PQ(),TP=(window.REEL_TOPICS||{})[q0.slug];
-  const P=pools(q0),h=plain(PH()),url=TP?'restless.faith/'+TP.short:'restless.faith';
+  const L=postLang(),q0=PQ(),TP=L==='es'?null:(window.REEL_TOPICS||{})[q0.slug]; // topic pages are English only
+  const P=pools(q0),h=plain(PH()),url=TP?'restless.faith/'+TP.short:T('url',L);
   const fill=t=>t.replace(/\{hook\}/g,h).replace(/\{q\}/g,q0.q).replace(/\{url\}/g,url);
   const tags=cur.tags.join(' ');
-  const full=TP?`\n\nFull answer with Scripture and Catechism sources: https://${url}`:'';
+  const full=TP?`\n\n${T('full',L)}: https://${url}`:'';
   return {title:fill(P.t[cur.t]),
     caption:`${h}\n\n${fill(P.l[cur.l])}\n${fill(P.a[cur.a])}\n\n${tags}`,
     desc:`${q0.q}\n\n${fill(P.l[cur.l])}${full}\n\n${fill(P.b[cur.b])}\n\n${fill(P.a[cur.a])}\n\n${tags}`,
