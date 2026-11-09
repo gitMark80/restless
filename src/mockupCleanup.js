@@ -22,10 +22,15 @@ div.fixed.inset-0>div{background:var(--rf-paper)!important;border-color:var(--rf
 main section.rounded-3xl .grid.grid-cols-3 span{font-size:12px!important}
 body[data-restless-theme="dark"] main section.rounded-3xl .grid.grid-cols-3 span{color:#f5f8fb!important}
 /* Footer links: phone-sized tap targets, and muted text that still passes contrast on the dark footer. */
-footer [data-rf-footer-links]>button,footer [data-rf-footer-links]>a{min-height:36px;display:inline-flex;align-items:center;padding:0 2px}
+.rf-footer-links{display:flex;flex-direction:column;gap:4px;margin-top:12px}
+.rf-footer-row{display:flex;align-items:center;flex-wrap:wrap;gap:4px 16px;min-width:0}
+footer .rf-footer-row>button,footer .rf-footer-row>a{min-height:32px;display:inline-flex;align-items:center;padding:0 2px;white-space:nowrap;line-height:1.4}
+.rf-footer-row>div{flex-shrink:0}
+@media(max-width:480px){.rf-text-size-label{display:none}.rf-footer-row{column-gap:12px}}
+@media(max-width:360px){.rf-footer-row{column-gap:6px}}
 /* "Keep exploring" links under answers: same blue as the rest of the answer area. */
 [data-restless-related]>p:first-child,[data-restless-related] a span[aria-hidden]{color:var(--rf-blue)!important}
-body[data-restless-theme="dark"] footer button[style*="font-weight: 700"],body[data-restless-theme="dark"] footer button[style*="font-weight: 600"],body[data-restless-theme="dark"] footer [data-rf-footer-links]>a{color:#b8c8d7!important}
+body[data-restless-theme="dark"] footer button[style*="font-weight: 700"],body[data-restless-theme="dark"] footer button[style*="font-weight: 600"],body[data-restless-theme="dark"] footer .rf-footer-row>a{color:#b8c8d7!important}
 body[data-restless-theme="dark"] footer button[data-rf-books]{color:#f5d76e!important}
 /* Share Q&A buttons under answers: text link in the page's text color (white in dark mode), card link in the same gold as Books. */
 main button[data-rf-share="text"]{color:var(--rf-navy)!important}
