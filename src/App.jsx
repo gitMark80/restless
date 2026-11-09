@@ -779,14 +779,13 @@ function BookCard({ book, theme, language, onOpenBooks }) {
         >
           {text.buy}
         </a>
-        <button
-          type="button"
-          onClick={onOpenBooks}
+        <a
+          href="/books"
           className="inline-flex items-center justify-center rounded-xl px-4 py-2.5"
           style={{ border: `1px solid ${theme.citationBorder}`, color: theme.accent, fontSize: "14px", fontWeight: 800 }}
         >
           {text.cardMore}
-        </button>
+        </a>
       </div>
       <p style={{ margin: "0.7rem 0 0", color: theme.subtext, fontSize: "12px", lineHeight: 1.45 }}>
         {[note, rec ? "" : BOOKS_LANGUAGE_NOTE[language]].filter(Boolean).join(" ")}
@@ -1989,9 +1988,9 @@ export default function Restless() {
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              <button
+              <a
                 data-rf-books="true"
-                onClick={() => setActiveModal("books")}
+                href="/books"
                 aria-label={BOOKS_TEXT[language].label}
                 title={BOOKS_TEXT[language].label}
                 className="h-9 px-3 rounded-full inline-flex items-center gap-1.5"
@@ -1999,7 +1998,7 @@ export default function Restless() {
               >
                 <BookOpen className="w-4 h-4" />
                 <span className="hidden sm:inline">{BOOKS_TEXT[language].label}</span>
-              </button>
+              </a>
 
               <button
                 onClick={handleLanguageToggle}
@@ -2195,13 +2194,13 @@ export default function Restless() {
               />
             </div>
             <div className="rf-footer-row">
-              <button
+              <a
                 data-rf-books="true"
-                onClick={() => setActiveModal("books")}
+                href="/books"
                 style={{ color: "#f5d76e", fontSize: "12px", fontWeight: 700 }}
               >
                 {BOOKS_TEXT[language].label}
-              </button>
+              </a>
               <button
                 onClick={() => setActiveModal("support")}
                 style={{ color: theme.accent, fontSize: "12px", fontWeight: 700 }}

@@ -43,7 +43,7 @@ footer .rf-footer-row>div>button{height:24px;min-height:24px}
 /* "Keep exploring" links under answers: same blue as the rest of the answer area. */
 [data-restless-related]>p:first-child,[data-restless-related] a span[aria-hidden]{color:var(--rf-blue)!important}
 body[data-restless-theme="dark"] footer button[style*="font-weight: 700"],body[data-restless-theme="dark"] footer button[style*="font-weight: 600"],body[data-restless-theme="dark"] footer .rf-footer-row>a{color:#b8c8d7!important}
-body[data-restless-theme="dark"] footer button[data-rf-books]{color:#f5d76e!important}
+body[data-restless-theme="dark"] footer [data-rf-books]{color:#f5d76e!important}
 /* Share Q&A buttons under answers: text link in the page's text color (white in dark mode), card link in the same gold as Books. */
 main button[data-rf-share="text"]{color:var(--rf-navy)!important}
 body[data-restless-theme="dark"] main button[data-rf-share="text"]{color:#fff!important}

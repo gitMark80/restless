@@ -5,12 +5,13 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { TOPICS, TOPIC_BY_SLUG } from "../content/topics.js";
 import { renderSite, parseRef, topicSources, plainAnswer } from "../scripts/site-pages.mjs";
-import { BOOKS, JOURNALS, RECOMMENDED } from "../src/books.js";
+import { BOOKS, JOURNALS, PLANNERS, COOKBOOKS, PUZZLES, RECOMMENDED } from "../src/books.js";
 import { matchTopics, readDeepLink } from "../src/topicLinks.js";
 import subscribe, { isConfigured, validateSignup } from "../api/subscribe.js";
 
 const checked = JSON.parse(fs.readFileSync(new URL("./fixtures/citations-checked.json", import.meta.url), "utf8"));
 const bookIds = new Set([...BOOKS, ...JOURNALS, ...RECOMMENDED].map((b) => b.id));
+const ownBooks = [...BOOKS, ...JOURNALS, ...PLANNERS, ...COOKBOOKS, ...PUZZLES];
 const site = renderSite();
 
 test("every topic is complete and consistent", () => {
@@ -59,7 +60,7 @@ test("short links in vercel.json match the topics", () => {
 });
 
 test("built pages have titles, canonicals, structured data and working internal links", () => {
-  const pages = new Set(["/", "/questions", "/books", "/privacy", ...TOPICS.map((t) => `/questions/${t.slug}`)]);
+  const pages = new Set(["/", "/questions", "/books", "/privacy", ...TOPICS.map((t) => `/questions/${t.slug}`), ...ownBooks.map(b => `/books/${b.id}`)]);
   for (const [file, html] of Object.entries(site)) {
     if (!file.endsWith(".html")) continue;
     assert.match(html, /<title>[^<]{10,}<\/title>/, `${file}: title`);
@@ -71,7 +72,7 @@ test("built pages have titles, canonicals, structured data and working internal 
     for (const m of html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) JSON.parse(m[1]);
     for (const m of html.matchAll(/href="(\/[^"#?]*)/g)) {
       const href = m[1];
-      if (/^\/(api|brand|covers|site\.|rf\.js|_vercel|site\.webmanifest)/.test(href)) continue;
+      if (/^\/(api|brand|covers|previews|site\.|rf\.js|book-catalog\.js|_vercel|site\.webmanifest)/.test(href)) continue;
       assert.ok(pages.has(href), `${file}: broken internal link ${href}`);
     }
   }
@@ -151,4 +152,24 @@ test("newsletter stays off until Kit is configured, and requires consent", async
   const post = mockRes();
   await subscribe({ method: "POST", headers: {}, body: { email: "a@b.co", consent: true } }, post);
   assert.equal(post.statusCode, 503);
+});
+
+
+test("all original titles have discoverable detail pages with matching metadata and purchase links", () => {
+  for (const book of ownBooks) {
+    const path = `/books/${book.id}`;
+    const html = site[`${path.slice(1)}.html`];
+    assert.ok(html, path);
+    assert.ok(site["books.html"].includes(`href="${path}"`), `${path} linked from catalog`);
+    assert.ok(site["sitemap.xml"].includes(`https://restless.faith${path}<`), `${path} in sitemap`);
+    assert.ok(html.includes(`href="https://restless.faith${path}"`));
+    assert.ok(html.includes(`data-rf-book="${book.id}"`));
+    assert.ok(html.includes(`src="${book.cover}"`));
+    const data = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(m => JSON.parse(m[1])).find(x => x['@type'] === 'Book');
+    assert.equal(data.author.name, book.author || 'M. B. Reston');
+    assert.equal(data.url, `https://restless.faith${path}`);
+  }
+  assert.match(site['books/built-on-rock.html'], /id="inside"/);
+  assert.match(site['books.html'], /data-catalog-controls hidden/);
+  for (const m of site['books/built-on-rock.html'].matchAll(/src="(\/previews\/[^"]+)"/g)) assert.ok(fs.existsSync(new URL(`../public${m[1]}`, import.meta.url)));
 });

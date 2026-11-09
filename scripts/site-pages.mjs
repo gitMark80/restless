@@ -9,13 +9,15 @@
 // public/site.css and public/rf.js and need no JavaScript to read.
 
 import { TOPICS, TOPIC_BY_SLUG, SITE, topicUrl } from "../content/topics.js";
-import { BOOKS, JOURNALS, RECOMMENDED, BOOKS_TEXT, bookUrl } from "../src/books.js";
+import { BOOKS, JOURNALS, PLANNERS, COOKBOOKS, PUZZLES, RECOMMENDED, BOOKS_TEXT, bookUrl } from "../src/books.js";
 
-const ALL_BOOKS = [...BOOKS, ...JOURNALS, ...RECOMMENDED];
+const OWN_BOOKS = [...JOURNALS, ...PLANNERS, ...COOKBOOKS, ...PUZZLES, ...BOOKS];
+const ALL_BOOKS = [...OWN_BOOKS, ...RECOMMENDED];
 const BOOK_BY_ID = Object.fromEntries(ALL_BOOKS.map((b) => [b.id, b]));
-const OWN_IDS = new Set([...BOOKS, ...JOURNALS].map((b) => b.id));
+const OWN_IDS = new Set(OWN_BOOKS.map((b) => b.id));
 const UPDATED = "2026-10-23";
-const ASSET_VERSION = "2"; // bump to bust caches of site.css / rf.js
+const BOOKS_UPDATED = "2026-11-09";
+const ASSET_VERSION = "3"; // bump to bust caches of site.css / rf.js
 
 // --- text helpers -------------------------------------------------------------
 
@@ -132,7 +134,7 @@ const ICONS = {
   arrow: `${ICON}<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`,
 };
 
-function head({ title, description, path, type = "website", jsonLd = [], noindex = false }) {
+function head({ title, description, path, type = "website", jsonLd = [], noindex = false, image = "/social-card.png", imageAlt = "Restless.faith — Catholic answers for modern questions" }) {
   const url = `${SITE}${path}`;
   return `<!doctype html>
 <html lang="en" data-theme="dark">
@@ -148,14 +150,12 @@ ${noindex ? '<meta name="robots" content="noindex">' : `<link rel="canonical" hr
 <meta property="og:url" content="${esc(url)}">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
-<meta property="og:image" content="${SITE}/social-card.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Restless.faith — Catholic answers for modern questions">
+<meta property="og:image" content="${SITE}${esc(image)}">
+<meta property="og:image:alt" content="${esc(imageAlt)}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(description)}">
-<meta name="twitter:image" content="${SITE}/social-card.png">
+<meta name="twitter:image" content="${SITE}${esc(image)}">
 <link rel="icon" type="image/png" sizes="32x32" href="/brand/icon-32.png">
 <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">
 <link rel="manifest" href="/site.webmanifest">
@@ -259,11 +259,12 @@ function crumbsHtml(items) {
 function bookCard(book, { compact = false, from = "" } = {}) {
   const own = OWN_IDS.has(book.id);
   const related = TOPICS.filter((t) => t.books.includes(book.id));
-  return `<article class="book${compact ? " book-compact" : ""}" id="book-${esc(book.id)}">
-  <img src="${esc(book.cover)}" alt="Cover of ${esc(book.title)}" width="120" height="193" loading="lazy" decoding="async">
+  return `<article class="book${compact ? " book-compact" : ""}" id="book-${esc(book.id)}" data-book-search="${esc([book.title, book.subtitle, book.author || "M. B. Reston", book.tagline.en].filter(Boolean).join(" ").toLowerCase())}">
+  ${own ? `<a href="/books/${esc(book.id)}" tabindex="-1" aria-hidden="true">` : ""}<img src="${esc(book.cover)}" alt="Cover of ${esc(book.title)}" width="120" height="193" loading="lazy" decoding="async">${own ? "</a>" : ""}
   <div class="book-body">
     ${own ? "" : `<p class="eyebrow">Recommended · not ours</p>`}
-    <h3>${esc(book.title)}</h3>
+    ${book.series ? `<p class="eyebrow">Pocket Guide · Book ${book.series}</p>` : ""}
+    <h3>${own ? `<a href="/books/${esc(book.id)}">${esc(book.title)}</a>` : esc(book.title)}</h3>
     ${book.subtitle ? `<p class="subtitle">${esc(book.subtitle)}</p>` : ""}
     ${book.author ? `<p class="byline">${esc(book.author)}</p>` : own ? `<p class="byline">M. B. Reston · Restless Faith Media</p>` : ""}
     <p class="for"><strong>Who it's for:</strong> ${esc(book.tagline.en)}</p>
@@ -272,6 +273,7 @@ function bookCard(book, { compact = false, from = "" } = {}) {
         ? `<p class="book-topics">Related: ${related.map((t) => `<a href="${topicUrl(t)}">${esc(t.label)}</a>`).join(" · ")}</p>`
         : ""
     }
+    ${own ? `<p class="book-details-link"><a href="/books/${esc(book.id)}">Explore this book ${ICONS.arrow}</a></p>` : ""}
     <a class="btn btn-amazon" href="${esc(bookUrl(book))}" target="_blank" rel="sponsored nofollow noopener" data-rf-book="${esc(book.id)}"${from ? ` data-rf-from="${esc(from)}"` : ""}>View on Amazon ${ICONS.arrow}</a>
   </div>
 </article>`;
@@ -283,10 +285,11 @@ function bookJsonLd(book) {
     "@type": "Book",
     name: book.subtitle ? `${book.title}: ${book.subtitle}` : book.title,
     image: `${SITE}${book.cover}`,
-    url: book.url,
+    url: own ? `${SITE}/books/${book.id}` : book.url,
+    sameAs: book.url,
     description: book.tagline.en,
     ...(own
-      ? { author: { "@type": "Person", name: "M. B. Reston" }, publisher: { "@id": `${SITE}/#org` } }
+      ? { author: { "@type": book.author === "Restless Faith Media" ? "Organization" : "Person", name: book.author || "M. B. Reston" }, publisher: { "@id": `${SITE}/#org` } }
       : book.author
         ? { author: { "@type": "Person", name: book.author.split("·")[0].trim() } }
         : {}),
@@ -452,64 +455,88 @@ ${newsletterBox("questions")}`;
   });
 }
 
+const BOOK_GROUPS = [
+  { id: "journals", label: "Journals", books: JOURNALS },
+  { id: "planners", label: "Planners", books: PLANNERS },
+  { id: "cookbooks", label: "Cookbooks", books: COOKBOOKS },
+  { id: "puzzles", label: "Puzzles & activities", books: PUZZLES },
+  { id: "guides", label: "Pocket guides", books: [...BOOKS].sort((a, b) => a.series - b.series) },
+  { id: "recommended", label: "Also recommended", books: RECOMMENDED },
+];
+
 export function renderBooks() {
   const t = BOOKS_TEXT.en;
-  const crumbs = [
-    { name: "Home", path: "/" },
-    { name: "Books", path: "/books" },
-  ];
-  const guides = [...BOOKS].sort((a, b) => a.series - b.series);
-  const jsonLd = [
-    {
-      "@context": "https://schema.org",
-      "@type": "CollectionPage",
-      name: "Books & Journals from Restless Faith Media",
-      url: `${SITE}/books`,
-      publisher: ORG,
-      mainEntity: { "@type": "ItemList", itemListElement: [...guides, ...JOURNALS].map((b, i) => ({ "@type": "ListItem", position: i + 1, item: bookJsonLd(b) })) },
-    },
-    breadcrumbs(crumbs),
-  ];
+  const crumbs = [{ name: "Home", path: "/" }, { name: "Books", path: "/books" }];
   const main = `${crumbsHtml(crumbs)}
 <header class="topic-head">
-  <p class="eyebrow">Books &amp; journals</p>
-  <h1>Books &amp; Journals</h1>
-  <p class="lede">Short, plain-language books and 90-day journals by M. B. Reston, from the makers of Restless.faith. Each one takes a question people keep asking and walks through it with Scripture and the Church.</p>
-  <p class="fine">${esc(t.disclosure)}</p>
+  <p class="eyebrow">Restless Faith Media</p>
+  <h1>Faith for your everyday life.</h1>
+  <p class="lede">Catholic books, journals, planners, and puzzles to help you ask honest questions, build a habit of prayer, and bring faith home.</p>
 </header>
-<section aria-labelledby="guides">
-  <h2 id="guides" class="section-title">${esc(t.guidesTitle)}</h2>
-  <p class="fine">${esc(t.guidesBody)}</p>
-  <div class="shelf">
-    ${guides.map((b) => bookCard(b, { from: "books" })).join("\n    ")}
-  </div>
+<section class="book-feature card" aria-labelledby="featured-title" data-catalog-feature>
+  <a href="/books/built-on-rock" tabindex="-1" aria-hidden="true"><img src="/covers/built-on-rock.jpg" alt="" width="160" height="240"></a>
+  <div><p class="eyebrow">Start here · Featured journal</p><h2 id="featured-title">Build a life that holds.</h2>
+  <p><strong>Built on Rock</strong> is a 90-day Catholic journal for men, husbands, and fathers—with Scripture, honest reflection, and one practical step a day.</p>
+  <a class="btn" href="/books/built-on-rock">Look inside Built on Rock ${ICONS.arrow}</a></div>
 </section>
-<section aria-labelledby="journals">
-  <h2 id="journals" class="section-title">${esc(t.journalsTitle)}</h2>
-  <p class="fine">${esc(t.journalsBody)}</p>
-  <div class="shelf">
-    ${JOURNALS.map((b) => bookCard(b, { from: "books" })).join("\n    ")}
+<section class="catalog-controls" aria-label="Find a book" data-catalog-controls hidden>
+  <label for="book-search">Find your next book</label>
+  <input type="search" id="book-search" placeholder="Search by title, topic, or author" autocomplete="off" aria-controls="book-catalog">
+  <div class="category-filters" role="group" aria-label="Book categories">
+    <button type="button" data-book-category="all" aria-pressed="true">All books</button>
+    ${BOOK_GROUPS.map(g => `<button type="button" data-book-category="${g.id}" aria-pressed="false">${esc(g.label)}</button>`).join("")}
   </div>
+  <p class="fine" data-book-count role="status" aria-live="polite"></p>
 </section>
-<section aria-labelledby="recommended">
-  <h2 id="recommended" class="section-title">${esc(t.recommendedTitle)}</h2>
-  <p class="fine">${esc(t.recommendedBody)}</p>
-  <div class="shelf">
-    ${RECOMMENDED.map((b) => bookCard(b, { from: "books" })).join("\n    ")}
-  </div>
-</section>
+<div id="book-catalog">
+${BOOK_GROUPS.map(g => `<section data-book-group="${g.id}" aria-labelledby="${g.id}">
+  <h2 id="${g.id}" class="section-title">${esc(t[`${g.id}Title`])}</h2>
+  <p class="fine">${esc(t[`${g.id}Body`])}</p>
+  <div class="shelf">${g.books.map(book => bookCard(book, { from: "books" })).join("\n")}</div>
+</section>`).join("\n")}
+</div>
+<div class="card catalog-empty" data-book-empty hidden><h2>No matching books</h2><p>Try a different title or topic, or browse all categories.</p><button type="button" class="btn" data-book-reset>Show all books</button></div>
+<p class="fine catalog-disclosure">${esc(t.disclosure)} Books are in English. Prices and available formats are listed on Amazon.</p>
+<script defer src="/book-catalog.js?v=${ASSET_VERSION}"></script>
 ${newsletterBox("books")}`;
   return page({
-    headHtml: head({
-      title: "Catholic Books & Journals by M. B. Reston | Restless.faith",
-      description: "Restless Faith Pocket Guides and 90-day Catholic journals by M. B. Reston: short books on confession, the Mass, Protestant questions and more.",
-      path: "/books",
-      jsonLd,
-    }),
-    main,
-    bodyClass: "page-books",
-    pageKey: "books",
+    headHtml: head({ title: "Catholic Books, Journals & Planners | Restless.faith", description: "Explore Catholic journals, pocket guides, planners, cookbooks, and Bible puzzles from Restless Faith Media. Find your next book and look inside Built on Rock.", path: "/books", jsonLd: [{
+      "@context": "https://schema.org", "@type": "CollectionPage", name: "Books from Restless Faith Media", url: `${SITE}/books`, publisher: ORG,
+      mainEntity: { "@type": "ItemList", itemListElement: OWN_BOOKS.map((book, i) => ({ "@type": "ListItem", position: i + 1, item: bookJsonLd(book) })) },
+    }, breadcrumbs(crumbs)] }), main, bodyClass: "page-books", pageKey: "books",
   });
+}
+
+export function renderBook(book) {
+  const path = `/books/${book.id}`;
+  const group = BOOK_GROUPS.find(g => g.books.some(b => b.id === book.id));
+  const crumbs = [{ name: "Home", path: "/" }, { name: "Books", path: "/books" }, { name: book.title, path }];
+  const related = group.books.filter(b => b.id !== book.id).slice(0, 3);
+  const previews = book.id === "built-on-rock" ? [
+    ["01_identity_in_christ_300x300.png", "Week 1: Identity in Christ"],
+    ["02_known_by_the_father_300x300.png", "Day 1: Known by the Father"],
+    ["03_prayer_truth_action_300x300.png", "Prayer, truth, and action"],
+  ] : [];
+  const main = `${crumbsHtml(crumbs)}
+<article>
+  <div class="book-detail">
+    <img class="detail-cover" src="${esc(book.cover)}" alt="Cover of ${esc(book.title)}" width="280" height="420" fetchpriority="high">
+    <header><p class="eyebrow">${esc(group.label)}${book.series ? ` · Book ${book.series}` : ""}</p>
+      <h1>${esc(book.title)}</h1>
+      ${book.subtitle ? `<p class="lede">${esc(book.subtitle)}</p>` : ""}
+      <p class="fine">By ${esc(book.author || "M. B. Reston")}${book.author === "Restless Faith Media" ? "" : " · Restless Faith Media"}</p>
+      <p>${esc(book.tagline.en)}</p>
+      <a class="btn" href="${esc(bookUrl(book))}" target="_blank" rel="sponsored nofollow noopener" data-rf-book="${esc(book.id)}" data-rf-from="book-detail">Get it on Amazon ${ICONS.arrow}</a>
+      <p class="fine purchase-note">See current pricing and available formats on Amazon. This book is in English.</p>
+      ${previews.length ? '<a href="#inside">See interior samples ↓</a>' : ""}
+    </header>
+  </div>
+  ${previews.length ? `<section id="inside" aria-labelledby="inside-title"><h2 id="inside-title">A look inside</h2><p class="fine">A weekly focus, daily reflection, and space to put your faith into practice.</p><div class="interior-previews">${previews.map(([file, label]) => `<figure><img src="/previews/built-on-rock/${file}" alt="${esc(label)} interior sample" width="300" height="300" loading="lazy"><figcaption>${esc(label)}</figcaption></figure>`).join("")}</div></section>` : ""}
+</article>
+${related.length ? `<section aria-labelledby="more-books"><h2 id="more-books">More ${esc(group.label.toLowerCase())}</h2><div class="shelf">${related.map(b => bookCard(b, { from: "book-detail" })).join("")}</div></section>` : ""}
+<p class="more"><a href="/books">Browse all books &amp; journals ${ICONS.arrow}</a></p>
+<p class="fine">${esc(BOOKS_TEXT.en.disclosure)}</p>`;
+  return page({ headHtml: head({ title: `${book.title} | Restless.faith`, description: book.tagline.en, path, type: "book", image: book.cover, imageAlt: `Cover of ${book.title}`, jsonLd: [{ "@context": "https://schema.org", ...bookJsonLd(book), publisher: ORG }, breadcrumbs(crumbs)] }), main, bodyClass: "page-book-detail", pageKey: "books" });
 }
 
 export function renderPrivacy() {
@@ -725,10 +752,10 @@ export function renderNotFound() {
 }
 
 export function renderSitemap() {
-  const urls = ["/", "/questions", ...TOPICS.map(topicUrl), "/books", "/privacy"];
+  const urls = ["/", "/questions", ...TOPICS.map(topicUrl), "/books", ...OWN_BOOKS.map(b => `/books/${b.id}`), "/privacy"];
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls.map((u) => `  <url><loc>${SITE}${u === "/" ? "/" : u}</loc><lastmod>${UPDATED}</lastmod></url>`).join("\n")}
+${urls.map((u) => `  <url><loc>${SITE}${u === "/" ? "/" : u}</loc><lastmod>${u.startsWith("/books") ? BOOKS_UPDATED : UPDATED}</lastmod></url>`).join("\n")}
 </urlset>
 `;
 }
@@ -781,5 +808,6 @@ export function renderSite() {
     "reel/topics.csv": renderSocialCsv(),
   };
   for (const topic of TOPICS) files[`questions/${topic.slug}.html`] = renderTopic(topic);
+  for (const book of OWN_BOOKS) files[`books/${book.id}.html`] = renderBook(book);
   return files;
 }

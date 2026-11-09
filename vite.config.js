@@ -7,7 +7,16 @@ import { renderSite } from "./scripts/site-pages.mjs";
 function staticPages() {
   return {
     name: "restless-static-pages",
-    apply: "build",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const pathname = new URL(req.url, "http://localhost").pathname.replace(/\/$/, "");
+        const file = pathname.slice(1) + (pathname.endsWith(".xml") || pathname.endsWith(".html") ? "" : ".html");
+        const html = renderSite()[file];
+        if (!html) return next();
+        res.setHeader("Content-Type", file.endsWith(".xml") ? "application/xml" : "text/html; charset=utf-8");
+        res.end(html);
+      });
+    },
     generateBundle() {
       for (const [fileName, source] of Object.entries(renderSite())) {
         this.emitFile({ type: "asset", fileName, source });
@@ -17,5 +26,6 @@ function staticPages() {
 }
 
 export default defineConfig({
+  server: { allowedHosts: ["terminal.local"] },
   plugins: [react(), staticPages()],
 });
