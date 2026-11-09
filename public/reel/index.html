@@ -242,6 +242,15 @@ details li{margin-bottom:6px}
 #presenterStatus{font-size:13px;line-height:1.5;color:var(--muted);margin:10px 0 0}
 #presenterSettings label.field{display:block;font:700 13px var(--sans);margin-top:14px}
 #presenterSettings button:disabled{opacity:.5;cursor:default}
+#studioPanel{margin:18px 0;padding:14px;border:1px solid #cad6df;border-radius:12px;background:#f5f8fb}
+#studioPanel summary{font-weight:700;cursor:pointer;line-height:1.4}
+#studioPanel input,#studioPanel textarea,#studioPanel select{width:100%;font:16px/1.5 var(--sans);padding:10px;border:1px solid #a9b6c3;border-radius:8px;background:white;color:#10263d;margin-top:6px}
+#studioPanel [hidden]{display:none!important}#studioPanel h4{margin:20px 0 8px}
+#studioStatus{font-size:14px;line-height:1.5;overflow-wrap:anywhere}
+#studioExactScript{white-space:pre-wrap;overflow-wrap:anywhere;font:16px/1.6 var(--sans);max-height:340px;overflow:auto;background:white;padding:12px;border-radius:8px}
+#studioVideo{width:100%;max-width:360px;aspect-ratio:1;display:block;border-radius:12px;background:#10263d}
+.studio-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px}.studio-actions a{font-size:14px;color:#124c7a}
+#studioJobs{display:grid;gap:8px;margin-top:10px}.studio-job{padding:12px;text-align:left;background:white;border:1px solid #cad6df;border-radius:8px;color:#10263d;font:14px/1.4 var(--sans);overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -316,10 +325,46 @@ details li{margin-bottom:6px}
     <div class="row"><span>Layout</span><div class="seg" id="layout"><button type="button" data-v="framed">Framed</button><button type="button" data-v="full">Full screen</button><button type="button" data-v="presenter">Presenter</button></div></div>
     <div id="presenterSettings">
       <h3>Gemma &amp; Luke</h3>
-      <p class="hint">Prepare the answer first, then create matching commentary in HeyGen. Upload the finished clip here. Clips and captions stay in this tab; choose them again after a page reload. Selecting a name does not generate a video.</p>
+      <p class="hint">Prepare an answer or paste your own script in the private studio below. Generate Gemma or Luke using your HeyGen API credits, or upload a finished clip. Uploaded files stay in this tab; generated clips can be reopened from Your clips.</p>
       <button type="button" class="action" id="prepareAnswer">Prepare answer</button><button type="button" class="action" id="downloadAnswer" disabled>Download answer for HeyGen</button>
       <label class="field" for="preparedAnswer">Exact answer used in this reel</label><textarea id="preparedAnswer" readonly placeholder="Prepare the answer to review it here."></textarea>
       <div class="row"><span>Presenter</span><div class="seg" id="presenter"><button type="button" data-v="none">No avatar</button><button type="button" data-v="Gemma">Gemma</button><button type="button" data-v="Luke">Luke</button></div></div>
+      <details id="studioPanel">
+        <summary>Generate with my HeyGen API credits</summary>
+        <p class="hint">Private creator studio · review your script before each paid generation.</p>
+        <form id="studioLogin" hidden>
+          <label class="field" for="studioPassword">Studio password</label>
+          <input id="studioPassword" type="password" autocomplete="current-password" required>
+          <button type="submit" class="action" id="studioUnlock">Unlock studio</button>
+        </form>
+        <p id="studioStatus" role="status" aria-live="polite">Open to check your connection.</p>
+        <div id="studioTools" hidden>
+          <p id="studioAccount" class="hint"></p><button type="button" class="action" id="studioLogout">Lock studio</button>
+          <label class="field" for="studioPresenter">Read with</label><select id="studioPresenter"><option>Gemma</option><option>Luke</option></select>
+          <label class="field" for="studioQuestion">Question / clip title</label><input id="studioQuestion" maxlength="140" placeholder="How do I know God exists?">
+          <label class="field" for="studioScript">Exact words to read</label><textarea id="studioScript" rows="8" maxlength="6000" placeholder="Paste an answer or your finished script. Your wording will be sent unchanged."></textarea>
+          <p class="hint" id="studioWordCount"></p>
+          <button type="button" class="action" id="studioUseAnswer">Use prepared answer</button>
+          <button type="button" class="action" id="studioReviewButton">Review script &amp; cost</button>
+          <div id="studioReview" hidden>
+            <h4>Ready to read</h4><pre id="studioExactScript"></pre><p id="studioEstimate" class="hint"></p>
+            <p class="hint">Square 1080p MP4 · saved voice · optional caption file. This generates the avatar clip; use Presenter mode to record the full reel.</p>
+            <button type="button" class="action" id="studioGenerate" disabled>Approve &amp; generate with API credits</button>
+          </div>
+          <div id="studioResult" hidden>
+            <h4 id="studioResultTitle"></h4><p id="studioResultStatus" class="hint"></p>
+            <video id="studioVideo" controls playsinline preload="metadata" hidden></video>
+            <div class="studio-actions"><button type="button" class="action" id="studioUseClip" hidden>Load clip into this reel</button>
+            <a id="studioDownload" target="_blank" rel="noopener noreferrer" hidden>Open / save MP4</a>
+            <a id="studioCaptions" target="_blank" rel="noopener noreferrer" hidden>Download captions</a>
+            <button type="button" class="action" id="studioCheck">Check status</button></div>
+            <p class="hint">On iPhone, open the MP4 and use Share → Save to Files. Load clip also replaces the reel’s answer with the exact narration. Download captions and upload them below if you want timed subtitles.</p>
+          </div>
+          <h4>Your clips</h4><button type="button" class="action" id="studioRefreshJobs">Refresh clips</button>
+          <p id="studioEmpty" class="hint">No clips generated here yet.</p><div id="studioJobs"></div>
+          <p class="hint">The last 20 Studio jobs are shown for up to 90 days. Save finished videos to keep your own copy. Identical scripts for the same presenter reuse the previous request for 24 hours.</p>
+        </div>
+      </details>
       <label class="field" for="avatarFile">Matching HeyGen video (MP4 recommended, up to 150 MB)</label><input id="avatarFile" type="file" accept="video/mp4,video/webm,video/quicktime,.mp4,.mov,.webm">
       <div class="row"><span>Avatar size</span><div class="seg" id="avatarSize"><button type="button" data-v="small">Small</button><button type="button" data-v="medium">Medium</button><button type="button" data-v="large">Large</button></div></div>
       <label class="field" for="captionsFile">Optional timed captions from the same clip (.srt or .vtt)</label><input id="captionsFile" type="file" accept=".srt,.vtt,text/vtt">
@@ -362,6 +407,7 @@ details li{margin-bottom:6px}
 <script src="/reel/topic-links.js"></script>
 <script type="module">
 import { chunkAnswer, parseCaptions, cueAt, pageAt } from "/reel/presenter-utils.js";
+import { initStudio } from "/reel/studio-api.js";
 (()=>{
 const D=window.REEL||{questions:[],hooks:{},copy:{}};
 const $=s=>document.querySelector(s);
@@ -762,6 +808,24 @@ $('#post').addEventListener('click',e=>{if(e.target.id==='post')$('#post').hidde
 $('#postbtn').onclick=e=>{e.stopPropagation();openPost()};
 $('#postonly').onclick=openPost;$('#pbtn').onclick=openPost;
 paint();refreshAnswer();syncPresenter();fit();
+initStudio({
+  getAnswer:()=>ANSWER?.key===currentKey()?ANSWER:null,
+  getQuestion:()=>({q:Q().q,level:S.level}),
+  useClip:async job=>{
+    if(!job?.videoUrl)throw new Error('This clip is not ready yet.');
+    const probe=document.createElement('video');probe.preload='metadata';
+    const duration=await new Promise((resolve,reject)=>{const timer=setTimeout(()=>{probe.removeAttribute('src');probe.load();reject(new Error('The clip could not load. Refresh its status and try again.'))},15000);probe.onloadedmetadata=()=>{clearTimeout(timer);resolve(probe.duration)};probe.onerror=()=>{clearTimeout(timer);reject(new Error('The clip link could not play. Refresh its status and try again.'))};probe.src=job.videoUrl;});
+    probe.removeAttribute('src');probe.load();
+    if(!Number.isFinite(duration)||duration<=0)throw new Error('The clip duration could not be read.');
+    S.slug='custom';S.custom=job.question;S.topic='all';S.level=job.level;S.presenter=job.presenter;S.layout='presenter';S.hook='custom';S.customHook=job.question.slice(0,70);
+    ANSWER={key:currentKey(),q:job.question,text:job.script,sources:job.sources||[]};
+    try{sessionStorage.setItem('rf-reel-answer',JSON.stringify(ANSWER))}catch(e){}
+    const previous=clips.get(job.presenter);
+    clips.set(job.presenter,{url:job.videoUrl,name:job.presenter+' generated clip',duration,cues:[],answerKey:ANSWER.key,answerText:ANSWER.text});
+    if(previous?.url.startsWith('blob:'))URL.revokeObjectURL(previous.url);
+    save();paint();syncPresenter();handToSite();
+  }
+});
 })();
 </script>
 </body>

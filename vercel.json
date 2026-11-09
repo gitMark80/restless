@@ -80,5 +80,10 @@
         }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/reel-studio.js": {
+      "maxDuration": 120
+    }
+  }
 }
