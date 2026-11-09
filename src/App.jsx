@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { NEXT_STEP_TEXT, classifyNextStep, nextStepContent } from "./nextSteps.js";
 import { BOOKS, JOURNALS, RECOMMENDED, BOOKS_TEXT, BOOKS_LANGUAGE_NOTE, bookUrl, matchBook } from "./books.js";
+import { drawShareCard } from "./shareCard.js";
 import { matchTopics, readDeepLink, topicUrl } from "./topicLinks.js";
 
 // Conversion analytics (public/rf.js → Vercel Web Analytics custom events).
@@ -352,74 +353,9 @@ async function askCompanion(question, ageBand, language, history) {
   return data;
 }
 
-function wrapCanvasText(ctx, text, maxWidth, maxLines) {
-  const words = text.replace(/\s+/g, " ").trim().split(" ");
-  const lines = [];
-  let line = "";
-  for (const word of words) {
-    const next = line ? `${line} ${word}` : word;
-    if (ctx.measureText(next).width <= maxWidth) {
-      line = next;
-    } else {
-      if (line) lines.push(line);
-      line = word;
-      if (lines.length === maxLines - 1) break;
-    }
-  }
-  if (line && lines.length < maxLines) lines.push(line);
-  if (lines.join(" ").length < text.replace(/\s+/g, " ").trim().length && lines.length) {
-    lines[lines.length - 1] = `${lines[lines.length - 1].replace(/[.,;:!?]?$/, "")}…`;
-  }
-  return lines;
-}
-
-async function createShareCard(questionText, answerText) {
+async function createShareCard(questionText, answerText, { tagline, language }) {
   const canvas = document.createElement("canvas");
-  canvas.width = 1080;
-  canvas.height = 1350;
-  const ctx = canvas.getContext("2d");
-  const gradient = ctx.createLinearGradient(0, 0, 1080, 1350);
-  gradient.addColorStop(0, "#0B1020");
-  gradient.addColorStop(1, "#172136");
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.fillStyle = "#E0B96A";
-  ctx.fillRect(72, 72, 7, 96);
-  ctx.font = "700 50px Arial";
-  ctx.fillText("Restless", 108, 118);
-  ctx.fillStyle = "#C4BBAA";
-  ctx.font = "400 30px Arial";
-  ctx.fillText(".faith", 300, 118);
-  ctx.fillText("Ask boldly. Learn deeply. Stay human.", 108, 160);
-
-  ctx.fillStyle = "#E0B96A";
-  ctx.font = "700 26px Arial";
-  ctx.fillText("QUESTION", 72, 260);
-  ctx.fillStyle = "#F6F0E5";
-  ctx.font = "700 46px Arial";
-  const questionLines = wrapCanvasText(ctx, questionText, 936, 4);
-  questionLines.forEach((line, i) => ctx.fillText(line, 72, 326 + i * 60));
-
-  const answerTop = 378 + questionLines.length * 60;
-  ctx.strokeStyle = "rgba(224,185,106,0.35)";
-  ctx.beginPath();
-  ctx.moveTo(72, answerTop);
-  ctx.lineTo(1008, answerTop);
-  ctx.stroke();
-
-  ctx.fillStyle = "#F6F0E5";
-  ctx.font = "400 37px Arial";
-  const answerLines = wrapCanvasText(ctx, answerText, 936, 13);
-  answerLines.forEach((line, i) => ctx.fillText(line, 72, answerTop + 72 + i * 50));
-
-  ctx.fillStyle = "#E0B96A";
-  ctx.font = "700 28px Arial";
-  ctx.fillText("Verify it. Think about it. Talk about it.", 72, 1240);
-  ctx.fillStyle = "#C4BBAA";
-  ctx.font = "400 26px Arial";
-  ctx.fillText("restless.faith", 72, 1286);
-
+  drawShareCard(canvas, { question: questionText, answer: answerText, tagline, language });
   return new Promise((resolve, reject) =>
     canvas.toBlob(
       (blob) => (blob ? resolve(blob) : reject(new Error("Could not create card"))),
@@ -566,7 +502,7 @@ function CitationCard({ source, isOpen, onToggle, theme, strings }) {
   );
 }
 
-function ShareButtons({ questionText, answerText, theme, strings }) {
+function ShareButtons({ questionText, answerText, theme, strings, language }) {
   const [copied, setCopied] = useState(false);
   const [cardSaved, setCardSaved] = useState(false);
   const [shareError, setShareError] = useState(false);
@@ -612,7 +548,7 @@ function ShareButtons({ questionText, answerText, theme, strings }) {
 
   const handleCardShare = async () => {
     try {
-      const blob = await createShareCard(questionText, answerText);
+      const blob = await createShareCard(questionText, answerText, { tagline: strings.tagline, language });
       const file = new File([blob], "restless-faith-answer.png", { type: "image/png" });
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         try {
@@ -1193,6 +1129,7 @@ function CompanionMessage({ message, questionText, theme, strings, language, onP
               answerText={message.text}
               theme={theme}
               strings={strings}
+              language={language}
             />
             <RelatedTopics topics={relatedTopics} theme={theme} strings={strings} />
             <NextStepPanel questionText={questionText} theme={theme} language={language} onPrompt={onPrompt} />
