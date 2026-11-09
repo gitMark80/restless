@@ -710,7 +710,7 @@ function BookCover({ book, theme, size = 72 }) {
     return (
       <div
         aria-hidden="true"
-        className="shrink-0 rounded-md flex items-center justify-center"
+        className="shrink-0 flex items-center justify-center"
         style={{ width: w, height: h, backgroundColor: theme.elevated, border: `1px solid ${theme.border}` }}
       >
         <BookOpen className="w-5 h-5" style={{ color: theme.muted }} />
@@ -722,7 +722,7 @@ function BookCover({ book, theme, size = 72 }) {
       src={book.cover}
       alt={`${book.title} cover`}
       loading="lazy"
-      className="shrink-0 rounded-md object-cover"
+      className="shrink-0 object-cover"
       style={{ width: w, height: h, boxShadow: "0 4px 14px rgba(0,0,0,0.25)" }}
     />
   );
@@ -918,7 +918,7 @@ function BookShelf({ title, body, books, theme, strings, language, showSeries })
                     maxHeight: "214px",
                     width: "auto",
                     height: "auto",
-                    borderRadius: "8px",
+                    borderRadius: 0,
                     boxShadow: "0 6px 18px rgba(0,0,0,0.28)",
                     display: "block",
                   }}
@@ -926,7 +926,7 @@ function BookShelf({ title, body, books, theme, strings, language, showSeries })
               ) : (
                 <div
                   aria-hidden="true"
-                  className="rounded-lg flex items-center justify-center"
+                  className="flex items-center justify-center"
                   style={{ width: "140px", height: "214px", backgroundColor: theme.elevated, border: `1px solid ${theme.border}` }}
                 >
                   <BookOpen className="w-6 h-6" style={{ color: theme.muted }} />
@@ -1032,7 +1032,7 @@ function BooksModal({ theme, strings, language, onClose }) {
                     src={book.cover}
                     alt={`${book.title} cover`}
                     loading="lazy"
-                    style={{ width: "96px", height: "auto", borderRadius: "7px", boxShadow: "0 5px 16px rgba(0,0,0,0.25)" }}
+                    style={{ width: "96px", height: "auto", borderRadius: 0, boxShadow: "0 5px 16px rgba(0,0,0,0.25)", display: "block" }}
                   />
                 </a>
                 <div className="min-w-0 flex-1">
