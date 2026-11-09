@@ -168,11 +168,11 @@ const STRINGS = {
     newsletterFine: "We'll email you a confirmation link first. Every email has an unsubscribe link.",
     newsletterDismiss: "No thanks",
     langToggleLabel: "Switch language",
-    shareLabel: "Share",
+    shareLabel: "Share Q&A",
     shareFooter: "Shared from Restless — restless.faith",
     copiedLabel: "Copied",
     shareFailedLabel: "Copy failed",
-    cardLabel: "Share card",
+    cardLabel: "Share Q&A card",
     cardSavedLabel: "Card saved",
     cardFailedLabel: "Card couldn't be shared",
     siteShareLabel: "Share site",
@@ -253,11 +253,11 @@ const STRINGS = {
     newsletterFine: "Primero te enviaremos un enlace de confirmación. Cada correo incluye un enlace para darte de baja.",
     newsletterDismiss: "No, gracias",
     langToggleLabel: "Cambiar idioma",
-    shareLabel: "Compartir",
+    shareLabel: "Compartir Q&A",
     shareFooter: "Compartido desde Restless — restless.faith",
     copiedLabel: "Copiado",
     shareFailedLabel: "No se pudo copiar",
-    cardLabel: "Tarjeta",
+    cardLabel: "Compartir tarjeta Q&A",
     cardSavedLabel: "Tarjeta guardada",
     cardFailedLabel: "No se pudo compartir",
     siteShareLabel: "Compartir sitio",
@@ -641,17 +641,19 @@ function ShareButtons({ questionText, answerText, theme, strings }) {
   return (
     <div className="flex items-center gap-4 flex-wrap" aria-live="polite">
       <button
+        data-rf-share="text"
         onClick={handleShare}
         className="flex items-center gap-1.5"
-        style={{ color: copied ? theme.accent : theme.subtext, fontSize: "13px" }}
+        style={{ color: copied ? theme.accent : theme.text, fontSize: "13px", fontWeight: 700 }}
       >
         {copied ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
         {shareError ? strings.shareFailedLabel : copied ? strings.copiedLabel : strings.shareLabel}
       </button>
       <button
+        data-rf-share="card"
         onClick={handleCardShare}
         className="flex items-center gap-1.5"
-        style={{ color: cardSaved ? theme.accent : theme.subtext, fontSize: "13px" }}
+        style={{ color: cardSaved ? theme.accent : "#f5d76e", fontSize: "13px", fontWeight: 700 }}
       >
         {cardSaved ? <Check className="w-3.5 h-3.5" /> : <ImageDown className="w-3.5 h-3.5" />}
         {cardError ? strings.cardFailedLabel : cardSaved ? strings.cardSavedLabel : strings.cardLabel}

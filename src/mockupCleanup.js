@@ -27,5 +27,11 @@ footer [data-rf-footer-links]>button,footer [data-rf-footer-links]>a{min-height:
 [data-restless-related]>p:first-child,[data-restless-related] a span[aria-hidden]{color:var(--rf-blue)!important}
 body[data-restless-theme="dark"] footer button[style*="font-weight: 700"],body[data-restless-theme="dark"] footer button[style*="font-weight: 600"],body[data-restless-theme="dark"] footer [data-rf-footer-links]>a{color:#b8c8d7!important}
 body[data-restless-theme="dark"] footer button[data-rf-books]{color:#f5d76e!important}
+/* Share Q&A buttons under answers: text link in the page's text color (white in dark mode), card link in the same gold as Books. */
+main button[data-rf-share="text"]{color:var(--rf-navy)!important}
+body[data-restless-theme="dark"] main button[data-rf-share="text"]{color:#fff!important}
+main button[data-rf-share="card"]{color:#d4a51c!important}
+body[data-restless-theme="dark"] main button[data-rf-share="card"]{color:#f5d76e!important}
+main button[data-rf-share] svg{color:inherit!important}
 `;
 const cleanupStyle=document.createElement('style');cleanupStyle.id='restless-mockup-cleanup';cleanupStyle.textContent=CLEANUP_CSS;document.head.appendChild(cleanupStyle);
