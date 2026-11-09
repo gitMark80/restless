@@ -234,7 +234,7 @@ export const RECOMMENDED = [
 
 export const BOOKS_TEXT = {
   en: {
-    label: "Books",
+    label: "Books & Journals",
     title: "Books from Restless",
     guidesTitle: "Restless Faith Pocket Guides",
     guidesBody: "Ten short, plain-language books, each on one question that keeps people up at night.",
@@ -258,7 +258,7 @@ export const BOOKS_TEXT = {
     recommendedBody: "A few books by other Catholic publishers that we reach for ourselves.",
   },
   es: {
-    label: "Libros",
+    label: "Libros y diarios",
     title: "Libros de Restless",
     guidesTitle: "Guías de bolsillo de Restless Faith",
     guidesBody: "Diez libros breves y en lenguaje sencillo, cada uno sobre una pregunta que no deja dormir a la gente.",
