@@ -204,8 +204,8 @@ export const PLANNERS = [
   {
     id: "liturgical-planner-2027",
     cover: "/covers/liturgical-planner-2027.webp",
-    title: "Built on Rock",
-    subtitle: "Catholic Liturgical Planner 2027",
+    title: "Built on Rock: Catholic Liturgical Planner 2027",
+    subtitle: "Prayer, Purpose & Daily Life",
     author: "Restless Faith Media",
     url: amazon("B0HQFVW7XX"),
     tagline: {
@@ -257,7 +257,7 @@ export const BOOKS_TEXT = {
     guidesBody: "Ten short, plain-language books, each on one question that keeps people up at night.",
     intro:
       "Catholic journals, planners, and short books from the makers of Restless. Tap any cover to see it on Amazon.",
-    byline: "Written by M. B. Reston · Restless Faith Media",
+    byline: "Original titles from Restless Faith Media",
     disclosure: "As an Amazon Associate, Restless Faith Media earns from qualifying purchases.",
     bookLabel: "Book",
     buy: "Get it on Amazon ↗",
@@ -287,7 +287,7 @@ export const BOOKS_TEXT = {
     guidesBody: "Diez libros breves y en lenguaje sencillo, cada uno sobre una pregunta que no deja dormir a la gente.",
     intro:
       "Diarios, agendas y libros breves de los creadores de Restless. Toca cualquier portada para verlo en Amazon.",
-    byline: "Escrito por M. B. Reston · Restless Faith Media",
+    byline: "Títulos originales de Restless Faith Media",
     disclosure: "Como Asociado de Amazon, Restless Faith Media recibe ingresos por las compras que cumplen los requisitos.",
     bookLabel: "Libro",
     buy: "Consíguelo en Amazon ↗",
