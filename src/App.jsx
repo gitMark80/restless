@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { createDictationSession } from "./dictation.js";
 import { NEXT_STEP_TEXT, classifyNextStep, nextStepContent } from "./nextSteps.js";
-import { BOOKS, JOURNALS, PLANNERS, RECOMMENDED, BOOKS_TEXT, BOOKS_LANGUAGE_NOTE, bookUrl, matchBook } from "./books.js";
+import { BOOKS, JOURNALS, PLANNERS, COOKBOOKS, RECOMMENDED, BOOKS_TEXT, BOOKS_LANGUAGE_NOTE, bookUrl, matchBook } from "./books.js";
 import { drawShareCard } from "./shareCard.js";
 import { matchTopics, readDeepLink, topicUrl } from "./topicLinks.js";
 
@@ -734,7 +734,8 @@ function BookCard({ book, theme, language, onOpenBooks }) {
   const eyebrow = rec ? text.recommendedEyebrow : text.cardEyebrow;
   const isJournal = JOURNALS.some((j) => j.id === book.id);
   const isPlanner = PLANNERS.some((p) => p.id === book.id);
-  const intro = rec ? text.recommendedIntro : isPlanner ? text.plannerCardIntro : isJournal ? text.journalCardIntro : text.cardIntro;
+  const isCookbook = COOKBOOKS.some((c) => c.id === book.id);
+  const intro = rec ? text.recommendedIntro : isCookbook ? text.cookbookCardIntro : isPlanner ? text.plannerCardIntro : isJournal ? text.journalCardIntro : text.cardIntro;
   const note = rec ? text.recommendedNote : text.cardNote;
   return (
     <section
@@ -963,7 +964,7 @@ function BooksModal({ theme, strings, language, onClose }) {
   const text = BOOKS_TEXT[language];
   const guides = [...BOOKS].sort((a, b) => a.series - b.series);
   const today = new Date();
-  const showPlannerSpotlight = today.getFullYear() === 2026 && (today.getMonth() === 10 || today.getMonth() === 11);
+  const show2027Spotlight = today.getFullYear() === 2026 && (today.getMonth() === 10 || today.getMonth() === 11);
   return (
     <div
       className="fixed inset-0 flex items-end sm:items-center justify-center px-0 sm:px-4"
@@ -987,7 +988,7 @@ function BooksModal({ theme, strings, language, onClose }) {
         </p>
         <p style={{ margin: "0.4rem 0 0", color: theme.muted, fontSize: "12px" }}>{text.byline}</p>
 
-        {showPlannerSpotlight && PLANNERS.length > 0 && (
+        {show2027Spotlight && PLANNERS.length > 0 && COOKBOOKS.length > 0 && (
           <section
             style={{
               marginTop: "1.2rem",
@@ -997,43 +998,62 @@ function BooksModal({ theme, strings, language, onClose }) {
               backgroundColor: theme.citationBg,
             }}
           >
-            <p style={{ margin: "0 0 0.65rem", color: theme.accent, fontSize: "11px", fontWeight: 900, letterSpacing: "0.08em" }}>
+            <p style={{ margin: "0 0 0.25rem", color: theme.accent, fontSize: "11px", fontWeight: 900, letterSpacing: "0.08em" }}>
               {text.plannerSpotlightEyebrow}
             </p>
-            <div className="flex gap-3 items-start">
-              <a
-                href={bookUrl(PLANNERS[0])}
-                target="_blank"
-                rel="noopener noreferrer sponsored"
-                data-rf-book={PLANNERS[0].id}
-                className="shrink-0"
-                aria-label={PLANNERS[0].subtitle}
+            <h3 style={{ margin: 0, color: theme.text, fontSize: "18px", fontWeight: 800 }}>
+              {text.year2027Title}
+            </h3>
+            <p style={{ margin: "0.3rem 0 0.8rem", color: theme.subtext, fontSize: "13px", lineHeight: 1.5 }}>
+              {text.year2027Body}
+            </p>
+            {[
+              { book: PLANNERS[0], title: text.plannerSpotlightTitle, body: text.plannerSpotlightBody },
+              { book: COOKBOOKS[0], title: text.cookbookSpotlightTitle, body: text.cookbookSpotlightBody },
+            ].map(({ book, title, body }, index) => (
+              <div
+                key={book.id}
+                className="flex gap-3 items-start"
+                style={{
+                  borderTop: index ? `1px solid ${theme.border}` : "none",
+                  paddingTop: index ? "0.85rem" : 0,
+                  marginTop: index ? "0.85rem" : 0,
+                }}
               >
-                <img
-                  src={PLANNERS[0].cover}
-                  alt="Built on Rock Catholic Liturgical Planner 2027 cover"
-                  loading="lazy"
-                  style={{ width: "96px", height: "auto", borderRadius: "7px", boxShadow: "0 5px 16px rgba(0,0,0,0.25)" }}
-                />
-              </a>
-              <div className="min-w-0 flex-1">
-                <h3 style={{ margin: 0, color: theme.text, fontSize: "17px", fontWeight: 800, lineHeight: 1.3 }}>
-                  {text.plannerSpotlightTitle}
-                </h3>
-                <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "13px", lineHeight: 1.5 }}>
-                  {text.plannerSpotlightBody}
-                </p>
                 <a
-                  href={bookUrl(PLANNERS[0])}
+                  href={bookUrl(book)}
                   target="_blank"
                   rel="noopener noreferrer sponsored"
-                  data-rf-book={PLANNERS[0].id}
-                  style={{ display: "inline-block", marginTop: "0.6rem", color: theme.accent, fontSize: "13px", fontWeight: 800 }}
+                  data-rf-book={book.id}
+                  className="shrink-0"
+                  aria-label={book.title}
                 >
-                  {text.buy}
+                  <img
+                    src={book.cover}
+                    alt={`${book.title} cover`}
+                    loading="lazy"
+                    style={{ width: "96px", height: "auto", borderRadius: "7px", boxShadow: "0 5px 16px rgba(0,0,0,0.25)" }}
+                  />
                 </a>
+                <div className="min-w-0 flex-1">
+                  <h4 style={{ margin: 0, color: theme.text, fontSize: "15px", fontWeight: 800, lineHeight: 1.3 }}>
+                    {title}
+                  </h4>
+                  <p style={{ margin: "0.35rem 0 0", color: theme.subtext, fontSize: "13px", lineHeight: 1.5 }}>
+                    {body}
+                  </p>
+                  <a
+                    href={bookUrl(book)}
+                    target="_blank"
+                    rel="noopener noreferrer sponsored"
+                    data-rf-book={book.id}
+                    style={{ display: "inline-block", marginTop: "0.6rem", color: theme.accent, fontSize: "13px", fontWeight: 800 }}
+                  >
+                    {text.buy}
+                  </a>
+                </div>
               </div>
-            </div>
+            ))}
           </section>
         )}
 
@@ -1049,6 +1069,14 @@ function BooksModal({ theme, strings, language, onClose }) {
           title={text.plannersTitle}
           body={text.plannersBody}
           books={PLANNERS}
+          theme={theme}
+          strings={strings}
+          language={language}
+        />
+        <BookShelf
+          title={text.cookbooksTitle}
+          body={text.cookbooksBody}
+          books={COOKBOOKS}
           theme={theme}
           strings={strings}
           language={language}
