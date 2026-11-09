@@ -1809,7 +1809,7 @@ export default function Restless() {
 
   return (
     <div
-      className="flex flex-col overflow-x-hidden"
+      className={`flex flex-col overflow-x-hidden ${messages.length === 0 ? "overflow-y-auto" : ""}`}
       style={{
         position: "fixed",
         top: 0,
@@ -1905,7 +1905,10 @@ export default function Restless() {
         </div>
       </header>
 
-      <main ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden px-3 sm:px-5 py-5">
+      <main
+        ref={scrollRef}
+        className={`${messages.length === 0 ? "shrink-0" : "flex-1 min-h-0"} overflow-y-auto overflow-x-hidden px-3 sm:px-5 py-5`}
+      >
         <div className="max-w-3xl mx-auto w-full space-y-4 min-w-0">
           {messages.length === 0 && (
             <WelcomePanel theme={theme} strings={strings} />
@@ -2115,3 +2118,4 @@ export default function Restless() {
     </div>
   );
 }
+
