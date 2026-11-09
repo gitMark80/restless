@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { createDictationSession } from "./dictation.js";
 import { NEXT_STEP_TEXT, classifyNextStep, nextStepContent } from "./nextSteps.js";
-import { BOOKS, JOURNALS, PLANNERS, COOKBOOKS, RECOMMENDED, BOOKS_TEXT, BOOKS_LANGUAGE_NOTE, bookUrl, matchBook } from "./books.js";
+import { BOOKS, JOURNALS, PLANNERS, COOKBOOKS, PUZZLES, RECOMMENDED, BOOKS_TEXT, BOOKS_LANGUAGE_NOTE, bookUrl, matchBook } from "./books.js";
 import { drawShareCard } from "./shareCard.js";
 import { matchTopics, readDeepLink, topicUrl } from "./topicLinks.js";
 
@@ -735,7 +735,8 @@ function BookCard({ book, theme, language, onOpenBooks }) {
   const isJournal = JOURNALS.some((j) => j.id === book.id);
   const isPlanner = PLANNERS.some((p) => p.id === book.id);
   const isCookbook = COOKBOOKS.some((c) => c.id === book.id);
-  const intro = rec ? text.recommendedIntro : isCookbook ? text.cookbookCardIntro : isPlanner ? text.plannerCardIntro : isJournal ? text.journalCardIntro : text.cardIntro;
+  const isPuzzle = PUZZLES.some((p) => p.id === book.id);
+  const intro = rec ? text.recommendedIntro : isPuzzle ? text.puzzleCardIntro : isCookbook ? text.cookbookCardIntro : isPlanner ? text.plannerCardIntro : isJournal ? text.journalCardIntro : text.cardIntro;
   const note = rec ? text.recommendedNote : text.cardNote;
   return (
     <section
@@ -1077,6 +1078,14 @@ function BooksModal({ theme, strings, language, onClose }) {
           title={text.cookbooksTitle}
           body={text.cookbooksBody}
           books={COOKBOOKS}
+          theme={theme}
+          strings={strings}
+          language={language}
+        />
+        <BookShelf
+          title={text.puzzlesTitle}
+          body={text.puzzlesBody}
+          books={PUZZLES}
           theme={theme}
           strings={strings}
           language={language}
