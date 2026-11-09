@@ -1372,7 +1372,7 @@ function TextSizeControls({ fontScale, setFontScale, theme, strings }) {
           <span style={{ fontSize: "10px", lineHeight: 1 }}>A</span>
           <span style={{ fontSize: "15px", lineHeight: 1 }}>A</span>
         </span>
-        {strings.textSizeLabel}
+        <span className="rf-text-size-label">{strings.textSizeLabel}</span>
       </button>
     </div>
   );
@@ -2023,56 +2023,54 @@ export default function Restless() {
             </button>
           </div>
 
-          <div className="flex items-center justify-start gap-2.5 mt-2.5 flex-wrap" aria-live="polite" data-rf-footer-links="true">
-            <a href="/questions" style={{ color: theme.subtext, fontSize: "12px", textDecoration: "none" }}>
-              {strings.questionsLabel}
-            </a>
-            <span style={{ color: theme.muted, fontSize: "12px" }}>·</span>
-            <button onClick={() => setActiveModal("about")} style={{ color: theme.subtext, fontSize: "12px" }}>
-              {strings.aboutLabel}
-            </button>
-            <span style={{ color: theme.muted, fontSize: "12px" }}>·</span>
-            <a href={YOUTUBE_URL} target="_blank" rel="noopener noreferrer" style={{ color: theme.subtext, fontSize: "12px", textDecoration: "none" }}>
-              {strings.youtubeLabel}
-            </a>
-            <span style={{ color: theme.muted, fontSize: "12px" }}>·</span>
-            <button onClick={() => setActiveModal("contact")} style={{ color: theme.subtext, fontSize: "12px" }}>
-              {strings.contactLabel}
-            </button>
-            <span style={{ color: theme.muted, fontSize: "12px" }}>·</span>
-            <button
-              data-rf-books="true"
-              onClick={() => setActiveModal("books")}
-              style={{ color: "#f5d76e", fontSize: "12px", fontWeight: 700 }}
-            >
-              {BOOKS_TEXT[language].label}
-            </button>
-            <span style={{ color: theme.muted, fontSize: "12px" }}>·</span>
-            <button
-              onClick={() => setActiveModal("support")}
-              style={{ color: theme.accent, fontSize: "12px", fontWeight: 700 }}
-            >
-              {strings.supportLabel}
-            </button>
-            <span style={{ color: theme.muted, fontSize: "12px" }}>·</span>
-            <button
-              onClick={handleSiteShare}
-              className="inline-flex items-center gap-1"
-              style={{ color: siteShareCopied ? theme.accent : theme.subtext, fontSize: "12px", fontWeight: 600 }}
-            >
-              {siteShareCopied ? <Check className="w-3 h-3" /> : <Share2 className="w-3 h-3" />}
-              {siteShareError
-                ? strings.siteShareFailed
-                : siteShareCopied
-                  ? strings.siteShareCopied
-                  : strings.siteShareLabel}
-            </button>
-            <TextSizeControls
-              fontScale={fontScale}
-              setFontScale={setFontScale}
-              theme={theme}
-              strings={strings}
-            />
+          <div className="rf-footer-links" aria-live="polite" data-rf-footer-links="true">
+            <div className="rf-footer-row">
+              <a href="/questions" style={{ color: theme.subtext, fontSize: "12px", textDecoration: "none" }}>
+                {strings.questionsLabel}
+              </a>
+              <button onClick={() => setActiveModal("about")} style={{ color: theme.subtext, fontSize: "12px" }}>
+                {strings.aboutLabel}
+              </button>
+              <a href={YOUTUBE_URL} target="_blank" rel="noopener noreferrer" style={{ color: theme.subtext, fontSize: "12px", textDecoration: "none" }}>
+                {strings.youtubeLabel}
+              </a>
+              <button onClick={() => setActiveModal("contact")} style={{ color: theme.subtext, fontSize: "12px" }}>
+                {strings.contactLabel}
+              </button>
+              <TextSizeControls
+                fontScale={fontScale}
+                setFontScale={setFontScale}
+                theme={theme}
+                strings={strings}
+              />
+            </div>
+            <div className="rf-footer-row">
+              <button
+                data-rf-books="true"
+                onClick={() => setActiveModal("books")}
+                style={{ color: "#f5d76e", fontSize: "12px", fontWeight: 700 }}
+              >
+                {BOOKS_TEXT[language].label}
+              </button>
+              <button
+                onClick={() => setActiveModal("support")}
+                style={{ color: theme.accent, fontSize: "12px", fontWeight: 700 }}
+              >
+                {strings.supportLabel}
+              </button>
+              <button
+                onClick={handleSiteShare}
+                className="inline-flex items-center gap-1"
+                style={{ color: siteShareCopied ? theme.accent : theme.subtext, fontSize: "12px", fontWeight: 600 }}
+              >
+                {siteShareCopied ? <Check className="w-3 h-3" /> : <Share2 className="w-3 h-3" />}
+                {siteShareError
+                  ? strings.siteShareFailed
+                  : siteShareCopied
+                    ? strings.siteShareCopied
+                    : strings.siteShareLabel}
+              </button>
+            </div>
           </div>
         </div>
       </footer>
