@@ -16,6 +16,7 @@ main section.rounded-3xl > div:last-child > .flex.items-start.gap-3 {
 
 main > div > section.rounded-3xl > div:first-child {
   padding: 20px 20px 14px !important;
+  min-height: 0;
 }
 main > div > section.rounded-3xl h2 {
   margin-top: 0 !important;
@@ -61,9 +62,16 @@ main section.rounded-3xl .grid.grid-cols-3 span {
 }
 
 main > div > section.rounded-3xl > div:last-child {
+  /* This legacy promo contains only hidden content; do not leave an empty strip. */
+  display: none !important;
   padding: 12px 20px 18px !important;
   border-top: 0 !important;
   background: transparent !important;
+}
+
+/* Keep the opening question box close to the welcome panel. Chat still fills the viewport. */
+main:has(> div > section.rounded-3xl) {
+  padding-bottom: 8px !important;
 }
 main > div > section.rounded-3xl > div:last-child > p {
   margin-top: 0 !important;
@@ -96,3 +104,4 @@ const style = document.createElement('style');
 style.id = 'restless-welcome-context';
 style.textContent = CONTEXT_CSS;
 document.head.appendChild(style);
+
