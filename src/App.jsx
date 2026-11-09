@@ -1,6 +1,8 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   Send,
+  Mic,
+  Square,
   ChevronDown,
   BookOpen,
   Cross,
@@ -17,6 +19,7 @@ import {
   Minus,
   Plus,
 } from "lucide-react";
+import { createDictationSession } from "./dictation.js";
 import { NEXT_STEP_TEXT, classifyNextStep, nextStepContent } from "./nextSteps.js";
 import { BOOKS, JOURNALS, RECOMMENDED, BOOKS_TEXT, BOOKS_LANGUAGE_NOTE, bookUrl, matchBook } from "./books.js";
 import { drawShareCard } from "./shareCard.js";
@@ -153,6 +156,16 @@ const STRINGS = {
     startersLabel: "Try a question",
     ideasLabel: "Need an idea?",
     placeholder: "Ask anything…",
+    micLabel: "Dictate question",
+    stopListening: "Stop dictation",
+    stopAnswer: "Stop response",
+    sendLabel: "Send question",
+    listening: "Listening… Tap stop, then review your question before sending.",
+    voiceUnsupported: "Voice input is unavailable in this browser. Use your keyboard’s microphone or type your question.",
+    voiceDenied: "Microphone access was denied. Allow it in your browser settings, or use your keyboard’s microphone.",
+    voiceError: "Dictation couldn’t continue. Check your microphone and connection, or type your question.",
+    voiceEmpty: "No speech was detected. Tap the microphone to try again.",
+    responseStopped: "Response stopped.",
     retryError: "That didn't come through. Tap send again to retry.",
     timeoutError: "That's taking longer than usual. Tap Try again.",
     rateLimitError: "Please wait a moment before asking again.",
@@ -238,6 +251,16 @@ const STRINGS = {
     startersLabel: "Prueba una pregunta",
     ideasLabel: "¿Necesitas una idea?",
     placeholder: "Pregunta lo que quieras…",
+    micLabel: "Dictar pregunta",
+    stopListening: "Detener dictado",
+    stopAnswer: "Detener respuesta",
+    sendLabel: "Enviar pregunta",
+    listening: "Escuchando… Toca detener y revisa tu pregunta antes de enviarla.",
+    voiceUnsupported: "El dictado no está disponible en este navegador. Usa el micrófono del teclado o escribe tu pregunta.",
+    voiceDenied: "Se denegó el acceso al micrófono. Permítelo en los ajustes del navegador o usa el micrófono del teclado.",
+    voiceError: "El dictado se interrumpió. Revisa el micrófono y la conexión, o escribe tu pregunta.",
+    voiceEmpty: "No se detectó voz. Toca el micrófono para intentarlo de nuevo.",
+    responseStopped: "Respuesta detenida.",
     retryError: "Eso no llegó. Toca enviar para intentarlo de nuevo.",
     timeoutError: "Está tardando más de lo normal. Toca Intentar de nuevo.",
     rateLimitError: "Espera un momento antes de volver a preguntar.",
@@ -319,7 +342,7 @@ function errorMessage(err, strings) {
   }
 }
 
-async function askCompanion(question, ageBand, language, history) {
+async function askCompanion(question, ageBand, language, history, requestSignal) {
   const now = new Date();
   const todayDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
     now.getDate()
@@ -328,8 +351,12 @@ async function askCompanion(question, ageBand, language, history) {
   // The server gives up after ~50s (including one retry), so wait a little
   // longer than that here; otherwise slow-but-successful answers get dropped.
   const controller = new AbortController();
+  const cancel = () => controller.abort();
+  requestSignal?.addEventListener("abort", cancel, { once: true });
+  if (requestSignal?.aborted) controller.abort();
   const timeout = setTimeout(() => controller.abort(), 60000);
   let response;
+  let data;
   try {
     response = await fetch("/api/ask", {
       method: "POST",
@@ -337,13 +364,13 @@ async function askCompanion(question, ageBand, language, history) {
       body: JSON.stringify({ question, ageBand, language, todayDate, history }),
       signal: controller.signal,
     });
+    data = await response.json();
   } catch (err) {
-    throw askError(err?.name === "AbortError" ? "timeout" : "network");
+    throw askError(requestSignal?.aborted ? "cancelled" : err?.name === "AbortError" ? "timeout" : "network");
   } finally {
     clearTimeout(timeout);
+    requestSignal?.removeEventListener("abort", cancel);
   }
-
-  const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     if (response.status === 429) throw askError("rateLimit");
     if (response.status === 504) throw askError("timeout");
@@ -1490,6 +1517,11 @@ export default function Restless() {
   });
   const [ageBand, setAgeBand] = useState("High School");
   const [isTyping, setIsTyping] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceNotice, setVoiceNotice] = useState("");
+  const dictationRef = useRef(null);
+  const requestRef = useRef(null);
+  const isResponding = isTyping || messages.some((message) => message.revealing);
   const [mode, setMode] = useState(readStoredMode);
   const [fontScale, setFontScale] = useState(readStoredFontScale);
   const [error, setError] = useState(null);
@@ -1591,7 +1623,63 @@ export default function Restless() {
     }
   }, [fontScale]);
 
+  const stopDictation = () => dictationRef.current?.stop();
+  const discardDictation = () => {
+    dictationRef.current?.abort();
+    dictationRef.current = null;
+  };
+  const handleStop = () => {
+    requestRef.current?.abort();
+    requestRef.current = null;
+    setIsTyping(false);
+    setMessages((prev) => prev.map((message) => message.revealing ? { ...message, revealing: false } : message));
+    setVoiceNotice(strings.responseStopped);
+  };
+  const startDictation = () => {
+    if (dictationRef.current || requestRef.current) return;
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!Recognition) {
+      setVoiceNotice(strings.voiceUnsupported);
+      return;
+    }
+    setVoiceNotice("");
+    setIsListening(true);
+    inputVia.current = "typed";
+    let session;
+    try {
+      session = createDictationSession({
+      Recognition, language, initialText: input,
+      onText: setInput,
+      onEnd: () => { dictationRef.current = null; setIsListening(false); },
+      onError: (code) => setVoiceNotice(
+        ["not-allowed", "service-not-allowed"].includes(code) ? strings.voiceDenied :
+        code === "no-speech" ? strings.voiceEmpty : strings.voiceError
+      ),
+      });
+    } catch {
+      setIsListening(false);
+      setVoiceNotice(strings.voiceError);
+      return;
+    }
+    dictationRef.current = session;
+    session.start();
+  };
+
+  useEffect(() => {
+    const stopWhenHidden = () => {
+      if (document.hidden) dictationRef.current?.abort();
+    };
+    document.addEventListener("visibilitychange", stopWhenHidden);
+    return () => {
+      document.removeEventListener("visibilitychange", stopWhenHidden);
+      dictationRef.current?.abort();
+      requestRef.current?.abort();
+    };
+  }, []);
+
   const handleLanguageToggle = () => {
+    discardDictation();
+    setVoiceNotice("");
     const next = language === "en" ? "es" : "en";
     setLanguage(next);
     setError(null);
@@ -1599,7 +1687,10 @@ export default function Restless() {
 
   const handleSend = async () => {
     const trimmed = input.trim();
-    if (!trimmed || isTyping) return;
+    if (!trimmed || requestRef.current || dictationRef.current) return;
+    const controller = new AbortController();
+    requestRef.current = controller;
+    setVoiceNotice("");
 
     const history = messages
       .map((m) => ({ role: m.role, text: m.text, sources: m.sources }))
@@ -1618,7 +1709,8 @@ export default function Restless() {
     // /api/ask; it just flows in at a readable pace instead of arriving all at once after a wait.
     const canned = window.__rfReel?.answerFor?.(trimmed);
     if (canned) {
-      await revealAnswer(canned);
+      await revealAnswer(canned, controller.signal);
+      if (requestRef.current === controller) requestRef.current = null;
       return;
     }
 
@@ -1626,7 +1718,8 @@ export default function Restless() {
 
     try {
       const responseAgeBand = ageBand === "Adult" ? "OCIA" : ageBand;
-      const result = await askCompanion(trimmed, responseAgeBand, language, history);
+      const result = await askCompanion(trimmed, responseAgeBand, language, history, controller.signal);
+      if (controller.signal.aborted || requestRef.current !== controller) return;
       setIsTyping(false);
       setMessages((prev) => [
         ...prev,
@@ -1638,23 +1731,28 @@ export default function Restless() {
         track("Multiple Questions", { answers: String(answersThisVisit.current) });
       }
     } catch (err) {
+      if (controller.signal.aborted || requestRef.current !== controller) return;
       setIsTyping(false);
       track("Answer Failed", { reason: err?.kind || "unknown" });
       setError(errorMessage(err, strings));
       setInput(trimmed);
       setMessages((prev) => prev.slice(0, -1));
+    } finally {
+      if (requestRef.current === controller) requestRef.current = null;
     }
   };
 
-  const revealAnswer = async (canned) => {
+  const revealAnswer = async (canned, signal) => {
     const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     await wait(canned.thinkMs ?? 1100);
+    if (signal.aborted) return;
     setIsTyping(false);
     const id = Date.now() + 1;
     setMessages((prev) => [...prev, { id, role: "companion", text: "", sources: [], revealing: true }]);
     const pieces = canned.text.split(/(\s+)/);
     let shown = "";
     for (const piece of pieces) {
+      if (signal.aborted) return;
       shown += piece;
       if (!/\S/.test(piece)) continue;
       const done = shown;
@@ -1663,6 +1761,7 @@ export default function Restless() {
       await wait((canned.wordMs ?? 48) + pause);
     }
     await wait(350);
+    if (signal.aborted) return;
     setMessages((prev) =>
       prev.map((m) => (m.id === id ? { ...m, text: canned.text, sources: canned.sources || [], revealing: false } : m))
     );
@@ -1684,12 +1783,17 @@ export default function Restless() {
   };
 
   const chooseStarter = (question, via = "suggestion") => {
+    discardDictation();
+    setVoiceNotice("");
     inputVia.current = via;
     setInput(question);
     requestAnimationFrame(() => document.querySelector("textarea[data-question-input]")?.focus());
   };
 
   const startOver = () => {
+    handleStop();
+    discardDictation();
+    setVoiceNotice("");
     setMessages([]);
     setError(null);
     setInput("");
@@ -1926,39 +2030,50 @@ export default function Restless() {
 
           <StarterQuestions theme={theme} strings={strings} chooseStarter={chooseStarter} />
 
-          <div className="flex items-end gap-2.5 min-w-0">
+          <div className="rf-question-composer">
             <textarea
               data-question-input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
+              readOnly={isListening}
               maxLength={1000}
               aria-label={strings.placeholder}
+              aria-describedby={isListening || voiceNotice ? "rf-voice-status" : undefined}
               placeholder={strings.placeholder}
               rows={2}
-              className="flex-1 min-w-0 resize-none rounded-2xl px-4 py-3 focus:outline-none overflow-y-auto max-h-40"
-              style={{
-                backgroundColor: theme.cardBg,
-                color: theme.text,
-                border: `1px solid ${theme.border}`,
-                fontSize: "17px",
-                boxSizing: "border-box",
-              }}
+              className="w-full min-w-0 resize-none rounded-2xl px-4 py-3 focus:outline-none overflow-y-auto max-h-40"
+              style={{ color: theme.text, fontSize: "17px", boxSizing: "border-box" }}
             />
-            <button
-              onClick={handleSend}
-              disabled={!input.trim() || isTyping}
-              aria-label="Send question"
-              className="shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center"
-              style={
-                input.trim() && !isTyping
-                  ? { backgroundColor: theme.accent, color: theme.accentText }
-                  : { backgroundColor: theme.disabledBg, color: theme.disabledText }
-              }
-            >
-              <Send className="w-4 h-4" />
-            </button>
+            <div className="rf-composer-actions">
+              <button
+                type="button"
+                onClick={isListening ? stopDictation : startDictation}
+                disabled={isResponding}
+                aria-label={isListening ? strings.stopListening : strings.micLabel}
+                title={isListening ? strings.stopListening : strings.micLabel}
+                aria-pressed={isListening}
+                className="rf-mic-button"
+              >
+                <Mic className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={isListening ? stopDictation : isResponding ? handleStop : handleSend}
+                disabled={!isListening && !isResponding && !input.trim()}
+                aria-label={isListening ? strings.stopListening : isResponding ? strings.stopAnswer : strings.sendLabel}
+                title={isListening ? strings.stopListening : isResponding ? strings.stopAnswer : strings.sendLabel}
+                className="rf-send-button"
+              >
+                {isListening || isResponding ? <Square className="w-4 h-4" fill="currentColor" /> : <Send className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
+          {(isListening || voiceNotice) && (
+            <p id="rf-voice-status" role="status" className="mt-2" style={{ color: theme.subtext, fontSize: "12px" }}>
+              {isListening ? strings.listening : voiceNotice}
+            </p>
+          )}
 
           <div className="rf-footer-links" aria-live="polite" data-rf-footer-links="true">
             <div className="rf-footer-row">

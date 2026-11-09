@@ -21,6 +21,17 @@ div.fixed.inset-0>div{background:var(--rf-paper)!important;border-color:var(--rf
 /* Welcome tiles: readable labels in dark mode (the rule above forces navy in both themes) and no text under 12px. */
 main section.rounded-3xl .grid.grid-cols-3 span{font-size:12px!important}
 body[data-restless-theme="dark"] main section.rounded-3xl .grid.grid-cols-3 span{color:#f5f8fb!important}
+/* Dictation and response controls sit inside the question box. */
+.rf-question-composer{position:relative;min-width:0}
+footer .rf-question-composer textarea{display:block;padding-right:108px!important;min-height:80px}
+.rf-composer-actions{position:absolute;right:8px;bottom:8px;display:flex;gap:4px;align-items:center}
+footer .rf-composer-actions button{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0}
+footer .rf-composer-actions .rf-mic-button{color:#173b5b!important;background:transparent}
+body[data-restless-theme="dark"] footer .rf-composer-actions .rf-mic-button{color:#dbeeff!important}
+footer .rf-composer-actions .rf-mic-button[aria-pressed="true"]{background:#bfe1ff;color:#0f2a44!important;box-shadow:0 0 0 2px #2087e8}
+footer .rf-composer-actions .rf-send-button{background:#2087e8;color:#fff!important}
+footer .rf-composer-actions button:disabled{opacity:.45}
+footer .rf-composer-actions button:focus-visible{outline:2px solid #2087e8;outline-offset:3px}
 /* Footer links: phone-sized tap targets, and muted text that still passes contrast on the dark footer. */
 .rf-footer-links{display:flex;flex-direction:column;gap:0;margin-top:8px}
 .rf-footer-row{display:flex;align-items:center;flex-wrap:wrap;gap:0 16px;min-width:0}
