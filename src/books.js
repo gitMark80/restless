@@ -233,6 +233,36 @@ export const COOKBOOKS = [
   },
 ];
 
+// Faith-centered puzzle and activity books published by Restless Faith Media.
+export const PUZZLES = [
+  {
+    id: "search-the-word",
+    cover: "/covers/search-the-word.webp",
+    title: "Search the Word",
+    subtitle: "52 Weeks of Scripture, Prayer & Word Searches",
+    author: "Restless Faith Media",
+    url: amazon("B0HPQ87VC9"),
+    tagline: {
+      en: "A yearlong journey through the Bible with 104 large-print word search puzzles centered on Scripture, prayer, and discovery.",
+      es: "Un recorrido de un año por la Biblia con 104 sopas de letras en letra grande sobre la Escritura, la oración y el descubrimiento. (Solo en inglés.)",
+    },
+    pattern: /\b(word search(es)?|word-search(es)?|search the word|bible word puzzle|sopa(s)? de letras|b[uú]squeda de palabras)\b/,
+  },
+  {
+    id: "sign-of-the-cross-word",
+    cover: "/covers/sign-of-crossword.webp",
+    title: "The Sign of the Cross Word",
+    subtitle: "Bible & Christian Crosswords",
+    author: "Restless Faith Media",
+    url: amazon("B0HPXRBWFK"),
+    tagline: {
+      en: "30 Bible and Christian crossword puzzles for curious minds, with complete solutions included.",
+      es: "30 crucigramas sobre la Biblia y el cristianismo para mentes curiosas, con todas las soluciones incluidas. (Solo en inglés.)",
+    },
+    pattern: /\b(crossword(s)?|cross-word(s)?|sign of the cross word|crucigrama(s)?|cruzada(s)? de palabras)\b/,
+  },
+];
+
 // Books by other Catholic publishers that Restless recommends. Kept separate
 // from BOOKS so the modal and card can be honest that these are not ours.
 export const RECOMMENDED = [
@@ -273,7 +303,7 @@ export const BOOKS_TEXT = {
     guidesTitle: "Restless Faith Pocket Guides",
     guidesBody: "Ten short, plain-language books, each on one question that keeps people up at night.",
     intro:
-      "Catholic journals, planners, cookbooks, and short books from the makers of Restless. Tap any cover to see it on Amazon.",
+      "Catholic journals, planners, cookbooks, puzzles, and short books from the makers of Restless. Tap any cover to see it on Amazon.",
     byline: "Original titles from Restless Faith Media",
     disclosure: "As an Amazon Associate, Restless Faith Media earns from qualifying purchases.",
     bookLabel: "Book",
@@ -293,6 +323,9 @@ export const BOOKS_TEXT = {
     plannersBody: "Faith-centered planning for the liturgical year and everyday life.",
     cookbooksTitle: "Catholic Cookbooks",
     cookbooksBody: "Feast-day meals, family tables, and meatless Friday suppers.",
+    puzzlesTitle: "Catholic Puzzles & Activities",
+    puzzlesBody: "Word searches and crosswords for exploring Scripture and Christian faith.",
+    puzzleCardIntro: "For a hands-on way to explore Scripture and faith, try one of our puzzle books:",
     cookbookCardIntro: "For celebrating faith and family around the table, we made a Catholic cookbook:",
     year2027Title: "A year of faith at home",
     year2027Body: "Two ways to live the Catholic year: plan with purpose, then gather around the family table.",
@@ -310,7 +343,7 @@ export const BOOKS_TEXT = {
     guidesTitle: "Guías de bolsillo de Restless Faith",
     guidesBody: "Diez libros breves y en lenguaje sencillo, cada uno sobre una pregunta que no deja dormir a la gente.",
     intro:
-      "Diarios, agendas, libros de cocina y guías breves de los creadores de Restless. Toca cualquier portada para verlo en Amazon.",
+      "Diarios, agendas, libros de cocina, pasatiempos y guías breves de los creadores de Restless. Toca cualquier portada para verlo en Amazon.",
     byline: "Títulos originales de Restless Faith Media",
     disclosure: "Como Asociado de Amazon, Restless Faith Media recibe ingresos por las compras que cumplen los requisitos.",
     bookLabel: "Libro",
@@ -330,6 +363,9 @@ export const BOOKS_TEXT = {
     plannersBody: "Organiza tu vida cotidiana teniendo presente el año litúrgico.",
     cookbooksTitle: "Libros de cocina católica",
     cookbooksBody: "Comidas festivas, mesas familiares y cenas sin carne los viernes.",
+    puzzlesTitle: "Pasatiempos y actividades católicas",
+    puzzlesBody: "Sopas de letras y crucigramas para descubrir la Escritura y la fe cristiana.",
+    puzzleCardIntro: "Para explorar la Escritura y la fe de forma práctica, prueba uno de nuestros libros de pasatiempos:",
     cookbookCardIntro: "Para celebrar la fe y la vida familiar alrededor de la mesa, creamos un libro de cocina católica:",
     year2027Title: "Un año de fe en casa",
     year2027Body: "Dos formas de vivir el año católico: planificar con propósito y compartir la mesa en familia.",
@@ -365,6 +401,8 @@ export function matchBook(question, nextStepKind) {
   const text = String(question || "").toLowerCase();
   const own = BOOKS.find((book) => book.pattern.test(text));
   if (own) return { ...own, recommended: false };
+  const puzzle = PUZZLES.find((book) => book.pattern.test(text));
+  if (puzzle) return { ...puzzle, recommended: false };
   const cookbook = COOKBOOKS.find((book) => book.pattern.test(text));
   if (cookbook) return { ...cookbook, recommended: false };
   const planner = PLANNERS.find((book) => book.pattern.test(text));
