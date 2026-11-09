@@ -22,10 +22,11 @@ div.fixed.inset-0>div{background:var(--rf-paper)!important;border-color:var(--rf
 main section.rounded-3xl .grid.grid-cols-3 span{font-size:12px!important}
 body[data-restless-theme="dark"] main section.rounded-3xl .grid.grid-cols-3 span{color:#f5f8fb!important}
 /* Footer links: phone-sized tap targets, and muted text that still passes contrast on the dark footer. */
-.rf-footer-links{display:flex;flex-direction:column;gap:4px;margin-top:12px}
-.rf-footer-row{display:flex;align-items:center;flex-wrap:wrap;gap:4px 16px;min-width:0}
-footer .rf-footer-row>button,footer .rf-footer-row>a{min-height:32px;display:inline-flex;align-items:center;padding:0 2px;white-space:nowrap;line-height:1.4}
+.rf-footer-links{display:flex;flex-direction:column;gap:0;margin-top:8px}
+.rf-footer-row{display:flex;align-items:center;flex-wrap:wrap;gap:0 16px;min-width:0}
+footer .rf-footer-row>button,footer .rf-footer-row>a{min-height:24px;display:inline-flex;align-items:center;padding:0 2px;white-space:nowrap;line-height:1.4}
 .rf-footer-row>div{flex-shrink:0}
+footer .rf-footer-row>div>button{height:24px;min-height:24px}
 @media(max-width:480px){.rf-text-size-label{display:none}.rf-footer-row{column-gap:12px}}
 @media(max-width:360px){.rf-footer-row{column-gap:6px}}
 /* "Keep exploring" links under answers: same blue as the rest of the answer area. */
