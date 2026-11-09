@@ -199,6 +199,23 @@ export const JOURNALS = [
   },
 ];
 
+// Faith-centered planners by Restless Faith Media, separate from journals.
+export const PLANNERS = [
+  {
+    id: "liturgical-planner-2027",
+    cover: "/covers/liturgical-planner-2027.webp",
+    title: "Built on Rock: Catholic Liturgical Planner 2027",
+    subtitle: "Prayer, Purpose & Daily Life",
+    author: "Restless Faith Media",
+    url: amazon("B0HQFVW7XX"),
+    tagline: {
+      en: "A Catholic planner for bringing prayer, purpose, and daily responsibilities together throughout 2027.",
+      es: "Una agenda católica para unir la oración, el propósito y la vida cotidiana a lo largo de 2027. (Solo en inglés.)",
+    },
+    pattern: /\b(catholic planner|liturgical planner|liturgical calendar|catholic calendar|2027 planner|planner for 2027|yearly planner|annual planner|weekly planner|planning journal|plan my (day|week|year)|organize my (day|week|year)|planificador cat[oó]lico|agenda cat[oó]lica|calendario lit[uú]rgico|planificar mi (d[ií]a|semana|a[nñ]o))\b/,
+  },
+];
+
 // Books by other Catholic publishers that Restless recommends. Kept separate
 // from BOOKS so the modal and card can be honest that these are not ours.
 export const RECOMMENDED = [
@@ -239,21 +256,27 @@ export const BOOKS_TEXT = {
     guidesTitle: "Restless Faith Pocket Guides",
     guidesBody: "Ten short, plain-language books, each on one question that keeps people up at night.",
     intro:
-      "Journals and short books from the makers of Restless. Tap any cover to see it on Amazon.",
-    byline: "Written by M. B. Reston · Restless Faith Media",
+      "Catholic journals, planners, and short books from the makers of Restless. Tap any cover to see it on Amazon.",
+    byline: "Original titles from Restless Faith Media",
     disclosure: "As an Amazon Associate, Restless Faith Media earns from qualifying purchases.",
     bookLabel: "Book",
     buy: "Get it on Amazon ↗",
     cardEyebrow: "GO DEEPER",
     cardIntro: "If this question is one you keep coming back to, there's a short Restless Faith Pocket Guide on it:",
     cardNote: "From the makers of Restless. As an Amazon Associate, Restless Faith Media earns from qualifying purchases, which helps keep Restless free.",
-    cardMore: "All pocket guides",
+    cardMore: "Browse books & journals",
     recommendedEyebrow: "A BOOK WE RECOMMEND",
     recommendedIntro: "Not ours — but if this is the question you're asking, it's the book we'd point you to:",
     recommendedNote: "As an Amazon Associate, Restless Faith Media earns from qualifying purchases, which helps keep Restless free.",
     journalsTitle: "Journals",
     journalsBody: "Daily practice books from Restless Faith Media.",
     journalCardIntro: "If you're looking for a simple daily rhythm, we made one:",
+    plannerCardIntro: "If you want to plan your days around prayer and purpose, we made a Catholic planner:",
+    plannersTitle: "Catholic Planners",
+    plannersBody: "Faith-centered planning for the liturgical year and everyday life.",
+    plannerSpotlightEyebrow: "FEATURED FOR 2027",
+    plannerSpotlightTitle: "Plan 2027 with faith at the center",
+    plannerSpotlightBody: "Bring prayer, purpose, and daily responsibilities together in one Catholic liturgical planner.",
     recommendedTitle: "Also recommended",
     recommendedBody: "A few books by other Catholic publishers that we reach for ourselves.",
   },
@@ -263,21 +286,27 @@ export const BOOKS_TEXT = {
     guidesTitle: "Guías de bolsillo de Restless Faith",
     guidesBody: "Diez libros breves y en lenguaje sencillo, cada uno sobre una pregunta que no deja dormir a la gente.",
     intro:
-      "Diarios y libros breves de los creadores de Restless. Toca cualquier portada para verlo en Amazon.",
-    byline: "Escrito por M. B. Reston · Restless Faith Media",
+      "Diarios, agendas y libros breves de los creadores de Restless. Toca cualquier portada para verlo en Amazon.",
+    byline: "Títulos originales de Restless Faith Media",
     disclosure: "Como Asociado de Amazon, Restless Faith Media recibe ingresos por las compras que cumplen los requisitos.",
     bookLabel: "Libro",
     buy: "Consíguelo en Amazon ↗",
     cardEyebrow: "PROFUNDIZA",
     cardIntro: "Si esta pregunta es una a la que siempre vuelves, hay una Guía de bolsillo de Restless Faith sobre ella:",
     cardNote: "De los creadores de Restless. Como Asociado de Amazon, Restless Faith Media recibe ingresos por las compras que cumplen los requisitos, lo que ayuda a mantener Restless gratuito.",
-    cardMore: "Todas las guías de bolsillo",
+    cardMore: "Ver libros y diarios",
     recommendedEyebrow: "UN LIBRO QUE RECOMENDAMOS",
     recommendedIntro: "No es nuestro — pero si esta es la pregunta que te haces, es el libro al que te enviaríamos:",
     recommendedNote: "Como Asociado de Amazon, Restless Faith Media recibe ingresos por las compras que cumplen los requisitos, lo que ayuda a mantener Restless gratuito.",
     journalsTitle: "Diarios",
     journalsBody: "Libros de práctica diaria de Restless Faith Media.",
     journalCardIntro: "Si buscas un ritmo diario sencillo, hicimos uno:",
+    plannerCardIntro: "Si deseas planificar tus días con oración y propósito, creamos una agenda católica:",
+    plannersTitle: "Agendas católicas",
+    plannersBody: "Organiza tu vida cotidiana teniendo presente el año litúrgico.",
+    plannerSpotlightEyebrow: "DESTACADO PARA 2027",
+    plannerSpotlightTitle: "Planifica 2027 con la fe en el centro",
+    plannerSpotlightBody: "Une la oración, el propósito y la vida cotidiana en una agenda litúrgica católica.",
     recommendedTitle: "También recomendamos",
     recommendedBody: "Algunos libros de otras editoriales católicas que nosotros mismos usamos.",
   },
@@ -305,6 +334,8 @@ export function matchBook(question, nextStepKind) {
   const text = String(question || "").toLowerCase();
   const own = BOOKS.find((book) => book.pattern.test(text));
   if (own) return { ...own, recommended: false };
+  const planner = PLANNERS.find((book) => book.pattern.test(text));
+  if (planner) return { ...planner, recommended: false };
   const journal = JOURNALS.find(
     (book) => book.pattern.test(text) && !(book.exclude && book.exclude.test(text)),
   );
