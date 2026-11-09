@@ -216,6 +216,23 @@ export const PLANNERS = [
   },
 ];
 
+// Catholic family cookbooks by Restless Faith Media.
+export const COOKBOOKS = [
+  {
+    id: "feast-fast-2027",
+    cover: "/covers/feast-fast-2027.webp",
+    title: "Feast & Fast",
+    subtitle: "A 2027 Catholic Family Table",
+    author: "Restless Faith Media",
+    url: amazon("B0HQFQ852N"),
+    tagline: {
+      en: "Celebrate the Catholic year around the family table with 36 three-course menus and 48 meatless Friday suppers.",
+      es: "Celebra el año católico en familia con 36 menús de tres platos y 48 cenas sin carne para los viernes. (Solo en inglés.)",
+    },
+    pattern: /\b(feast\s*(?:&|and)\s*fast|catholic cookbook|catholic recipes|catholic cooking|meatless friday|meatless supper|friday supper|friday abstinence|lenten recipes|lent recipes|fasting recipes|feast day recipes|recipes for feast days|2027 cookbook|catholic family table|recetas cat[oó]licas|comida cat[oó]lica|cena sin carne|viernes sin carne|recetas de cuaresma|recetas para fiestas religiosas)\b/,
+  },
+];
+
 // Books by other Catholic publishers that Restless recommends. Kept separate
 // from BOOKS so the modal and card can be honest that these are not ours.
 export const RECOMMENDED = [
@@ -256,7 +273,7 @@ export const BOOKS_TEXT = {
     guidesTitle: "Restless Faith Pocket Guides",
     guidesBody: "Ten short, plain-language books, each on one question that keeps people up at night.",
     intro:
-      "Catholic journals, planners, and short books from the makers of Restless. Tap any cover to see it on Amazon.",
+      "Catholic journals, planners, cookbooks, and short books from the makers of Restless. Tap any cover to see it on Amazon.",
     byline: "Original titles from Restless Faith Media",
     disclosure: "As an Amazon Associate, Restless Faith Media earns from qualifying purchases.",
     bookLabel: "Book",
@@ -274,6 +291,13 @@ export const BOOKS_TEXT = {
     plannerCardIntro: "If you want to plan your days around prayer and purpose, we made a Catholic planner:",
     plannersTitle: "Catholic Planners",
     plannersBody: "Faith-centered planning for the liturgical year and everyday life.",
+    cookbooksTitle: "Catholic Cookbooks",
+    cookbooksBody: "Feast-day meals, family tables, and meatless Friday suppers.",
+    cookbookCardIntro: "For celebrating faith and family around the table, we made a Catholic cookbook:",
+    year2027Title: "A year of faith at home",
+    year2027Body: "Two ways to live the Catholic year: plan with purpose, then gather around the family table.",
+    cookbookSpotlightTitle: "Feast & Fast: A 2027 Catholic Family Table",
+    cookbookSpotlightBody: "36 three-course menus and 48 meatless Friday suppers for the Catholic year.",
     plannerSpotlightEyebrow: "FEATURED FOR 2027",
     plannerSpotlightTitle: "Plan 2027 with faith at the center",
     plannerSpotlightBody: "Bring prayer, purpose, and daily responsibilities together in one Catholic liturgical planner.",
@@ -286,7 +310,7 @@ export const BOOKS_TEXT = {
     guidesTitle: "Guías de bolsillo de Restless Faith",
     guidesBody: "Diez libros breves y en lenguaje sencillo, cada uno sobre una pregunta que no deja dormir a la gente.",
     intro:
-      "Diarios, agendas y libros breves de los creadores de Restless. Toca cualquier portada para verlo en Amazon.",
+      "Diarios, agendas, libros de cocina y guías breves de los creadores de Restless. Toca cualquier portada para verlo en Amazon.",
     byline: "Títulos originales de Restless Faith Media",
     disclosure: "Como Asociado de Amazon, Restless Faith Media recibe ingresos por las compras que cumplen los requisitos.",
     bookLabel: "Libro",
@@ -304,6 +328,13 @@ export const BOOKS_TEXT = {
     plannerCardIntro: "Si deseas planificar tus días con oración y propósito, creamos una agenda católica:",
     plannersTitle: "Agendas católicas",
     plannersBody: "Organiza tu vida cotidiana teniendo presente el año litúrgico.",
+    cookbooksTitle: "Libros de cocina católica",
+    cookbooksBody: "Comidas festivas, mesas familiares y cenas sin carne los viernes.",
+    cookbookCardIntro: "Para celebrar la fe y la vida familiar alrededor de la mesa, creamos un libro de cocina católica:",
+    year2027Title: "Un año de fe en casa",
+    year2027Body: "Dos formas de vivir el año católico: planificar con propósito y compartir la mesa en familia.",
+    cookbookSpotlightTitle: "Feast & Fast: A 2027 Catholic Family Table",
+    cookbookSpotlightBody: "36 menús de tres platos y 48 cenas sin carne para los viernes del año católico.",
     plannerSpotlightEyebrow: "DESTACADO PARA 2027",
     plannerSpotlightTitle: "Planifica 2027 con la fe en el centro",
     plannerSpotlightBody: "Une la oración, el propósito y la vida cotidiana en una agenda litúrgica católica.",
@@ -334,6 +365,8 @@ export function matchBook(question, nextStepKind) {
   const text = String(question || "").toLowerCase();
   const own = BOOKS.find((book) => book.pattern.test(text));
   if (own) return { ...own, recommended: false };
+  const cookbook = COOKBOOKS.find((book) => book.pattern.test(text));
+  if (cookbook) return { ...cookbook, recommended: false };
   const planner = PLANNERS.find((book) => book.pattern.test(text));
   if (planner) return { ...planner, recommended: false };
   const journal = JOURNALS.find(
