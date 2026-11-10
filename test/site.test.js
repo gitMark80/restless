@@ -155,6 +155,15 @@ test("newsletter stays off until Kit is configured, and requires consent", async
 });
 
 
+test("books catalog shows only five compact category filters without search or recommendations", () => {
+  const html = site["books.html"];
+  assert.doesNotMatch(html, /id="book-search"|data-book-category="all"|data-book-category="recommended"|data-book-group="recommended"/);
+  assert.doesNotMatch(html, /<label[^>]*>Find your next book<\/label>/);
+  const categories = [...html.matchAll(/data-book-category="([^"]+)"/g)].map(match => match[1]);
+  assert.deepEqual(categories, ["journals", "planners", "puzzles", "cookbooks", "guides"]);
+  assert.match(html, /data-catalog-feature/);
+});
+
 test("all original titles have discoverable detail pages with matching metadata and purchase links", () => {
   for (const book of ownBooks) {
     const path = `/books/${book.id}`;

@@ -17,7 +17,7 @@ const BOOK_BY_ID = Object.fromEntries(ALL_BOOKS.map((b) => [b.id, b]));
 const OWN_IDS = new Set(OWN_BOOKS.map((b) => b.id));
 const UPDATED = "2026-10-23";
 const BOOKS_UPDATED = "2026-11-09";
-const ASSET_VERSION = "3"; // bump to bust caches of site.css / rf.js
+const ASSET_VERSION = "4"; // bump to bust caches of site.css / rf.js
 
 // --- text helpers -------------------------------------------------------------
 
@@ -458,10 +458,9 @@ ${newsletterBox("questions")}`;
 const BOOK_GROUPS = [
   { id: "journals", label: "Journals", books: JOURNALS },
   { id: "planners", label: "Planners", books: PLANNERS },
-  { id: "cookbooks", label: "Cookbooks", books: COOKBOOKS },
   { id: "puzzles", label: "Puzzles & activities", books: PUZZLES },
+  { id: "cookbooks", label: "Cookbooks", books: COOKBOOKS },
   { id: "guides", label: "Pocket guides", books: [...BOOKS].sort((a, b) => a.series - b.series) },
-  { id: "recommended", label: "Also recommended", books: RECOMMENDED },
 ];
 
 export function renderBooks() {
@@ -479,11 +478,8 @@ export function renderBooks() {
   <p><strong>Built on Rock</strong> is a 90-day Catholic journal for men, husbands, and fathers—with Scripture, honest reflection, and one practical step a day.</p>
   <a class="btn" href="/books/built-on-rock">Look inside Built on Rock ${ICONS.arrow}</a></div>
 </section>
-<section class="catalog-controls" aria-label="Find a book" data-catalog-controls hidden>
-  <label for="book-search">Find your next book</label>
-  <input type="search" id="book-search" placeholder="Search by title, topic, or author" autocomplete="off" aria-controls="book-catalog">
+<section class="catalog-controls" aria-label="Browse books by category" data-catalog-controls hidden>
   <div class="category-filters" role="group" aria-label="Book categories">
-    <button type="button" data-book-category="all" aria-pressed="true">All books</button>
     ${BOOK_GROUPS.map(g => `<button type="button" data-book-category="${g.id}" aria-pressed="false">${esc(g.label)}</button>`).join("")}
   </div>
   <p class="fine" data-book-count role="status" aria-live="polite"></p>
@@ -495,7 +491,7 @@ ${BOOK_GROUPS.map(g => `<section data-book-group="${g.id}" aria-labelledby="${g.
   <div class="shelf">${g.books.map(book => bookCard(book, { from: "books" })).join("\n")}</div>
 </section>`).join("\n")}
 </div>
-<div class="card catalog-empty" data-book-empty hidden><h2>No matching books</h2><p>Try a different title or topic, or browse all categories.</p><button type="button" class="btn" data-book-reset>Show all books</button></div>
+<div class="card catalog-empty" data-book-empty hidden><h2>No books in this category</h2><p>Choose another category or show all books.</p><button type="button" class="btn" data-book-reset>Show all books</button></div>
 <p class="fine catalog-disclosure">${esc(t.disclosure)} Books are in English. Prices and available formats are listed on Amazon.</p>
 <script defer src="/book-catalog.js?v=${ASSET_VERSION}"></script>
 ${newsletterBox("books")}`;
