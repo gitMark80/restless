@@ -2202,12 +2202,6 @@ export default function Restless() {
                 {BOOKS_TEXT[language].label}
               </a>
               <button
-                onClick={() => setActiveModal("support")}
-                style={{ color: theme.accent, fontSize: "12px", fontWeight: 700 }}
-              >
-                {strings.supportLabel}
-              </button>
-              <button
                 onClick={handleSiteShare}
                 className="inline-flex items-center gap-1"
                 style={{ color: siteShareCopied ? theme.accent : theme.subtext, fontSize: "12px", fontWeight: 600 }}
@@ -2223,6 +2217,11 @@ export default function Restless() {
           </div>
         </div>
       </footer>
+      <div style={{ maxWidth: 760, margin: "18px auto 32px", padding: "0 20px", textAlign: "center" }}>
+        <a href="/contribute/" style={{ display: "inline-block", background: "#e5bd62", color: "#14243c", borderRadius: 14, padding: "15px 32px", fontWeight: 800, textDecoration: "none", boxShadow: "0 4px 18px rgba(0,0,0,.18)" }}>
+          {language === "es" ? "Contribuye aquí" : "Contribute Here"}
+        </a>
+      </div>
 
       {activeModal === "about" && (
         <InfoModal
