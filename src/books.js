@@ -227,8 +227,9 @@ export const COOKBOOKS = [
     subtitle: "A 2027 Catholic Family Table",
     author: "Restless Faith Media",
     url: amazon("B0HQFQ852N"),
+    description: "What’s for dinner on a feast day? What about a Friday in Lent?\n\nBake a ring of Three Kings bread for Epiphany, gather around a Sicilian-inspired meatless supper for St. Joseph’s Day, or set a pot of potato-leek soup on the stove for Good Friday. Feast & Fast brings the 2027 Catholic calendar into your kitchen with 156 recipes organized month by month.\n\nEach month opens with a one-page calendar showing the dates of selected feasts, family observances, and Fridays. Then come three complete menus, each with a main dish, a side, and a dessert, plus four meatless suppers. Plan a celebration for six, pick a new Friday favorite, or turn straight to the recipe index when you already know what you’re hungry for.\n\nInside you’ll find 36 three-course menus, 48 meatless Friday suppers, a plain-English guide to U.S. Catholic fasting and abstinence, and a pantry list for Fridays. From rosemary focaccia to shrimp and grits, these are meals to share around your own family table throughout the Church year.",
     tagline: {
-      en: "Celebrate the Catholic year around the family table with 36 three-course menus and 48 meatless Friday suppers.",
+      en: "What’s for dinner on a feast day? What about a Friday in Lent?",
       es: "Celebra el año católico en familia con 36 menús de tres platos y 48 cenas sin carne para los viernes. (Solo en inglés.)",
     },
     pattern: /\b(feast\s*(?:&|and)\s*fast|catholic cookbook|catholic recipes|catholic cooking|meatless friday|meatless supper|friday supper|friday abstinence|lenten recipes|lent recipes|fasting recipes|feast day recipes|recipes for feast days|2027 cookbook|catholic family table|recetas cat[oó]licas|comida cat[oó]lica|cena sin carne|viernes sin carne|recetas de cuaresma|recetas para fiestas religiosas)\b/,
