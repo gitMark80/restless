@@ -156,6 +156,21 @@ export const BOOKS = [
 // the numbered Pocket Guide series.
 export const JOURNALS = [
   {
+    "id": "leave-the-heavy-here",
+    "cover": "/covers/leave-the-heavy-here.jpg",
+    "title": "Leave the Heavy Here",
+    "subtitle": "A 90-Day Christian Prayer Journal for Gratitude, Surrender, and Daily Peace",
+    "author": "Restless Faith Media",
+    "url": "https://www.amazon.com/dp/B0HRB2CK5B",
+    "description": "You don’t have to carry it all into tomorrow.\n\nThe unfinished work. The unanswered question. The worry that follows you into the evening. Bring it into prayer.\n\nLeave the Heavy Here is a 90-day Christian prayer journal that invites you to begin each morning with God and end each evening by placing what remains unfinished in His care.\n\nSimple, repeating prompts give you a familiar place to return. In the morning, name what you are carrying, give thanks, ask for grace, and choose one faithful step. In the evening, reflect on the day, recognize kindness, seek forgiveness, and entrust tomorrow to God.\n\nInside you’ll find:\n\n• 90 undated morning-and-evening spreads\n• Short opening prayers and five guided prompts for each session\n• Space for gratitude, honest reflection, prayer intentions, and practical next steps\n• Completed examples to help you begin\n• Opening and closing prayers, plus reflections on what you want to carry forward\n\nThe spacious 7 × 10-inch format offers room to write, with 192 thoughtfully arranged pages. Because the entries are undated, you can begin whenever you’re ready and continue at your own pace.\n\nCreated by Restless Faith, a Catholic publisher, this journal welcomes Christians seeking a simple daily rhythm of prayer centered on Jesus Christ.\n\nYou do not need polished prayers or perfect days. Begin with what is true.\n\nBring what is heavy. Leave it with God.",
+    "tagline": {
+        "en": "Leave the Heavy Here is a 90-day Christian prayer journal that invites you to begin each morning with God and end each evening by placing what remains unfinished in His care.",
+        "es": "Un diario cristiano de oración de 90 días para la mañana y la noche. (Solo en inglés.)"
+    }
+,
+    pattern: /leave the heavy here/i,
+  },
+  {
     id: "built-on-rock",
     cover: "/covers/built-on-rock.jpg",
     title: "Built on Rock",
@@ -246,8 +261,9 @@ export const PUZZLES = [
     subtitle: "52 Weeks of Scripture, Prayer & Word Searches",
     author: "Restless Faith Media",
     url: amazon("B0HPQ87VC9"),
+    description: "Make room for Scripture, prayer, and a little quiet discovery.\n\nSearch the Word brings together 104 large-print word searches and 52 weeks of reflection in a yearlong journey through the Bible and Christian faith. Begin whenever you like and enjoy a simple weekly rhythm: read, reflect, search, and pray.\n\nEach week includes Scripture references, an original reflection, two word searches, a prayer, thoughtful questions, a practical next step, and space for personal notes.\n\nInside you’ll find:\n\n• 104 original word searches—two for every week of the year\n• Large, easy-to-read 18-point puzzle letters with generous spacing\n• Clear three-column word banks with 20 entries per puzzle\n• A gentler puzzle and a more challenging puzzle each week\n• 52 reflections and prayers\n• 104 reflection questions and 52 practical actions\n• A weekly progress tracker and space to write\n• Complete answer keys included\n\nExplore creation, the life of Jesus, prayer, mercy, the virtues, and the hope of eternal life. Rooted in the Catholic tradition, the book also explores Mary, the saints, and the sacraments, with Catechism references for deeper study.\n\nThe undated format lets you move at your own pace. Enjoy a few quiet minutes each day or settle into a longer weekly time of reflection.\n\nAn inviting companion for personal devotion—and a thoughtful gift for someone who enjoys faith-inspired puzzles.\n\nIncludes 244 pages in a spacious 8.5 × 11-inch format. Puzzle grids use large print; answer keys and supporting text use smaller type. Scripture passages are referenced rather than reproduced",
     tagline: {
-      en: "A yearlong journey through the Bible with 104 large-print word search puzzles centered on Scripture, prayer, and discovery.",
+      en: "Search the Word brings together 104 large-print word searches and 52 weeks of reflection in a yearlong journey through the Bible and Christian faith. Begin whenever you like and enjoy a simple weekly rhythm: read, reflect, search, and pray.",
       es: "Un recorrido de un año por la Biblia con 104 sopas de letras en letra grande sobre la Escritura, la oración y el descubrimiento. (Solo en inglés.)",
     },
     pattern: /\b(word search(es)?|word-search(es)?|search the word|bible word puzzle|sopa(s)? de letras|b[uú]squeda de palabras)\b/,
