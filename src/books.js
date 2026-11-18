@@ -161,8 +161,9 @@ export const JOURNALS = [
     title: "Built on Rock",
     subtitle: "A 90-Day Catholic Journal for Men, Husbands, and Fathers",
     url: amazon("B0HJMP5V7R"),
+    description: "A strong life needs a true foundation.\n\nBuilt on Rock is a 90-day Catholic journal for men seeking greater faithfulness in prayer, marriage, fatherhood, work, self-discipline, brotherhood, and Christian mission.\n\nThrough Scripture, guided reflection, honest examination, practical action, and personal writing, this journal helps men bring the real responsibilities and struggles of everyday life before God.\n\nExplore 13 focused themes:\n\n• Identity in Christ\n• Prayer and discipline\n• Courage and fortitude\n• Marriage and self-gift\n• Fatherhood and leadership\n• Work, service, and integrity\n• Temptation and self-mastery\n• Anger, mercy, and repair\n• Suffering and perseverance\n• Brotherhood and accountability\n• Sacramental life\n• Discernment and mission\n• Building a faithful legacy\n\nEach day includes a Scripture passage, focused reflection, honest questions, a practical next step, and room for prayer and writing.\n\nYou do not need to have everything figured out. You only need the willingness to begin, remain faithful to the responsibilities before you, and keep building your life on Christ.",
     tagline: {
-      en: "Ninety days of Scripture, honest questions, and one practical step a day — on prayer, marriage, fatherhood, work, temptation, anger, brotherhood, and building a life that holds.",
+      en: "Built on Rock is a 90-day Catholic journal for men seeking greater faithfulness in prayer, marriage, fatherhood, work, self-discipline, brotherhood, and Christian mission.",
       es: "Noventa días de Escritura, preguntas honestas y un paso práctico al día — sobre la oración, el matrimonio, la paternidad, el trabajo, la tentación, la ira, la hermandad y construir una vida que se sostiene. (Solo en inglés.)",
     },
     pattern:
@@ -208,8 +209,9 @@ export const PLANNERS = [
     subtitle: "Prayer, Purpose & Daily Life",
     author: "Restless Faith Media",
     url: amazon("B0HQFVW7XX"),
+    description: "Plan your week with the Catholic liturgical year in view. Built on Rock: 2027 Catholic Liturgical Planner brings Sunday Scripture, feast days, and prayer intentions onto the same pages you use for appointments, meals, and family life.\n\nEach week opens across two pages, Monday through Sunday, with a daily schedule from 6 AM to 10 PM. Before the week begins, look ahead to the readings for Sunday Mass and write down someone you want to pray for. As the days unfold, there’s space to plan meals, note what you’re grateful for, and keep track of your Rosary, Mass, and Confession.\n\nInside you’ll find 53 weekly spreads, 12 monthly calendars, monthly reflections, and pages for notes. The calendar follows U.S. Roman Catholic observances, with Sunday Ascension. A simple letter key identifies liturgical colors throughout the black-and-white interior.\n\nThis 180-page, 8.5 × 11-inch paperback is a companion to the Built on Rock journal from Restless Faith",
     tagline: {
-      en: "A Catholic planner for bringing prayer, purpose, and daily responsibilities together throughout 2027.",
+      en: "Plan your week with the Catholic liturgical year in view. Built on Rock: 2027 Catholic Liturgical Planner brings Sunday Scripture, feast days, and prayer intentions onto the same pages you use for appointments, meals, and family life.",
       es: "Una agenda católica para unir la oración, el propósito y la vida cotidiana a lo largo de 2027. (Solo en inglés.)",
     },
     pattern: /\b(catholic planner|liturgical planner|liturgical calendar|catholic calendar|2027 planner|planner for 2027|yearly planner|annual planner|weekly planner|planning journal|plan my (day|week|year)|organize my (day|week|year)|planificador cat[oó]lico|agenda cat[oó]lica|calendario lit[uú]rgico|planificar mi (d[ií]a|semana|a[nñ]o))\b/,

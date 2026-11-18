@@ -256,6 +256,14 @@ function crumbsHtml(items) {
 
 // --- book card --------------------------------------------------------------
 
+function bookDescription(book) {
+  return book.description.split("\n\n").map(block =>
+    block.startsWith("• ")
+      ? `<ul>${block.split("\n").map(line => `<li>${esc(line.slice(2))}</li>`).join("")}</ul>`
+      : `<p>${esc(block)}</p>`
+  ).join("\n");
+}
+
 function bookCard(book, { compact = false, from = "" } = {}) {
   const own = OWN_IDS.has(book.id);
   const related = TOPICS.filter((t) => t.books.includes(book.id));
@@ -267,7 +275,7 @@ function bookCard(book, { compact = false, from = "" } = {}) {
     <h3>${own ? `<a href="/books/${esc(book.id)}">${esc(book.title)}</a>` : esc(book.title)}</h3>
     ${book.subtitle ? `<p class="subtitle">${esc(book.subtitle)}</p>` : ""}
     ${book.author ? `<p class="byline">${esc(book.author)}</p>` : own ? `<p class="byline">M. B. Reston · Restless Faith Media</p>` : ""}
-    <p class="for"><strong>Who it's for:</strong> ${esc(book.tagline.en)}</p>
+    ${book.description && from === "books" ? `<div class="book-description">${bookDescription(book)}</div>` : `<p class="for"><strong>Who it's for:</strong> ${esc(book.tagline.en)}</p>`}
     ${
       !compact && related.length
         ? `<p class="book-topics">Related: ${related.map((t) => `<a href="${topicUrl(t)}">${esc(t.label)}</a>`).join(" · ")}</p>`
@@ -287,7 +295,7 @@ function bookJsonLd(book) {
     image: `${SITE}${book.cover}`,
     url: own ? `${SITE}/books/${book.id}` : book.url,
     sameAs: book.url,
-    description: book.tagline.en,
+    description: book.description || book.tagline.en,
     ...(own
       ? { author: { "@type": book.author === "Restless Faith Media" ? "Organization" : "Person", name: book.author || "M. B. Reston" }, publisher: { "@id": `${SITE}/#org` } }
       : book.author
@@ -474,8 +482,8 @@ export function renderBooks() {
 </header>
 <section class="book-feature card" aria-labelledby="featured-title" data-catalog-feature>
   <a href="/books/built-on-rock" tabindex="-1" aria-hidden="true"><img src="/covers/built-on-rock.jpg" alt="" width="160" height="240"></a>
-  <div><p class="eyebrow">Start here · Featured journal</p><h2 id="featured-title">Build a life that holds.</h2>
-  <p><strong>Built on Rock</strong> is a 90-day Catholic journal for men, husbands, and fathers—with Scripture, honest reflection, and one practical step a day.</p>
+  <div><p class="eyebrow">Start here · Featured journal</p><h2 id="featured-title">A strong life needs a true foundation.</h2>
+  <p>Built on Rock is a 90-day Catholic journal for men seeking greater faithfulness in prayer, marriage, fatherhood, work, self-discipline, brotherhood, and Christian mission.</p>
   <a class="btn" href="/books/built-on-rock">Look inside Built on Rock ${ICONS.arrow}</a></div>
 </section>
 <section class="catalog-controls" aria-label="Browse books by category" data-catalog-controls hidden>
@@ -521,7 +529,7 @@ export function renderBook(book) {
       <h1>${esc(book.title)}</h1>
       ${book.subtitle ? `<p class="lede">${esc(book.subtitle)}</p>` : ""}
       <p class="fine">By ${esc(book.author || "M. B. Reston")}${book.author === "Restless Faith Media" ? "" : " · Restless Faith Media"}</p>
-      <p>${esc(book.tagline.en)}</p>
+      ${book.description ? `<div class="book-description">${bookDescription(book)}</div>` : `<p>${esc(book.tagline.en)}</p>`}
       <a class="btn" href="${esc(bookUrl(book))}" target="_blank" rel="sponsored nofollow noopener" data-rf-book="${esc(book.id)}" data-rf-from="book-detail">Get it on Amazon ${ICONS.arrow}</a>
       <p class="fine purchase-note">See current pricing and available formats on Amazon. This book is in English.</p>
       ${previews.length ? '<a href="#inside">See interior samples ↓</a>' : ""}
