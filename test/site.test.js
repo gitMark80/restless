@@ -161,7 +161,10 @@ test("books catalog shows only five compact category filters without search or r
   assert.doesNotMatch(html, /<label[^>]*>Find your next book<\/label>/);
   const categories = [...html.matchAll(/data-book-category="([^"]+)"/g)].map(match => match[1]);
   assert.deepEqual(categories, ["journals", "planners", "puzzles", "cookbooks", "guides"]);
-  assert.match(html, /data-catalog-feature/);
+  assert.doesNotMatch(html, /data-catalog-feature/);
+  assert.equal((html.match(/<details class="catalog-book"/g) || []).length, 18);
+  assert.doesNotMatch(html, /<details[^>]*\sopen(?:[\s>])/);
+  assert.match(html, /<summary>/);
 });
 
 test("all original titles have discoverable detail pages with matching metadata and purchase links", () => {

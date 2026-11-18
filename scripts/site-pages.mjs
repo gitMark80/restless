@@ -17,7 +17,7 @@ const BOOK_BY_ID = Object.fromEntries(ALL_BOOKS.map((b) => [b.id, b]));
 const OWN_IDS = new Set(OWN_BOOKS.map((b) => b.id));
 const UPDATED = "2026-10-23";
 const BOOKS_UPDATED = "2026-11-09";
-const ASSET_VERSION = "4"; // bump to bust caches of site.css / rf.js
+const ASSET_VERSION = "5"; // bump to bust caches of site.css / rf.js
 
 // --- text helpers -------------------------------------------------------------
 
@@ -264,7 +264,22 @@ function bookDescription(book) {
   ).join("\n");
 }
 
+function catalogBook(book) {
+  return `<details class="catalog-book" name="book-description" id="book-${esc(book.id)}" data-book-search="${esc(book.title)}">
+  <summary>
+    <img src="${esc(book.cover)}" alt="" width="70" height="100" loading="lazy" decoding="async">
+    <span class="catalog-book-title"><span class="catalog-title">${esc(book.title)}</span>${book.subtitle ? `<span class="catalog-subtitle">${esc(book.subtitle)}</span>` : ""}<span class="catalog-hint"><span class="when-closed">View description</span><span class="when-open">Hide description</span></span></span>
+    <span class="catalog-chevron" aria-hidden="true"></span>
+  </summary>
+  <div class="catalog-book-content">
+    <div class="book-description">${book.description ? bookDescription(book) : `<p>${esc(book.tagline.en)}</p>`}</div>
+    <div class="catalog-book-actions"><a class="btn btn-amazon" href="${esc(bookUrl(book))}" target="_blank" rel="sponsored nofollow noopener" data-rf-book="${esc(book.id)}" data-rf-from="books">View on Amazon</a><a href="/books/${esc(book.id)}">Explore this book</a></div>
+  </div>
+</details>`;
+}
+
 function bookCard(book, { compact = false, from = "" } = {}) {
+  if (from === "books") return catalogBook(book);
   const own = OWN_IDS.has(book.id);
   const related = TOPICS.filter((t) => t.books.includes(book.id));
   return `<article class="book${compact ? " book-compact" : ""}" id="book-${esc(book.id)}" data-book-search="${esc([book.title, book.subtitle, book.author || "M. B. Reston", book.tagline.en].filter(Boolean).join(" ").toLowerCase())}">
@@ -479,13 +494,8 @@ export function renderBooks() {
   <p class="eyebrow">Restless Faith Media</p>
   <h1>Faith for your everyday life.</h1>
   <p class="lede">Catholic books, journals, planners, and puzzles to help you ask honest questions, build a habit of prayer, and bring faith home.</p>
+  <p class="fine">Select a book to read its full description.</p>
 </header>
-<section class="book-feature card" aria-labelledby="featured-title" data-catalog-feature>
-  <a href="/books/built-on-rock" tabindex="-1" aria-hidden="true"><img src="/covers/built-on-rock.jpg" alt="" width="160" height="240"></a>
-  <div><p class="eyebrow">Start here · Featured journal</p><h2 id="featured-title">A strong life needs a true foundation.</h2>
-  <p>Built on Rock is a 90-day Catholic journal for men seeking greater faithfulness in prayer, marriage, fatherhood, work, self-discipline, brotherhood, and Christian mission.</p>
-  <a class="btn" href="/books/built-on-rock">Look inside Built on Rock ${ICONS.arrow}</a></div>
-</section>
 <section class="catalog-controls" aria-label="Browse books by category" data-catalog-controls hidden>
   <div class="category-filters" role="group" aria-label="Book categories">
     ${BOOK_GROUPS.map(g => `<button type="button" data-book-category="${g.id}" aria-pressed="false">${esc(g.label)}</button>`).join("")}

@@ -6,7 +6,6 @@
   const groups = [...document.querySelectorAll('[data-book-group]')];
   const count = document.querySelector('[data-book-count]');
   const empty = document.querySelector('[data-book-empty]');
-  const feature = document.querySelector('[data-catalog-feature]');
   let category = 'all';
 
   function update() {
@@ -21,7 +20,6 @@
     buttons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.bookCategory === category)));
     count.textContent = `${total} ${total === 1 ? 'book' : 'books'} ${category === 'all' ? 'to explore' : 'in this category'}`;
     empty.hidden = total !== 0;
-    feature.hidden = category !== 'all';
   }
 
   // Tapping a selected category a second time restores the full catalog.
