@@ -188,8 +188,9 @@ export const JOURNALS = [
     title: "Restless",
     subtitle: "A 90-Day Catholic Journal for Questions, Doubt, and Deeper Faith",
     url: amazon("B0HJLFXF4P"),
+    description: "Restless Faith Media creates thoughtfully designed Catholic resources for anyone who longs to grow closer to God—whether you are carrying honest questions, navigating uncertainty, seeking deeper faith, or simply ready to begin again. Each resource offers a welcoming space to bring your hopes, doubts, joys, and everyday struggles into prayer.\n\nThrough Scripture, guided reflection, personal writing, prayer, and practical next steps, these resources invite you to slow down, listen for God’s voice, and discover how faith can take root in ordinary life. Explore topics including prayer, the sacraments, vocation, family, moral decision-making, suffering, conversion, and Christian mission.\n\nYou do not need to have everything figured out, and you do not have to walk this journey alone. Begin where you are. Bring your real questions, open your heart to God’s presence, and take the next step toward a deeper, more hopeful relationship with Him.",
     tagline: {
-      en: "The journal built for the same people this app is built for. Ninety days of Scripture, honest reflection, and small next steps for anyone carrying real questions, sitting with doubt, or ready to begin again.",
+      en: "Restless Faith Media creates thoughtfully designed Catholic resources for anyone who longs to grow closer to God—whether you are carrying honest questions, navigating uncertainty, seeking deeper faith, or simply ready to begin again. Each resource offers a welcoming space to bring your hopes, doubts, joys, and everyday struggles into prayer.",
       es: "El diario hecho para las mismas personas para quienes se hizo esta app. Noventa días de Escritura, reflexión honesta y pequeños pasos para quien lleva preguntas reales, convive con la duda o está listo para empezar de nuevo. (Solo en inglés.)",
     },
     // A catch-all, so it yields when the question is really about a specific
