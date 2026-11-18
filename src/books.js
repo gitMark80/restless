@@ -275,8 +275,9 @@ export const PUZZLES = [
     subtitle: "Bible & Christian Crosswords",
     author: "Restless Faith Media",
     url: amazon("B0HPXRBWFK"),
+    description: "Faith meets wordplay—one square at a time.\n\nThe Sign of the Crossword brings together 30 traditional crossword puzzles featuring the Bible, Christian history, and everyday knowledge. Scripture and saints share the page with geography, music, history, and familiar expressions.\n\nDesigned for adults who enjoy a satisfying crossword, each puzzle includes all its clues and its grid on the same page. There’s no flipping back and forth while you solve.\n\nInside you’ll find:\n\n• 30 fully interlocking 15 × 15 crossword puzzles\n• Bible and Christian themes mixed with general knowledge\n• Selected clues exploring Catholic saints and traditions\n• Clean, single-page puzzle layouts in an 8.5 × 11-inch format\n• Standard-size clue text and writing squares\n• Complete solutions at the back\n\nPick a puzzle, sharpen your pencil, and enjoy finding the word that fits.",
     tagline: {
-      en: "30 Bible and Christian crossword puzzles for curious minds, with complete solutions included.",
+      en: "The Sign of the Crossword brings together 30 traditional crossword puzzles featuring the Bible, Christian history, and everyday knowledge. Scripture and saints share the page with geography, music, history, and familiar expressions.",
       es: "30 crucigramas sobre la Biblia y el cristianismo para mentes curiosas, con todas las soluciones incluidas. (Solo en inglés.)",
     },
     pattern: /\b(crossword(s)?|cross-word(s)?|sign of the cross word|crucigrama(s)?|cruzada(s)? de palabras)\b/,
