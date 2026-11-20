@@ -215,12 +215,13 @@ const ARTICLES = {
     ],
   },
   "catholic-vs-protestant-beliefs": {
+    dateModified: "2026-11-20",
     answer:
       "Catholics and Protestants share a great deal: faith in the Trinity, in Jesus Christ as true God and true man, in his death and Resurrection, in the Bible as God's word and in baptism. The main differences are about how God's revelation is handed on (Scripture and Tradition, or Scripture alone), how we are justified, the sacraments, especially the Eucharist, the authority of the Church and the pope, and the place of Mary and the saints.",
     body: [
-      { h: "What Catholics and Protestants share" },
+      { h: "Are Catholics and Protestants both Christians?" },
       {
-        p: "The Catholic Church teaches that all who are baptized and believe in Christ are truly Christians, brothers and sisters in the Lord, in real though imperfect communion with the Catholic Church [[CCC 818]] [[CCC 838]]. The differences are real, and they matter, but they sit inside a large shared faith.",
+        p: "Yes. Catholics and Protestants are both Christians who profess faith in Jesus Christ. Baptism unites us as brothers and sisters in the Lord, even as we differ on questions such as Church authority and the Eucharist [[CCC 818]] [[CCC 838]].",
       },
       { h: "The main differences at a glance" },
       {

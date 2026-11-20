@@ -323,6 +323,7 @@ function bookJsonLd(book) {
 // --- pages ------------------------------------------------------------------
 
 export function renderTopic(topic) {
+  const dateModified = topic.dateModified ?? UPDATED;
   const path = topicUrl(topic);
   const { bible, ccc } = topicSources(topic);
   const related = topic.related.map((slug) => {
@@ -350,7 +351,7 @@ export function renderTopic(topic) {
       abstract: plainAnswer,
       image: `${SITE}/social-card.png`,
       datePublished: UPDATED,
-      dateModified: UPDATED,
+      dateModified,
       inLanguage: "en",
       mainEntityOfPage: `${SITE}${path}`,
       author: ORG,
@@ -366,7 +367,7 @@ export function renderTopic(topic) {
   <header class="topic-head">
     <p class="eyebrow">A Catholic answer</p>
     <h1>${esc(topic.question)}</h1>
-    <p class="meta">Grounded in Scripture and the Catechism · ${bible.length + ccc.length} sources · Updated ${new Date(UPDATED).toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" })}</p>
+    <p class="meta">Grounded in Scripture and the Catechism · ${bible.length + ccc.length} sources · Updated ${new Date(dateModified).toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" })}</p>
   </header>
 
   <section class="card answer" aria-labelledby="short-answer">
@@ -766,10 +767,17 @@ export function renderNotFound() {
 }
 
 export function renderSitemap() {
-  const urls = ["/", "/questions", ...TOPICS.map(topicUrl), "/books", ...OWN_BOOKS.map(b => `/books/${b.id}`), "/privacy"];
+  const pages = [
+    ["/", UPDATED],
+    ["/questions", UPDATED],
+    ...TOPICS.map(topic => [topicUrl(topic), topic.dateModified ?? UPDATED]),
+    ["/books", BOOKS_UPDATED],
+    ...OWN_BOOKS.map(book => [`/books/${book.id}`, BOOKS_UPDATED]),
+    ["/privacy", UPDATED],
+  ];
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls.map((u) => `  <url><loc>${SITE}${u === "/" ? "/" : u}</loc><lastmod>${u.startsWith("/books") ? BOOKS_UPDATED : UPDATED}</lastmod></url>`).join("\n")}
+${pages.map(([path, lastmod]) => `  <url><loc>${SITE}${path}</loc><lastmod>${lastmod}</lastmod></url>`).join("\n")}
 </urlset>
 `;
 }
