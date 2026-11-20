@@ -17,7 +17,7 @@ const BOOK_BY_ID = Object.fromEntries(ALL_BOOKS.map((b) => [b.id, b]));
 const OWN_IDS = new Set(OWN_BOOKS.map((b) => b.id));
 const UPDATED = "2026-10-23";
 const BOOKS_UPDATED = "2026-11-09";
-const ASSET_VERSION = "5"; // bump to bust caches of site.css / rf.js
+const ASSET_VERSION = "6"; // bump to bust caches of site.css / rf.js
 
 // --- text helpers -------------------------------------------------------------
 
@@ -264,18 +264,25 @@ function bookDescription(book) {
   ).join("\n");
 }
 
+function bookPurchaseLink(book, from) {
+  return `<a class="btn book-purchase" href="${esc(bookUrl(book))}" target="_blank" rel="sponsored nofollow noopener" aria-label="View on Amazon: ${esc(book.title)}" data-rf-book="${esc(book.id)}" data-rf-from="${from}"><span><span class="purchase-verb">View on </span>Amazon</span>${ICONS.arrow}</a>`;
+}
+
 function catalogBook(book) {
-  return `<details class="catalog-book" name="book-description" id="book-${esc(book.id)}" data-book-search="${esc(book.title)}">
-  <summary>
-    <img src="${esc(book.cover)}" alt="" width="70" height="100" loading="lazy" decoding="async">
-    <span class="catalog-book-title"><span class="catalog-title">${esc(book.title)}</span>${book.subtitle ? `<span class="catalog-subtitle">${esc(book.subtitle)}</span>` : ""}<span class="catalog-hint"><span class="when-closed">View description</span><span class="when-open">Hide description</span></span></span>
-    <span class="catalog-chevron" aria-hidden="true"></span>
-  </summary>
-  <div class="catalog-book-content">
-    <div class="book-description">${book.description ? bookDescription(book) : `<p>${esc(book.tagline.en)}</p>`}</div>
-    <div class="catalog-book-actions"><a class="btn btn-amazon" href="${esc(bookUrl(book))}" target="_blank" rel="sponsored nofollow noopener" data-rf-book="${esc(book.id)}" data-rf-from="books">View on Amazon</a><a href="/books/${esc(book.id)}">Explore this book</a></div>
-  </div>
-</details>`;
+  return `<div class="catalog-entry" id="book-${esc(book.id)}" data-book-search="${esc(book.title)}">
+  ${bookPurchaseLink(book, "books")}
+  <details class="catalog-book" name="book-description">
+    <summary>
+      <img src="${esc(book.cover)}" alt="" width="70" height="100" loading="lazy" decoding="async">
+      <span class="catalog-book-title"><span class="catalog-title">${esc(book.title)}</span>${book.subtitle ? `<span class="catalog-subtitle">${esc(book.subtitle)}</span>` : ""}<span class="catalog-hint"><span class="when-closed">View description</span><span class="when-open">Hide description</span></span></span>
+      <span class="catalog-chevron" aria-hidden="true"></span>
+    </summary>
+    <div class="catalog-book-content">
+      <div class="book-description">${book.description ? bookDescription(book) : `<p>${esc(book.tagline.en)}</p>`}</div>
+      <div class="catalog-book-actions"><a href="/books/${esc(book.id)}">Explore this book</a></div>
+    </div>
+  </details>
+</div>`;
 }
 
 function bookCard(book, { compact = false, from = "" } = {}) {
@@ -535,16 +542,18 @@ export function renderBook(book) {
   const main = `${crumbsHtml(crumbs)}
 <article>
   <div class="book-detail">
-    <img class="detail-cover" src="${esc(book.cover)}" alt="Cover of ${esc(book.title)}" width="280" height="420" fetchpriority="high">
     <header><p class="eyebrow">${esc(group.label)}${book.series ? ` · Book ${book.series}` : ""}</p>
-      <h1>${esc(book.title)}</h1>
+      <div class="book-title-row">
+        <h1>${esc(book.title)}</h1>
+        ${bookPurchaseLink(book, "book-detail")}
+      </div>
       ${book.subtitle ? `<p class="lede">${esc(book.subtitle)}</p>` : ""}
       <p class="fine">By ${esc(book.author || "M. B. Reston")}${book.author === "Restless Faith Media" ? "" : " · Restless Faith Media"}</p>
-      ${book.description ? `<div class="book-description">${bookDescription(book)}</div>` : `<p>${esc(book.tagline.en)}</p>`}
-      <a class="btn" href="${esc(bookUrl(book))}" target="_blank" rel="sponsored nofollow noopener" data-rf-book="${esc(book.id)}" data-rf-from="book-detail">Get it on Amazon ${ICONS.arrow}</a>
       <p class="fine purchase-note">See current pricing and available formats on Amazon. This book is in English.</p>
       ${previews.length ? '<a href="#inside">See interior samples ↓</a>' : ""}
     </header>
+    <img class="detail-cover" src="${esc(book.cover)}" alt="Cover of ${esc(book.title)}" width="280" height="420" fetchpriority="high">
+    <div class="book-description">${book.description ? bookDescription(book) : `<p>${esc(book.tagline.en)}</p>`}</div>
   </div>
   ${previews.length ? `<section id="inside" aria-labelledby="inside-title"><h2 id="inside-title">A look inside</h2><p class="fine">A weekly focus, daily reflection, and space to put your faith into practice.</p><div class="interior-previews">${previews.map(([file, label]) => `<figure><img src="/previews/built-on-rock/${file}" alt="${esc(label)} interior sample" width="300" height="300" loading="lazy"><figcaption>${esc(label)}</figcaption></figure>`).join("")}</div></section>` : ""}
 </article>
