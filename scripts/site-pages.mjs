@@ -17,6 +17,7 @@ const BOOK_BY_ID = Object.fromEntries(ALL_BOOKS.map((b) => [b.id, b]));
 const OWN_IDS = new Set(OWN_BOOKS.map((b) => b.id));
 const UPDATED = "2026-10-23";
 const BOOKS_UPDATED = "2026-11-09";
+const CATALOG_UPDATED = OWN_BOOKS.reduce((latest, book) => book.dateModified > latest ? book.dateModified : latest, BOOKS_UPDATED);
 const ASSET_VERSION = "6"; // bump to bust caches of site.css / rf.js
 
 // --- text helpers -------------------------------------------------------------
@@ -319,7 +320,7 @@ function bookJsonLd(book) {
     sameAs: book.url,
     description: book.description || book.tagline.en,
     ...(own
-      ? { author: { "@type": book.author === "Restless Faith Media" ? "Organization" : "Person", name: book.author || "M. B. Reston" }, publisher: { "@id": `${SITE}/#org` } }
+      ? { author: { "@type": book.authorType || (book.author === "Restless Faith Media" ? "Organization" : "Person"), name: book.author || "M. B. Reston" }, publisher: { "@id": `${SITE}/#org` } }
       : book.author
         ? { author: { "@type": "Person", name: book.author.split("·")[0].trim() } }
         : {}),
@@ -780,8 +781,8 @@ export function renderSitemap() {
     ["/", UPDATED],
     ["/questions", UPDATED],
     ...TOPICS.map(topic => [topicUrl(topic), topic.dateModified ?? UPDATED]),
-    ["/books", BOOKS_UPDATED],
-    ...OWN_BOOKS.map(book => [`/books/${book.id}`, BOOKS_UPDATED]),
+    ["/books", CATALOG_UPDATED],
+    ...OWN_BOOKS.map(book => [`/books/${book.id}`, book.dateModified || BOOKS_UPDATED]),
     ["/privacy", UPDATED],
   ];
   return `<?xml version="1.0" encoding="UTF-8"?>

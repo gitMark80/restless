@@ -162,7 +162,7 @@ test("books catalog shows only five compact category filters without search or r
   const categories = [...html.matchAll(/data-book-category="([^"]+)"/g)].map(match => match[1]);
   assert.deepEqual(categories, ["journals", "planners", "puzzles", "cookbooks", "guides"]);
   assert.doesNotMatch(html, /data-catalog-feature/);
-  assert.equal((html.match(/<details class="catalog-book"/g) || []).length, 18);
+  assert.equal((html.match(/<details class="catalog-book"/g) || []).length, ownBooks.length);
   assert.doesNotMatch(html, /<details[^>]*\sopen(?:[\s>])/);
   assert.match(html, /<summary>/);
 });

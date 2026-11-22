@@ -219,6 +219,22 @@ export const JOURNALS = [
 // Faith-centered planners by Restless Faith Media, separate from journals.
 export const PLANNERS = [
   {
+    id: "ponder-and-keep-2027",
+    cover: "/covers/ponder-and-keep-2027.jpg",
+    title: "Ponder & Keep",
+    subtitle: "2027 Catholic Liturgical Planner",
+    author: "Restless Faith",
+    authorType: "Organization",
+    dateModified: "2026-11-21",
+    url: amazon("B0HSKFFC9P"),
+    description: "What will you carry home from Sunday Mass?\n\nA name to pray for. A line from the Gospel. A promise to visit someone this week. Ponder & Keep brings the Church year into your daily plans. Keep the Sunday Gospel beside your to-do list, mark a feast or a First Friday, and make a little room for the people God has placed in your care.\n\nCreated for Catholic women, this pocket-size planner follows the U.S. Catholic liturgical calendar from January through December 2027. Each weekly spread pairs seven dated days with a Prayer & Plans page: a Sunday Gospel reference, a prayer question, names to bring to Mass, three priorities, and space for prayer.\n\nInside you’ll find:\n\n• 12 two-page monthly calendars and 53 weekly spreads\n• Feast days, saints’ memorials, and liturgical colors\n• Monthly botanical illustrations, Scripture reflections, and prayer intentions\n• Rosary and Scripture trackers\n• First Friday reminders\n• Suggested start dates for nine Marian novenas\n• Pocket guides to the Rosary, Confession, and Lenten fasting\n\nThe 166-page paperback measures 4.25 × 6 inches, with a black-and-white interior and a deep navy floral cover featuring ivory lilies and Gulf Coast magnolias. Small enough to carry with you, it offers a place to keep your plans, prayers, and the people you love close at hand.",
+    tagline: {
+      en: "A pocket-size 2027 Catholic planner for women, with monthly calendars, weekly plans, Sunday Gospel reflections, feast days, and room for prayer.",
+      es: "Una agenda católica de bolsillo para mujeres, con calendarios mensuales, planes semanales, el Evangelio dominical y espacio para la oración en 2027. (Solo en inglés.)",
+    },
+    pattern: /\bponder\s*(?:&|and)\s*keep\b/i,
+  },
+  {
     id: "liturgical-planner-2027",
     cover: "/covers/liturgical-planner-2027.webp",
     title: "Built on Rock: Catholic Liturgical Planner 2027",
